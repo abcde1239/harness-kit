@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "repository": { "visibility": "private" },
+  "workspaces": [
+    { "id": "api", "root": "services/api", "tests": { "include": ["**/*_test.go"], "requireConfiguredTask": true } },
+    { "id": "web", "root": "apps/web", "tests": { "include": ["src/**/*.test.ts", "src/**/*.spec.ts"], "requireConfiguredTask": true } },
+    { "id": "custom", "root": "tools/custom", "tests": { "requireConfiguredTask": true } }
+  ],
+  "documents": {
+    "defaultAudience": "internal",
+    "publicRoots": ["docs/public"],
+    "internalRoots": ["docs/prd", "docs/decision", "docs/verification"],
+    "publicPatterns": ["services/api/**", "apps/web/**"],
+    "internalPatterns": ["**/MEMORY.md", "**/memory/**", "**/decision/**"]
+  },
+  "tasks": [
+    { "id": "api:test", "workspace": "api", "argv": ["go", "test", "./..."], "kind": "test" },
+    { "id": "web:test", "workspace": "web", "argv": ["pnpm", "run", "test"], "kind": "test" },
+    { "id": "custom:test", "workspace": "custom", "argv": ["custom-runner", "check"], "kind": "test" }
+  ]
+}

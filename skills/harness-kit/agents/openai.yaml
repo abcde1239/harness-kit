@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Kit 项目治理"
+  short_description: "扫描项目并问答适配 harness-lint，保留测试约定与内部文档边界"
+  default_prompt: "使用 $harness-kit 为当前项目配置适合的 harness-lint，先扫描并只询问缺失需求，再应用改造并验证。"

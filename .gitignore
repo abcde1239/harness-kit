@@ -1,0 +1,35 @@
+# Dependencies and generated output
+node_modules/
+/artifacts/
+/coverage/
+/dist/
+/build/
+
+# Local environment (keep distributable examples)
+.env
+.env.*
+!.env.example
+!.env.sample
+*.log
+.DS_Store
+Thumbs.db
+
+# Local harness answers, plans and temporary data
+/.harness/*
+!/.harness/managed.json
+
+# Internal development material in a public repository
+/.harness/
+/docs/prd/
+/docs/decision/
+/docs/verification/
+/docs/agent_guide.md
+/docs/structure.md
+MEMORY.md
+memory/
+memories/
+decision/
+decisions/
+
+/docs/tasks/
+/docs/harness-*.md

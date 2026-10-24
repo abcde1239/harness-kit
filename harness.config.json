@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "repository": {
+    "visibility": "public"
+  },
+  "workspaces": [
+    {
+      "id": "root",
+      "root": "."
+    }
+  ],
+  "documents": {
+    "defaultAudience": "internal",
+    "publicRoots": [
+      "docs/public"
+    ],
+    "internalRoots": [
+      "docs/prd",
+      "docs/decision",
+      "docs/verification",
+      "docs/tasks",
+      ".harness"
+    ],
+    "publicPatterns": [
+      "README.md",
+      "package.json",
+      "bun.lock",
+      "src/**",
+      "bin/**",
+      "scripts/**",
+      "tests/**",
+      "examples/**",
+      "skills/harness-kit/**",
+      ".github/workflows/**",
+      ".gitignore",
+      "harness.config.json"
+    ],
+    "internalPatterns": [
+      "**/MEMORY.md",
+      "**/memory/**",
+      "**/memories/**",
+      "**/decision/**",
+      "docs/harness-*.md",
+      "docs/structure.md",
+      "docs/agent_guide.md"
+    ]
+  },
+  "tests": {
+    "include": [
+      "tests/**/*.test.mjs"
+    ],
+    "exclude": [
+      "artifacts/**"
+    ],
+    "artifacts": [
+      "artifacts",
+      "coverage"
+    ],
+    "requireConfiguredTask": true
+  },
+  "tasks": [
+    {
+      "id": "test",
+      "kind": "test",
+      "argv": [
+        "bun",
+        "test",
+        "./tests"
+      ],
+      "required": true,
+      "timeoutMs": 180000
+    }
+  ],
+  "publicationTargets": [],
+  "rules": {},
+  "baseline": []
+}

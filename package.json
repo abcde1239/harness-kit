@@ -1,0 +1,17 @@
+{
+  "name": "harness-kit",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Configurable project harness generation and publication governance",
+  "engines": { "bun": ">=1.3.4" },
+  "packageManager": "bun@1.3.4",
+  "bin": { "harness": "bin/harness.mjs", "harness-kit": "bin/harness.mjs" },
+  "scripts": {
+    "test": "bun test ./tests",
+    "verify": "bun scripts/verify.mjs",
+    "harness": "bun bin/harness.mjs",
+    "setup": "bun scripts/install.mjs",
+    "package:skill": "bun scripts/package-skill.mjs"
+  }
+}

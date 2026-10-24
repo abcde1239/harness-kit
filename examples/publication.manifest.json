@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "target": "site",
+  "artifactRoot": "dist/site",
+  "entries": [
+    {
+      "path": "index.html",
+      "sha256": "REPLACE_WITH_ACTUAL_OUTPUT_SHA256",
+      "sources": [{ "path": "docs/public/index.md", "sha256": "REPLACE_WITH_ACTUAL_SOURCE_SHA256" }],
+      "review": { "reviewer": "YOUR_REVIEWER", "reference": "YOUR_BUILD_PROVENANCE_REVIEW" }
+    }
+  ]
+}
