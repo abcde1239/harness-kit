@@ -5,6 +5,7 @@ import path from 'node:path';
 import {fixture,write} from './helpers.mjs';
 import {install} from '../scripts/install.mjs';
 import {packageSkill} from '../scripts/package-skill.mjs';
+import {validateSkill} from '../scripts/validate-skill.mjs';
 import {inspect} from '../src/discovery.mjs';
 setDefaultTimeout(15000);
 
@@ -43,7 +44,11 @@ test('installer previews only and refuses to overwrite unrelated launchers or mo
 test('packaged skill has no unfinished resources and bundled CLI validates missing requirements',async()=>{
   const root=fixture(),destination=path.join(root,'packaged');await packageSkill(destination);
   const text=fs.readFileSync(path.join(destination,'SKILL.md'),'utf8');
-  assert.ok(text.startsWith('---\nname: harness-kit\n'));
+  assert.match(text,/^---\r?\nname: harness-kit\r?\n/);
+  for(const newline of ['\n','\r\n']) {
+    fs.writeFileSync(path.join(destination,'SKILL.md'),text.replace(/\r?\n/g,newline));
+    assert.equal(validateSkill(destination).status,'passed');
+  }
   for(const match of text.matchAll(/\]\((references\/[^)]+)\)/g))assert.ok(fs.existsSync(path.join(destination,match[1])));
   const r=Bun.spawnSync([process.execPath,path.join(destination,'scripts/harness.mjs'),'setup','--yes','--json'],{cwd:fixture(),stdout:'pipe',stderr:'pipe'});
   assert.equal(r.exitCode,2);assert.ok(Buffer.from(r.stderr).toString().includes('未回答'));
