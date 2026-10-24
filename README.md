@@ -1,6 +1,6 @@
 # Harness Kit
 
-基于 gen-new 思路的通用 harness-lint 创建与治理工具。使用 **Bun ≥ 1.3.4**，无第三方运行依赖；Git 功能另需 Git。无需 Node.js、npm 安装或 Bash。
+通用 harness-lint 创建与治理工具。使用 **Bun ≥ 1.3.4**，无第三方运行依赖；Git 功能另需 Git。无需 Node.js、npm 安装或 Bash。
 
 核心按配置执行，扫描适配器提供建议。Go、TS、Vite、pnpm 和 Bun 是发现配方；其他栈可以直接声明工作区、测试布局和命令。
 
