@@ -4,27 +4,26 @@
 
 Harness Kit 帮你把编码 Agent 接入现有项目，运行项目里的测试，并保存下次继续工作需要的信息。安装 Skill 或插件后，在 Agent 会话中说明目标即可开始。
 
-[快速开始](#快速开始) · [安装指南](docs/public/guides/installation.md) · [使用指南](docs/public/guides/usage.md) · [版本下载](https://github.com/abcde1239/harness-kit/releases)
+[快速开始](#让-agent-安装已发布版本) · [安装指南](docs/public/guides/installation.md) · [使用指南](docs/public/guides/usage.md) · [版本下载](https://github.com/abcde1239/harness-kit/releases)
 
 ## 它能帮你做什么
 
 - **接入已有项目。** 为所选 Agent 配置项目指令，保留现有框架、测试布局和用户修改。
 - **接续未完成的工作。** 保存任务目标、验收条件、备注和下一步，供新会话或其他 Agent 接手。
-- **编排多Agent协作。** 可编排多Agent，以不同职责进行协作。
-- **检查改动是否通过验证。** 运行项目已有的测试和检查；源码或配置变化后，之前的验证结果会过期。
+- **协调多 Agent 协作。** 按任务分配职责，使用角色提示词和宿主委派工具推进协作。
 - **整理自己的编码习惯。** 从指定项目提炼有代码依据的风格和架构规则，按适用范围用于后续开发与复核，见[使用方法](docs/public/guides/coding-style.md)。
 
 小改动直接实施和验证，复杂任务再保存计划、分工和交接。可以继续使用 Superpowers、OpenSpec 或团队已有的开发流程。
 
-**功能可用性：** 下方 v0.5.0 下载包不含编码习惯提炼、专业职责角色和链接安装入口；风格提炼与职责角色可从当前源码构建分发包使用；链接安装流程见下文。
+**功能可用性：** 下方 v0.5.0 下载包仍需 Bun，且不含 Node 兼容、编码习惯提炼、专业职责角色（含 Agent 专家）和链接安装入口；Node 兼容、风格提炼与职责角色可从当前源码构建分发包使用；链接安装流程见下文。
 
 ## 环境配置
 
-需要 **Bun ≥ 1.3.4**；Git 相关检查另需 Git。
+当前源码与新构建包支持 **Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4**；Git 相关检查另需 Git。Skill 和插件可直接使用，无需运行 `bun setup` 或安装全局 `harness` 命令。
 
 ## 让 Agent 安装已发布版本
 
-将仓库链接交给 Agent，它会读取[安装入口](INSTALL.md)，询问默认或自定义位置，再下载、校验并配置已发布插件。
+将仓库链接交给 Agent，它会读取[安装入口](INSTALL.md)，询问默认或自定义位置，再下载、校验并配置已发布插件。无需手动解压或运行 `bun setup`。
 
 可直接复制以下请求；要固定安装版本时，将仓库链接替换为对应 Release 链接：
 
@@ -36,10 +35,9 @@ First ask whether I want the default installation location or a custom directory
 
 Agent 会显示完整安装路径，保留已有修改，并核对宿主插件状态。自选位置用于保存插件源文件，宿主缓存仍由宿主管理；安装后可能需要重启或开启新会话。
 
-安装器从仓库源码获取，插件安装包仍取自最新正式 Release，目前为 v0.5.0。链接安装不会将尚未发布的源码功能加入旧安装包。
+安装器从仓库源码获取，插件安装包仍取自最新正式 Release，目前为 v0.5.0。链接安装不会将尚未发布的源码功能加入旧安装包。仅有 Node 时应使用当前源码构建的分发包；v0.5.0 包仍要求 Bun。
 
-
-
+## 手动安装
 
 ### 安装 Skill
 
@@ -112,10 +110,9 @@ dsh plugin --profile <actual-profile> add "<absolute-harness-kit-package-path>"
 
 Gemini CLI、Cursor 和 OpenCode 可通过 CLI 的 `init --hosts` 生成项目指令，具体步骤见[使用指南](docs/public/guides/usage.md)。DSH 插件按 developer preview 接口开发，尚未在实际 DSH 环境中验证安装；尝试前请查看[安装指南](docs/public/guides/installation.md)中的兼容范围。
 
-
 ## 终端用法
 
-偏好手动操作时，可在源码目录运行可选的 `bun run setup`，安装短命令：
+偏好手动操作时，先在源码目录安装依赖（`npm install` 或 `bun install`），再运行可选的 `node scripts/install.mjs`，安装短命令。使用 Bun 时将 node 替换为 bun：
 
 ```sh
 harness init      # 接入项目，运行首次验证
@@ -133,10 +130,11 @@ harness doctor    # 诊断接入状态和验证记录
 - [可恢复任务](skills/harness-kit/references/tasks.md)
 - [v0.5.0 版本说明](docs/public/releases/v0.5.0.md)
 
-在源码目录验证和打包：
+在源码目录验证和打包；`node scripts/verify.mjs` 运行 Node 集成测试，`bun run verify:bun` 运行原有完整测试：
 
 ```sh
-bun run verify
-bun run harness check --json
-bun run package:distribution <新的输出目录>
+npm install
+node scripts/verify.mjs
+node bin/harness.mjs check --json
+node scripts/package-distribution.mjs <新的输出目录>
 ```

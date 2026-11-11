@@ -18,7 +18,7 @@ Choose proportionate work:
 
 When professional responsibilities are requested or useful, select [role prompts](roles.md), carrying existing requirements, interfaces, and file ownership. Do not add a full fixed workflow merely to use roles. For an observed Agent behavior problem or an explicit request to improve Agent output, use the [Agent expert](roles/agent-expert.md) to assess evidence and proportionate changes. This is an optional diagnostic role, not a mandatory stage for every task.
 
-Use `bun <skill>/scripts/harness.mjs` with `--root <project> --json`. Start with meaningful local validation via `run --task <runnerID>`; after integration run the project's required full `run`. If a work task exists, associate results with `run --work <work-task-id>`. `--task` still selects a runner task. Report partial scope and never call unselected workspaces verified.
+Use `node <skill>/scripts/harness.mjs` with `--root <project> --json`. Start with meaningful local validation via `run --task <runnerID>`; after integration run the project's required full `run`. If a work task exists, associate results with `run --work <work-task-id>`. `--task` still selects a runner task. Report partial scope and never call unselected workspaces verified.
 
 ## Failed validation
 

@@ -3,19 +3,20 @@ import os from 'node:os';
 import path from 'node:path';
 import { skillFiles } from './package-skill.mjs';
 import { hash,json,safePath } from '../src/fs.mjs';
+import {isMain,isBun,assertRuntime} from '../src/runtime.mjs';
 
 const marker='.harness-kit-install.json';
 const shQuote=text=>`'${text.replaceAll("'","'\\''")}'`;
-export function launchers(entry,bun=process.execPath,platform=process.platform) {
+export function launchers(entry,runtime=process.execPath,platform=process.platform) {
   if(platform==='win32') {
-    if(/["%\r\n]/.test(entry+bun))throw new Error('Windows install path contains unsupported command characters');
-    return new Map(['harness','harness-kit'].map(name=>[`${name}.cmd`,Buffer.from(`@echo off\r\n"${bun}" "${entry}" %*\r\nexit /b %ERRORLEVEL%\r\n`)]));
+    if(/["%\r\n]/.test(entry+runtime))throw new Error('Windows install path contains unsupported command characters');
+    return new Map(['harness','harness-kit'].map(name=>[`${name}.cmd`,Buffer.from(`@echo off\r\n"${runtime}" "${entry}" %*\r\nexit /b %ERRORLEVEL%\r\n`)]));
   }
-  return new Map(['harness','harness-kit'].map(name=>[name,Buffer.from(`#!/bin/sh\nexec ${shQuote(bun)} ${shQuote(entry)} "$@"\n`)]));
+  return new Map(['harness','harness-kit'].map(name=>[name,Buffer.from(`#!/bin/sh\nexec ${shQuote(runtime)} ${shQuote(entry)} "$@"\n`)]));
 }
 export async function install({binDir,skillDir,dryRun=false}={}) {
-  if(!globalThis.Bun)throw new Error('Install using Bun');
-  binDir=path.resolve(binDir??path.join(process.env.BUN_INSTALL??path.join(os.homedir(),'.bun'),'bin'));
+  assertRuntime();
+  binDir=path.resolve(binDir??(isBun?path.join(process.env.BUN_INSTALL??path.join(os.homedir(),'.bun'),'bin'):process.platform==='win32'?path.join(process.env.LOCALAPPDATA??path.join(os.homedir(),'AppData/Local'),'harness-kit/bin'):path.join(os.homedir(),'.local/bin')));
   skillDir=path.resolve(skillDir??path.join(process.env.CODEX_HOME??path.join(os.homedir(),'.codex'),'skills/harness-kit'));
   const files=await skillFiles(), shims=launchers(path.join(skillDir,'scripts/harness.mjs'));
   const stateFile=path.join(skillDir,marker);
@@ -60,7 +61,7 @@ export async function install({binDir,skillDir,dryRun=false}={}) {
   }
   return result;
 }
-if(import.meta.main) {
+if(isMain(import.meta.url)) {
   try {
     const options={},args=process.argv.slice(2);
     while(args.length){const flag=args.shift();if(flag==='--dry-run')options.dryRun=true;else if(['--bin-dir','--skill-dir'].includes(flag)){const value=args.shift();if(!value||value.startsWith('--'))throw new Error(`Missing ${flag}`);options[flag==='--bin-dir'?'binDir':'skillDir']=value;}else throw new Error(`Unknown option: ${flag}`);}

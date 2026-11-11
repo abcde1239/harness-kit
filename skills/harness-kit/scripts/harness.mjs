@@ -1,3 +1,3 @@
-#!/usr/bin/env bun
-// Repository entrypoint. Packaging replaces this wrapper with a self-contained Bun bundle.
+#!/usr/bin/env node
+// Repository entrypoint. Packaging replaces this with a standalone Node/Bun bundle.
 import '../../../bin/harness.mjs';

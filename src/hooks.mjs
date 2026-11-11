@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {parse as parseToml} from 'smol-toml';
 import { atomicWrite, digest, fileHash, hash, json, readJson, safePath } from './fs.mjs';
 import { loadConfig } from './config.mjs';
 import { inputSnapshot, verificationEvidence } from './workflow.mjs';
@@ -12,7 +13,7 @@ const psQuote = value => `'${value.replaceAll("'", "''")}'`;
 function localHooksEnabled(root) {
   const config=safePath(root,'.codex/config.toml');
   if(!fs.existsSync(config))return true;
-  return Bun.TOML.parse(fs.readFileSync(config,'utf8')).features?.hooks!==false;
+  return parseToml(fs.readFileSync(config,'utf8')).features?.hooks!==false;
 }
 
 export function inspectHooks(root) {
@@ -23,7 +24,7 @@ export function inspectHooks(root) {
     if(state.owner!=='harness-kit'||state.version!==1||fileHash(root,RUNTIME)!==state.runtimeHash)throw new Error('Hook runtime or ownership changed');
     for(const event of ['SessionStart','Stop'])if(!(config.hooks?.[event]??[]).some(group=>digest(group)===digest(state.groups?.[event])))throw new Error('Managed hook was modified or removed');
     const command=state.groups.Stop.hooks[0].command;
-    if(!command.includes(quote(fs.realpathSync(root)))||!command.includes(quote(process.execPath)))throw new Error('Project or Bun path changed; rerun init --hooks');
+    if(!command.includes(quote(fs.realpathSync(root)))||!command.includes(quote(process.execPath)))throw new Error('Project or runtime path changed; rerun init --hooks');
     return {status:'configured',trust:'not-confirmed',message:'本地 Hooks 配置与运行器一致；仍需宿主 /hooks 审阅信任，不代表会话已加载'};
   }catch(error){return {status:'conflict',trust:'not-confirmed',message:`Hooks 不可用：${error.message}`};}
 }
@@ -43,12 +44,10 @@ export async function connectHooks(root) {
     if(state?.groups[event] && !(hooks[event]??[]).some(group=>digest(group)===digest(state.groups[event])))conflicts.push(CONFIG);
   }
   if(conflicts.length)return {status:'conflicts',exitCode:1,changed:[],conflicts:[...new Set(conflicts)],notice:'保留已修改或删除的 Hook；请先比较 .harness/hooks/state.json 中的旧定义。'};
-  // An installed Skill supplies the current bundled entry; source tests use bin/.
-  const sourceEntry=fileURLToPath(new URL('../bin/harness.mjs',import.meta.url));
-  const entry=fs.existsSync(sourceEntry)?sourceEntry:path.resolve(process.argv[1]);
-  const build=await Bun.build({entrypoints:[entry],target:'bun',format:'esm',minify:false});
-  if(!build.success)throw new Error(`Cannot build project hook runtime: ${build.logs.join('\n')}`);
-  const runtime=await build.outputs[0].text(),runtimeFile=safePath(root,RUNTIME);
+  // Packaged runtimes copy themselves; only source development needs a builder.
+  const bundled=typeof HARNESS_BUNDLED!=='undefined'&&HARNESS_BUNDLED;
+  const runtime=bundled?fs.readFileSync(fileURLToPath(import.meta.url),'utf8'):(await (await import('../scripts/build.mjs')).buildCLI()).toString('utf8');
+  const runtimeFile=safePath(root,RUNTIME);
   const command=`${quote(process.execPath)} ${quote(runtimeFile)} hook --root ${quote(fs.realpathSync(root))}`;
   const commandWindows=`& ${psQuote(process.execPath)} ${psQuote(runtimeFile)} hook --root ${psQuote(fs.realpathSync(root))}`;
   const handler={type:'command',command,commandWindows,timeout:15};

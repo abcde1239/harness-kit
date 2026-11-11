@@ -2,7 +2,7 @@
 
 Use this workflow only when the user explicitly requests publication preparation, checks, or export. State the configured public scope. Never classify the entire repository as public merely to pass a check.
 
-Use `bun <skill>/scripts/harness.mjs <command> --root <project> --json`:
+Use `node <skill>/scripts/harness.mjs <command> --root <project> --json`:
 
 - `export --destination artifacts/public-snapshot --manifest-out .harness/publication.json`: write to a new directory without copying `.git` or private history, and without pushing. If the destination exists, choose another clearly named directory; do not delete an earlier result to make room.
 - `publication-check --manifest .harness/publication.json`: check the actual file set, output and source SHA-256 digests, known copies of internal files, and links. Repeat after changing the output.

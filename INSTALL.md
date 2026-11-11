@@ -16,14 +16,16 @@ While awaiting the answer, you may inspect tools and release metadata, but do no
 
 ## Download and run the installer
 
-1. Check the actual Bun executable (>=1.3.4) and target host CLI. Do not install runtimes or change PATH, model accounts or permissions automatically.
+1. Check the actual Node.js (>=22.12.0) or Bun (>=1.3.4) executable and target host CLI. Do not install runtimes or change PATH, model accounts or permissions automatically.
 2. Read release metadata from the supplied repository/Release. Prefer install-plugin.mjs from that Release. Inspect the script and run it as a local file; do not pipe network content into a shell. For an older Release lacking this asset, use scripts/install-plugin.mjs corresponding to this entry point and explain any source/version difference when the older Release lacks the described functionality.
 3. Run with --dry-run to inspect paths, version, host commands and checksums, then repeat the same arguments without --dry-run. Once the user has selected a location, continue within that authorization without adding another approval step. Pass paths as separate arguments, never by composing arbitrary shell strings.
 
 ```text
-bun <absolute-path-to-downloaded-install-plugin.mjs> --source <user-repository-or-release-link> --host codex --location default --dry-run
-bun <absolute-path-to-downloaded-install-plugin.mjs> --source <same-link> --host codex --location default
+node <absolute-path-to-downloaded-install-plugin.mjs> --source <user-repository-or-release-link> --host codex --location default --dry-run
+node <absolute-path-to-downloaded-install-plugin.mjs> --source <same-link> --host codex --location default
 ```
+
+Use the selected runtime; substitute bun for node if using Bun. The installer supports both runtimes, but existing v0.5.0 plugin archives require Bun. Use newly built distributions for Node-only operation; report a missing package runtime before claiming readiness.
 
 Use --host claude for Claude, --host dsh --profile <actual-profile> for DSH, or --host skill for a standalone Skill. Replace --location default with --location <absolute-path> for a custom directory. The script accepts GitHub repository, Release page and Release ZIP links. ZIP links pin the owning Release and select the matching host archive. Repository and documentation links resolve the latest stable Release. Downloaded source alone is not an installed Skill.
 

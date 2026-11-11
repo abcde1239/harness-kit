@@ -8,9 +8,10 @@ import { verificationEvidence } from './workflow.mjs';
 import { HOSTS, inspectHostEntries } from './host.mjs';
 import { inspectHooks } from './hooks.mjs';
 import { classify } from './policy.mjs';
+import {isBun} from './runtime.mjs';
 
 function commandExists(command,cwd) {
-  if(command==='bun')return true;
+  if(command===(isBun?'bun':'node'))return true;
   const extensions=process.platform==='win32'?['','.exe','.cmd','.bat']:[''];
   const direct=path.isAbsolute(command)||command.includes('/')||command.includes('\\');
   const candidates=direct?extensions.map(ext=>path.resolve(cwd,command+ext)):(process.env.PATH??'').split(path.delimiter).flatMap(dir=>extensions.map(ext=>path.join(dir,command+ext)));

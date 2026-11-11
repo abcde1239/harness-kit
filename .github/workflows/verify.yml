@@ -15,5 +15,22 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.3.4'
-      - run: bun run verify
-      - run: bun run harness lint --json
+      - run: bun install --frozen-lockfile
+      - run: bun run verify:bun
+      - run: bun bin/harness.mjs lint --json
+  node:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['22.12.0', '24']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm install --ignore-scripts
+      - run: node scripts/verify.mjs
+      - run: node bin/harness.mjs check --json

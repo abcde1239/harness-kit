@@ -1,9 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateSkill } from './validate-skill.mjs';
-if (!globalThis.Bun) throw new Error('Run this script with Bun');
+import {spawnSync} from 'node:child_process';
+import {isBun,assertRuntime} from '../src/runtime.mjs';
+assertRuntime();
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const result = Bun.spawnSync([process.execPath,'test','./tests'],{cwd:root,stdout:'inherit',stderr:'inherit',env:process.env});
-if (result.exitCode !== 0) process.exit(result.exitCode);
+const result = spawnSync(process.execPath,isBun?['test','./tests']:['--test','./tests/node-runtime.node.mjs'],{cwd:root,stdio:'inherit',env:process.env,windowsHide:true});
+if (result.error)throw result.error;
+if (result.status !== 0) process.exit(result.status??1);
 console.log('PASS: test suite');
 console.log(validateSkill(path.join(root,'skills/harness-kit')));

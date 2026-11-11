@@ -1,4 +1,6 @@
-import { version } from '../package.json';
+import metadata from '../package.json' with {type:'json'};
+import {parse as parseYaml} from 'yaml';
+const {version}=metadata;
 import { relativePath } from '../src/fs.mjs';
 
 export const DSH_PLUGIN_PACKAGE = 'dsh-plugin-harness-kit';
@@ -89,7 +91,7 @@ dsh plugin --profile web add "D:/plugins/harness-kit"
 
 DSH 的 add 会安装并选择包中声明的 bundle；包无需构建、依赖安装脚本或额外 JavaScript 包。重新启动对应 profile，或在启用 HMR 时等待重载。插件页可查看 Harness Kit 条目；启用了原生 skill 工具的会话应发现 \x60harness-kit\x60，再按需加载。该插件依赖宿主 skills 注册服务；精简或自定义 profile 需先具备该服务及相应 skill 消费工具。不要仅凭文件存在宣称宿主已加载。
 
-插件加载只注册 Skill，不自动扫描项目、运行命令、写项目指令或启动后台服务。Skill 的工具脚本位于 \x60skills/harness-kit/scripts/harness.mjs\x60，实际运行 CLI 时仍需 Bun >= 1.3.4；Git 功能另需 Git。调用形式：\x60bun <本目录>/skills/harness-kit/scripts/harness.mjs doctor --root <项目绝对路径> --json\x60。接入项目时选 \x60init --hosts dsh\x60，不会因安装插件自动改变项目。
+插件加载只注册 Skill，不自动扫描项目、运行命令、写项目指令或启动后台服务。Skill 的工具脚本位于 \x60skills/harness-kit/scripts/harness.mjs\x60，实际运行 CLI 时需要 Node.js >= 22.12.0 或 Bun >= 1.3.4；Git 功能另需 Git。调用形式：\x60node <本目录>/skills/harness-kit/scripts/harness.mjs doctor --root <项目绝对路径> --json\x60。接入项目时选 \x60init --hosts dsh\x60，不会因安装插件自动改变项目。
 
 原生 provider 的目录资源根固定在插件内的 \x60skills/harness-kit\x60；Skill 正文按需读取，metadata 在打包时固定，修改 metadata 后需重新打包安装。项目/用户同名 Skill 的较高优先级可能覆盖 bundled provider。卸载或禁用后，Cordis 会撤销 provider；已在历史中加载的指令需通过新会话清除。
 
@@ -112,7 +114,7 @@ export async function dshPluginFiles(skillFilesMap) {
   const source = result.get('skills/harness-kit/SKILL.md')?.toString('utf8');
   const match = source && /^(?:\uFEFF)?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(source);
   if (!match) throw new Error('Portable Skill requires SKILL.md YAML frontmatter');
-  const metadata = Bun.YAML.parse(match[1]);
+  const metadata = parseYaml(match[1]);
   if (metadata?.name !== 'harness-kit' || typeof metadata.description !== 'string' || !metadata.description.trim()) throw new Error('Expected harness-kit Skill name and description');
   if (!result.has('skills/harness-kit/scripts/harness.mjs')) throw new Error('Portable Skill is missing its bundled CLI');
   const summary = { name: metadata.name, description: metadata.description, invocation: {

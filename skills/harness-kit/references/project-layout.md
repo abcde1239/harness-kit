@@ -93,7 +93,7 @@ Choose per-package tasks or an existing root aggregate task. Use `covers` on an 
 - `harness run` combines convention checks with configured tasks and retains workspace results and local validation records.
 - `harness doctor` diagnoses onboarding and evidence applicability; it does not run tests or confirm live-session loading.
 - When `scripts/verify.sh` or a package verify entry exists, define which entry calls the other to avoid recursion. A `test` script must invoke a real test runner.
-- CI uses the same configuration and checks. The CLI does not generate workflows automatically. Install Bun and task-specific tools in CI, and provide an available Harness Kit CLI.
+- CI uses the same configuration and checks. The CLI does not generate workflows automatically. Install a compatible runtime and task-specific tools in CI, and provide an available Harness Kit CLI.
 - Export public material to a separate new directory such as `artifacts/public-snapshot`, then check the actual manifest and files. That directory excludes private Git history. Making the original private repository public also requires history and platform review.
 
 The tool does not upload, change visibility, or clean history automatically. Routine testing does not require a publication audit, and ordinary lint clearance does not authorize publication.

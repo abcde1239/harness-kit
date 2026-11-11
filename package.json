@@ -4,15 +4,29 @@
   "private": true,
   "type": "module",
   "description": "Agent project onboarding, collaborative development and evidence-based verification",
-  "engines": { "bun": ">=1.3.4" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "packageManager": "bun@1.3.4",
-  "bin": { "harness": "bin/harness.mjs", "harness-kit": "bin/harness.mjs" },
+  "bin": {
+    "harness": "bin/harness.mjs",
+    "harness-kit": "bin/harness.mjs"
+  },
   "scripts": {
     "test": "bun test ./tests",
-    "verify": "bun scripts/verify.mjs",
-    "harness": "bun bin/harness.mjs",
-    "setup": "bun scripts/install.mjs",
-    "package:skill": "bun scripts/package-skill.mjs",
-    "package:distribution": "bun scripts/package-distribution.mjs"
+    "test:node": "node --test ./tests/node-runtime.node.mjs",
+    "verify": "node scripts/verify.mjs",
+    "verify:bun": "bun scripts/verify.mjs",
+    "harness": "node bin/harness.mjs",
+    "setup": "node scripts/install.mjs",
+    "package:skill": "node scripts/package-skill.mjs",
+    "package:distribution": "node scripts/package-distribution.mjs"
+  },
+  "dependencies": {
+    "smol-toml": "1.9.1",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
   }
 }

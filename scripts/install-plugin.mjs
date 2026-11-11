@@ -1,10 +1,13 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 // Standalone release installer. No imports from the source checkout.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {inflateRawSync} from 'node:zlib';
+import {fileURLToPath} from 'node:url';
+import {spawn,spawnSync} from 'node:child_process';
+import {StringDecoder} from 'node:string_decoder';
 
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const json=value=>JSON.stringify(value,null,2)+'\n';
@@ -118,20 +121,50 @@ export function commandsFor(host,directory,profile) {
   }
   return [];
 }
+export function packageRuntime(loaded) {
+  const prefix=loaded.kind==='skill'?'':loaded.kind==='marketplace'?'plugins/harness-kit/skills/harness-kit/':'skills/harness-kit/';
+  const bytes=loaded.files.get(prefix+'runtime.json');
+  const requirements=bytes?JSON.parse(bytes.toString('utf8')):{version:1,anyOf:[{name:'bun',minimum:'1.3.4'}]};
+  if(requirements.version!==1||!Array.isArray(requirements.anyOf)||!requirements.anyOf.length||requirements.anyOf.some(r=>!['node','bun'].includes(r.name)||!/^\d+\.\d+\.\d+$/.test(r.minimum)))throw new Error('Invalid package runtime requirements');
+  const name=process.versions.bun?'bun':'node',actual=process.versions[name].split('.').map(Number);
+  const compatible=requirements.anyOf.some(r=>{const minimum=r.minimum.split('.').map(Number);return r.name===name&&actual.some((v,i)=>v>minimum[i]&&actual.slice(0,i).every((n,j)=>n===minimum[j]))||r.name===name&&actual.every((v,i)=>v===minimum[i]);});
+  if(!compatible)throw new Error('Package runtime mismatch: this archive requires '+requirements.anyOf.map(r=>r.name+' >= '+r.minimum).join(' or ')+'. Use that runtime, or a newly built Node-compatible package; existing v0.5.0 archives require Bun.');
+  return name;
+}
+function executable(command,env=process.env) {
+  const directories=path.isAbsolute(command)||command.includes('/')||command.includes('\\')?['']:(env.PATH??'').split(path.delimiter).filter(Boolean);
+  const extensions=process.platform==='win32'&&!path.extname(command)?['.exe','.com','.cmd','.bat','']:[''];
+  for(const directory of directories)for(const extension of extensions){const candidate=path.resolve(directory,command+extension);try{if(fs.statSync(candidate).isFile()){fs.accessSync(candidate,process.platform==='win32'?fs.constants.F_OK:fs.constants.X_OK);return candidate;}}catch{}}
+  return null;
+}
+
+async function executeProcess(argv,{cwd,env=process.env,timeoutMs=60000,signal,maxOutput=32768,windowsVerbatimArguments=false}={}) {
+  if(signal?.aborted)return {exitCode:null,reason:'cancelled',stdout:'',stderr:'',output:''};
+  const child=spawn(argv[0],argv.slice(1),{cwd,env,windowsHide:true,windowsVerbatimArguments,detached:process.platform!=='win32',stdio:['ignore','pipe','pipe']});
+  let reason=null,output='';const collected={stdout:'',stderr:''};
+  for(const name of ['stdout','stderr']){const decoder=new StringDecoder('utf8');child[name].on('data',chunk=>{const text=decoder.write(chunk);collected[name]=(collected[name]+text).slice(-maxOutput);output=(output+text).slice(-maxOutput);});child[name].on('end',()=>{const text=decoder.end();collected[name]=(collected[name]+text).slice(-maxOutput);output=(output+text).slice(-maxOutput);});}
+  function stop(why){
+    if(reason)return;reason=why;
+    if(child.pid){if(process.platform==='win32')spawnSync('taskkill',['/pid',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore',timeout:2000});else{try{process.kill(-child.pid,'SIGKILL');}catch{}}}
+    try{child.kill('SIGKILL');}catch{}
+    child.stdout.destroy();child.stderr.destroy();
+  }
+  const timer=setTimeout(()=>stop('timeout'),timeoutMs),abort=()=>stop('cancelled');signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
+  try{const exitCode=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',code=>resolve(code));});return {exitCode,reason,...collected,output};}
+  finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
+}
+
 export function resolveCommand(command) {
-  const resolved=process.platform==='win32'?(Bun.which(command+'.exe')??Bun.which(command)):Bun.which(command);
-  if(!resolved)throw new Error(`Missing host command: ${command}`);
-  if(/\.(cmd|bat)$/i.test(resolved))throw new Error(`Use a native executable for ${command}; its shell shim cannot be safely invoked here`);
+  const resolved=executable(command);
+  if(!resolved)throw new Error('Missing host command: '+command);
+  if(/\.(cmd|bat)$/i.test(resolved))throw new Error('Use a native executable for '+command+'; its shell shim cannot be safely invoked here');
   return resolved;
 }
 export async function runCommand(argv) {
-  const child=Bun.spawn([resolveCommand(argv[0]),...argv.slice(1)],{stdin:'ignore',stdout:'pipe',stderr:'pipe',windowsHide:true});
-  const readers=[child.stdout.getReader(),child.stderr.getReader()];
-  const collect=async reader=>{let output='';try{while(true){const {done,value}=await reader.read();if(done)break;output=(output+Buffer.from(value).toString()).slice(-32768);}}finally{reader.releaseLock();}return output;};
-  let timedOut=false;
-  const timer=setTimeout(()=>{timedOut=true;if(process.platform==='win32')Bun.spawnSync(['taskkill','/pid',String(child.pid),'/T','/F'],{stdout:'ignore',stderr:'ignore',windowsHide:true,timeout:2000});try{child.kill();}catch{}for(const r of readers)try{r.cancel().catch(()=>{});}catch{}},60000);
-  try {const [exitCode,stdout,stderr]=await Promise.all([child.exited,...readers.map(collect)]);return {exitCode:timedOut?124:exitCode,stdout,stderr,timedOut};}finally{clearTimeout(timer);}
+  const result=await executeProcess([resolveCommand(argv[0]),...argv.slice(1)]);
+  return {exitCode:result.reason==='timeout'?124:result.exitCode,stdout:result.stdout,stderr:result.stderr,timedOut:result.reason==='timeout'};
 }
+
 const pathKey=value=>path.resolve(value.replace(/^\\\\\?\\/, '')).replaceAll('\\','/').replace(/\/$/,'').toLowerCase();
 async function marketplaceState(host,run) {
   const result=await run([host,'plugin','marketplace','list','--json']);
@@ -150,6 +183,7 @@ export async function installFromLink(options,{fetcher=fetch,run=runCommand,pref
   commandsFor(host,base,profile); // Validate required host options before download or writes.
   if(host!=='skill')preflight(host);
   const loaded=await loadPackage(source,host,fetcher);
+  const runtime=packageRuntime(loaded);
   const directory=host==='skill'?base:safeAbsolute(path.join(base,loaded.checksum.slice(0,16)));
   const commands=commandsFor(host,directory,profile);
   if(host==='codex'||host==='claude') {
@@ -167,7 +201,7 @@ export async function installFromLink(options,{fetcher=fetch,run=runCommand,pref
     if(state.owner!=='harness-kit-link'||state.checksum!==loaded.checksum||state.host!==host)throw new Error('Existing install differs; select a new location');
     for(const [name,bytes] of loaded.files)if(!fs.existsSync(safeAbsolute(path.join(directory,name)))||sha(fs.readFileSync(safeAbsolute(path.join(directory,name))))!==sha(bytes))throw new Error(`Preserving modified installation: ${name}`);
   }
-  const result={status:dryRun?'preview':'installed',host,directory,archive:loaded.archive,origin:loaded.origin,checksum:loaded.checksum,commands,hostRuntime:'not-confirmed',notice:'Confirm Skill discovery in a new session; setup is unnecessary. Host cache locations remain host-managed.'};
+  const result={status:dryRun?'preview':'installed',host,directory,archive:loaded.archive,origin:loaded.origin,checksum:loaded.checksum,runtime,commands,hostRuntime:'not-confirmed',notice:'Confirm Skill discovery in a new session; setup is unnecessary. Host cache locations remain host-managed.'};
   if(dryRun)return result;
   if(!fs.existsSync(directory)) {
     fs.mkdirSync(path.dirname(directory),{recursive:true});
@@ -202,7 +236,7 @@ export async function installFromLink(options,{fetcher=fetch,run=runCommand,pref
   }
   return {...result,completed,registration:host==='skill'?'not-applicable':'command-succeeded-profile-restart-required'};
 }
-if(import.meta.main) {
+if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1])) {
   try {
     const options={},args=process.argv.slice(2);
     while(args.length){const flag=args.shift();if(flag==='--dry-run')options.dryRun=true;else if(['--source','--host','--location','--profile'].includes(flag)){const value=args.shift();if(!value||value.startsWith('--'))throw new Error(`Missing ${flag}`);options[flag.slice(2)]=value;}else throw new Error(`Unknown option ${flag}`);}

@@ -1,6 +1,6 @@
 # 使用指南
 
-为新旧项目接入 Agent 指令、开发流程与统一验证。使用 **Bun ≥ 1.3.4**，无第三方运行依赖；Git 功能另需 Git。无需 Node.js、npm 安装或 Bash。
+为新旧项目接入 Agent 指令、开发流程与统一验证。当前源码与新构建包支持 **Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4**；Git 功能另需 Git。分发包内置解析库，不需要额外安装 npm 依赖；源码开发需先安装依赖。已发布 v0.5.0 包仍要求 Bun。
 
 核心按配置执行，扫描适配器提供建议。Go、TS、Vite、pnpm 和 Bun 是发现配方；其他栈可以直接声明工作区、测试布局和命令。
 
@@ -8,13 +8,13 @@
 
 独立 Skill、Codex/Claude 插件和 DSH 原生插件的下载、安装、升级与排障统一见[安装指南](installation.md)。安装后用自然语言提出目标；Agent 直接调用实际技能目录内的 CLI，无需 setup 或全局 harness 命令。
 
-本页的 harness 示例面向已安装可选终端短命令的用户；Skill/插件调用使用 bun <已安装技能目录>/scripts/harness.mjs，并显式提供 --root <项目绝对路径>。完整文档入口见[文档导航](../README.md)。
+本页的 harness 示例面向已安装可选终端短命令的用户；Skill/插件调用使用 node <已安装技能目录>/scripts/harness.mjs，并显式提供 --root <项目绝对路径>。完整文档入口见[文档导航](../README.md)。
 
 要从自己维护的项目中总结编码风格与架构习惯，可直接说明项目路径和目标。画像与规则的保存、采用及复核方式见[编码习惯提炼](coding-style.md)，无需新增 CLI 命令。
 
 ## 可选：人类终端短命令
 
-希望手动使用中文菜单和 `harness` 短命令时，才在下载/克隆后的源码目录执行 `bun run setup`。安装器在 Bun 用户 bin 中写入 `harness` / `harness-kit`，默认也安装 Codex Skill 到 `$CODEX_HOME/skills/harness-kit`（未设置时 `~/.codex/skills/harness-kit`），不覆盖无归属或用户已修改的文件。它不修改系统 PATH 或 shell profile；若 bin 目录不在 PATH，按报告提示自行添加后重开终端。此步骤不影响 Skill/插件直接调用包内 CLI 的方式。
+希望手动使用中文菜单和 `harness` 短命令时，先在源码目录运行 `npm install` 或 `bun install`，再执行 `node scripts/install.mjs`（Bun 用户可替换运行时）。安装器写入所选运行时的默认用户命令目录（Bun 为 ~/.bun/bin，Node 在 Windows 为 %LOCALAPPDATA%/harness-kit/bin，其他系统为 ~/.local/bin），生成 `harness` / `harness-kit`，默认也安装 Codex Skill 到 `$CODEX_HOME/skills/harness-kit`（未设置时 `~/.codex/skills/harness-kit`），不覆盖无归属或用户已修改的文件。它不修改系统 PATH 或 shell profile；若 bin 目录不在 PATH，按报告提示自行添加后重开终端。此步骤不影响 Skill/插件直接调用包内 CLI 的方式。
 
 源码升级后可重新运行 setup；`bun run setup --dry-run` 预览位置，高级参数为 `--bin-dir`、`--skill-dir`。已经通过其他方式安装同名 Skill 时，先确认实际加载来源，避免多份安装造成混淆。
 
@@ -111,7 +111,7 @@ harness init --hooks
 
 已有脚本和可见性可复用；非交互接入时补充 `--yes` 及仍缺失的答案。该模式写入 `.codex/hooks.json`、`.harness/hooks/runtime.mjs` 和归属记录。项目运行器自包含，保留现有第三方字段与 handlers；本工具的 handler 被用户修改或删除时报告冲突，不强行恢复。
 
-在新 Codex 本地会话中打开 `/hooks` 审阅并信任。配置使用本机 Bun 和项目绝对路径，移动项目、更换机器或升级后重新运行 `init --hooks`；不修改宿主权限。`.harness` 仍为内部资料，hook 配置中的本机路径也不应直接作为公开模板发布。
+在新 Codex 本地会话中打开 `/hooks` 审阅并信任。配置使用所选 Node/Bun 运行时和项目绝对路径，移动项目、更换机器或升级后重新运行 `init --hooks`；不修改宿主权限。`.harness` 仍为内部资料，hook 配置中的本机路径也不应直接作为公开模板发布。
 
 项目若已在 `.codex/config.toml` 明确设置 `features.hooks=false`，接入会报告 disabled 并保留禁用选择；不会擅自启用。`doctor` 会检查本工具已有 hooks 的文件和本地禁用状态，仍无法证明宿主已信任或实际加载。
 
@@ -125,7 +125,7 @@ SessionStart 提供项目验证提示并记录本会话输入摘要；Stop 在�
 Use harness-kit to onboard and verify this project, preserve its test framework, and keep internal development documents private.
 ```
 
-日常也可直接使用：`Use harness-kit to reproduce and fix this issue with a minimal change, then run project verification.` 需要并行时明确授权：`Use harness-kit to implement this change. Multi-agent delegation is authorized; integrate the work and verify acceptance.` 显式调用方式以宿主实际发现的技能为准，插件可能带命名空间；不能假定同一符号语法通用。下方 CLI 示例中的 `harness` 是可选短命令，未安装时由 Agent 使用包内 `bun <已安装技能目录>/scripts/harness.mjs`。
+日常也可直接使用：`Use harness-kit to reproduce and fix this issue with a minimal change, then run project verification.` 需要并行时明确授权：`Use harness-kit to implement this change. Multi-agent delegation is authorized; integrate the work and verify acceptance.` 显式调用方式以宿主实际发现的技能为准，插件可能带命名空间；不能假定同一符号语法通用。下方 CLI 示例中的 `harness` 是可选短命令，未安装时由 Agent 使用包内 `node <已安装技能目录>/scripts/harness.mjs`。
 
 对于 dsh，启用 dsh-skill 与 dsh-skill-filesystem 后，将打包出的完整自包含目录放到 `<projectRoot>/.dsh/skills/harness-kit` 或 `<projectRoot>/.agents/skills/harness-kit`，也可按实际 provider 配置使用用户技能目录（默认 `~/.dsh/skills`、`~/.agents/skills`）。当前安装器默认的 Codex Skill 目录不会自动变成 dsh 技能目录。目录型技能须为扫描根的直接子目录；亦支持根顶层 `<name>.md` flat 技能，不递归任意嵌套树。Harness Kit 包含脚本与引用，应保留完整目录；先确认会话目录中出现 harness-kit 再加载。该 provider 监测技能目录/frontmatter 变化，正文在加载时重读；这与项目指令插件没有持续 watcher 的机制不同。详见 [dsh skill-filesystem 官方说明](https://github.com/deepseek-ai/deepseek-harness/blob/fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159/packages/skill/skill-filesystem/README.md)。
 
@@ -177,7 +177,7 @@ harness apply --plan .harness/plan.json --json
 harness init --answers answers.json --yes --json
 ```
 
-`--json` 保留完整机器输出；普通模式仅显示简要状态与诊断。`configure` 仍是仅生成计划的兼容入口。`--out` 对 init 指定计划路径，不会把执行结果覆盖到计划文件里。低层 `apply` 只应用计划，之后运行 `run` 和 `doctor`。以上短命令均可由 Agent 替换成 `bun <已安装技能目录>/scripts/harness.mjs`；源码开发者也可用 `bun bin/harness.mjs`。
+`--json` 保留完整机器输出；普通模式仅显示简要状态与诊断。`configure` 仍是仅生成计划的兼容入口。`--out` 对 init 指定计划路径，不会把执行结果覆盖到计划文件里。低层 `apply` 只应用计划，之后运行 `run` 和 `doctor`。以上短命令均可由 Agent 替换成 `node <已安装技能目录>/scripts/harness.mjs`；源码开发者也可用 `bun bin/harness.mjs`。
 
 项目已经有 `harness.config.json` 时以它为准。可直接编辑该配置；生成器不会覆盖未管理或已被用户修改的文件。`apply` 返回 `conflicts` 时保留原文件，需人工合并计划里的建议内容后重跑。gen-new 的原 `scripts/verify.sh`、Agent 目录和自定义指南均保留。
 
@@ -274,6 +274,6 @@ bun run verify
 bun run harness check --json
 ```
 
-测试使用 Bun 原生测试框架和临时 fixture，包括本地 Git 历史，不操作真实远端。CI 提供 Windows/Linux 矩阵，实际结果以对应提交的 Actions 为准。构建与使用文档可以公开，内部验收过程不随公开源码导出。
+原有完整测试使用 Bun 原生测试框架，Node 集成测试使用 node:test；两者使用临时 fixture，包括本地 Git 历史，不操作真实远端。CI 提供 Windows/Linux 矩阵，实际结果以对应提交的 Actions 为准。构建与使用文档可以公开，内部验收过程不随公开源码导出。
 
-当前交付包含 CLI、自包含 Skill、Codex/Claude 插件和 DSH 原生插件；宿主覆盖范围见[能力说明](../reference/capabilities.md)。运行 CLI 只需 Bun，代码中的 node: 导入使用 Bun 内置兼容 API，不需要单独安装 Node.js。构建全部分发包：bun run package:distribution <新的输出目录>。已有目标目录拒绝覆盖。
+当前交付包含 CLI、自包含 Skill、Codex/Claude 插件和 DSH 原生插件；宿主覆盖范围见[能力说明](../reference/capabilities.md)。当前源码及新包的 CLI 支持 Node.js 或 Bun，二选一；项目测试仍需要自身工具链。构建全部分发包：bun run package:distribution <新的输出目录>。已有目标目录拒绝覆盖。

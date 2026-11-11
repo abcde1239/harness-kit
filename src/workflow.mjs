@@ -3,6 +3,7 @@ import { atomicWrite, digest, fileHash, json, readJson, safePath, walk } from '.
 import { effectiveTests } from './config.mjs';
 import { lint } from './lint.mjs';
 import { verify } from './runner.mjs';
+import {runtimeEnvironment} from './runtime.mjs';
 
 export const EVIDENCE = '.harness/verification.json';
 
@@ -16,7 +17,7 @@ export function inputSnapshot(root, config) {
   const files = entries.map(e=>({path:e.path,type:e.type,sha256:e.type==='file'?fileHash(root,e.path):null}));
   return {digest:digest(files),files:files.length,unsupported:[...entries.filter(e=>e.type!=='file').map(e=>e.path),...(excluded.includes('.')?['excluded-project-root']:[])],excluded:[...ignored,...excluded]};
 }
-const environment = () => ({bun:Bun.version,platform:process.platform,arch:process.arch});
+const environment = runtimeEnvironment;
 
 export function verificationEvidence(root, config) {
   if(!fs.existsSync(safePath(root,EVIDENCE))) return {status:'missing',path:EVIDENCE,message:'尚未运行验证：harness run'};

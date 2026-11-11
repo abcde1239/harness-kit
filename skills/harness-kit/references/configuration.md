@@ -4,7 +4,7 @@ Resolve all relative path arguments against `--root`. Do not write target-projec
 
 ## Installed Skill entry point
 
-Standalone and plugin Skill distributions include a complete `scripts/harness.mjs`. Locate the Skill root from the SKILL.md actually loaded by the host, then run `bun <installed-skill-directory>/scripts/harness.mjs <command> --root <absolute-project-path> --json`. No setup, global harness command, or Harness Kit PATH change is required. Bun >= 1.3.4 must still be executable; packages do not include Bun. Git features also require Git. Do not assume a fixed plugin cache path or depend on a source checkout. The script under the source skills/harness-kit directory is a development entry point; install a ZIP or packaged output rather than copying that source directory alone.
+Standalone and plugin Skill distributions include a complete `scripts/harness.mjs`. Locate the Skill root from the SKILL.md actually loaded by the host, then run `node <installed-skill-directory>/scripts/harness.mjs <command> --root <absolute-project-path> --json`. No setup, global harness command, or Harness Kit PATH change is required. Node.js >= 22.12.0 or Bun >= 1.3.4 must be executable; choose the available runtime and substitute bun for node when appropriate. Packages include parser libraries but no runtime. Old v0.5.0 archives still require Bun; use newly built distributions for Node support. Git features also require Git. Do not assume a fixed plugin cache path or depend on a source checkout. The script under the source skills/harness-kit directory is a development entry point; install a ZIP or packaged output rather than copying that source directory alone.
 
 The examples below omit this shared prefix; supply the actual paths when invoking them. Users can request onboarding, development, or validation in their preferred language. The optional source `bun run setup` only provides short commands for human terminals. Plugin installation names and Skill invocation names may have host namespaces; use the actual discovered names.
 
@@ -40,7 +40,7 @@ Omitted fields use defaults; unknown fields and versions are rejected. Root READ
 
 ## Commands
 
-Use `bun <skill>/scripts/harness.mjs`, adding `--root <project> --json` to each command:
+Use `node <skill>/scripts/harness.mjs`, adding `--root <project> --json` to each command:
 
 - `inspect`: read-only discovery returning facts, questions, and suggestedConfig.
 - `init --answers .harness/answers.json --yes`: apply onboarding and run first validation by default; `--skip-verify` explicitly defers it.
@@ -57,7 +57,7 @@ Everyday help shows the primary entry points; `help --all` includes advanced and
 
 ## Optional local Codex hooks
 
-`init --hooks` merges SessionStart/Stop handlers into `.codex/hooks.json` and generates a self-contained runner and ownership record in `.harness/hooks`. Users must review and trust them through `/hooks` in a new local session; setup does not change host permissions. Preserve third-party handlers. Modified or deleted managed handlers produce conflicts. Commands bind local Bun and project absolute paths; rerun init --hooks after moving, changing machines, or upgrading.
+`init --hooks` merges SessionStart/Stop handlers into `.codex/hooks.json` and generates a self-contained runner and ownership record in `.harness/hooks`. Users must review and trust them through `/hooks` in a new local session; setup does not change host permissions. Preserve third-party handlers. Modified or deleted managed handlers produce conflicts. Commands bind the chosen runtime and project absolute paths; rerun init --hooks after moving, changing machines, or upgrading.
 
 SessionStart records a session input digest and supplies validation context. Stop requests continued validation only when the session changed files and no current full passing evidence exists. It does not run project commands itself; after one automatic continuation it only reminds. Missing start snapshots or tasks are reported as gaps. This adapter is not universal enforcement. Do not trust hooks on the user's behalf or disable other hooks.
 

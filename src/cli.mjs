@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { version } from '../package.json';
+import metadata from '../package.json' with {type:'json'};
+const {version}=metadata;
 import { inspect } from './discovery.mjs';
 import { loadConfig } from './config.mjs';
 import { makePlan, applyPlan } from './planner.mjs';
@@ -106,15 +107,12 @@ async function cancellable(operation) {
   finally{process.removeListener('SIGINT',abort);process.removeListener('SIGTERM',abort);}
 }
 async function hookInput() {
-  const reader=Bun.stdin.stream().getReader(),chunks=[];let size=0;
-  try {
-    while(true) {
-      const {done,value}=await reader.read();if(done)break;
-      size+=value.byteLength;
-      if(size>1024*1024) {await reader.cancel();throw new Error('Hook input exceeds 1 MiB.');}
-      chunks.push(value);
-    }
-  } finally {reader.releaseLock();}
+  const chunks=[];let size=0;
+  for await(const value of process.stdin) {
+    size+=value.byteLength;
+    if(size>1024*1024)throw new Error('Hook input exceeds 1 MiB.');
+    chunks.push(value);
+  }
   const input=JSON.parse(Buffer.concat(chunks).toString('utf8'));
   if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('Hook input must be a JSON object.');
   return input;

@@ -2,7 +2,7 @@
 
 Create work tasks for cross-session recovery, explicit acceptance, or handoff. Complete simple changes directly with appropriate validation. Reuse OpenSpec/Spec Kit or existing requirement records; Harness tasks track goals, evidence, and validation links rather than duplicating the full specification.
 
-Invoke `bun <skill>/scripts/harness.mjs` with `--root <absolute-project-path> --json`. Examples use human short commands; Agents must use the actual available entry point rather than hard-code a host tool name.
+Invoke `node <skill>/scripts/harness.mjs` with `--root <absolute-project-path> --json`. Examples use human short commands; Agents must use the actual available entry point rather than hard-code a host tool name.
 
 ## Complete example
 

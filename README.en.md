@@ -4,22 +4,40 @@
 
 Harness Kit connects coding agents to existing projects, runs the project's tests, and saves the context needed to continue work later. Install a Skill or plugin, then describe your goal in the Agent session.
 
-[Quick start](#quick-start) · [Installation guide (Chinese)](docs/public/guides/installation.md) · [Usage guide (Chinese)](docs/public/guides/usage.md) · [Downloads](https://github.com/abcde1239/harness-kit/releases)
+[Quick start](#let-your-agent-install-a-released-version) · [Installation guide (Chinese)](docs/public/guides/installation.md) · [Usage guide (Chinese)](docs/public/guides/usage.md) · [Downloads](https://github.com/abcde1239/harness-kit/releases)
 
 ## What it helps with
 
 - **Onboard existing projects.** Add instructions for your chosen Agent while preserving frameworks, test layouts, and user edits.
 - **Resume unfinished work.** Save goals, acceptance criteria, notes, and next steps for another session or Agent.
-- **Verify changes.** Run existing tests and checks. Changes to source or configuration make earlier verification evidence stale.
+- **Coordinate multiple Agents.** Assign responsibilities and use role prompts with the host's delegation tools.
 - **Document your coding conventions.** Derive scoped style and architecture rules from selected projects, with code evidence and counterexamples. See the [coding-style workflow](skills/harness-kit/references/coding-style.md).
 
 Implement and verify small changes directly. Save plans, assignments, and handoffs when the work warrants them. Keep using Superpowers, OpenSpec, or your team's existing process.
 
-**Availability:** The v0.5.0 downloads below do not include coding-style distillation, specialist role profiles (including the Agent expert), or the link-install entry point. Build a distribution from current source to use coding-style distillation and specialist roles. See below for link installation of released packages.
+**Availability:** The v0.5.0 downloads below still require Bun and do not include Node support, coding-style distillation, specialist role profiles (including the Agent expert), or the link-install entry point. Build a distribution from current source for Node support, coding-style distillation, and specialist roles. See below for link installation of released packages.
 
-## Quick start
+## Environment
 
-Requires **Bun >= 1.3.4** in the Agent's execution environment. Git checks also require Git. Skills and plugins include the CLI; no `bun setup` or global `harness` command is needed.
+Current source and newly built packages support **Node.js >= 22.12.0 or Bun >= 1.3.4** in the Agent's execution environment. Git checks also require Git. Skills and plugins include the CLI; no `bun setup` or global `harness` command is needed.
+
+## Let your Agent install a released version
+
+Give your Agent the repository link. It reads the [installation entry point](INSTALL.md), asks for a default or custom location, then downloads, validates, and configures a released plugin. You do not need to extract archives manually or run `bun setup`.
+
+Copy this request. To pin a version, replace the repository link with the corresponding Release link:
+
+```text
+Read https://github.com/abcde1239/harness-kit/blob/main/INSTALL.md.
+Install the Harness Kit plugin from https://github.com/abcde1239/harness-kit.
+First ask whether I want the default installation location or a custom directory, then install and configure it for the current host.
+```
+
+The Agent shows the full installation path, preserves existing edits, and checks the host's plugin status. A custom location stores persistent plugin source files; caches remain host-managed. A restart or new session may be required.
+
+The installer comes from repository source; the plugin package comes from the latest stable Release, currently v0.5.0. Link installation does not add unreleased source features to older packages. For Node-only use, build a distribution from current source; v0.5.0 archives still require Bun.
+
+## Manual installation
 
 ### Install the Skill
 
@@ -92,25 +110,9 @@ Maintained Agent instructions and prompt templates are in English. User-facing r
 
 Gemini CLI, Cursor, and OpenCode can use `init --hosts` to generate project instructions. See the [usage guide (Chinese)](docs/public/guides/usage.md). The DSH plugin targets a developer-preview interface; installation in a real DSH profile has not been verified. Check the compatibility range in the installation guide before trying it.
 
-## Let your Agent install a released version
-
-Give your Agent the repository link. It reads the [installation entry point](INSTALL.md), asks for a default or custom location, then downloads, validates, and configures a released plugin. You do not need to extract archives manually or run `bun setup`.
-
-Copy this request. To pin a version, replace the repository link with the corresponding Release link:
-
-```text
-Read https://github.com/abcde1239/harness-kit/blob/main/INSTALL.md.
-Install the Harness Kit plugin from https://github.com/abcde1239/harness-kit.
-First ask whether I want the default installation location or a custom directory, then install and configure it for the current host.
-```
-
-The Agent shows the full installation path, preserves existing edits, and checks the host's plugin status. A custom location stores persistent plugin source files; caches remain host-managed. A restart or new session may be required.
-
-The installer comes from repository source; the plugin package comes from the latest stable Release, currently v0.5.0. Link installation does not add unreleased source features to older packages.
-
 ## Terminal usage
 
-For optional terminal shortcuts, run `bun run setup` in the source directory. Then, from your project:
+For optional terminal shortcuts, install source dependencies with `npm install` or `bun install`, then run `node scripts/install.mjs`. Substitute bun for node when using Bun. From your project:
 
 ```sh
 harness init      # Connect the project and run initial verification
@@ -128,10 +130,11 @@ Running `harness` without arguments opens a Chinese menu. Use `harness help --al
 - [Persistent tasks](skills/harness-kit/references/tasks.md)
 - [v0.5.0 release notes (Chinese)](docs/public/releases/v0.5.0.md)
 
-Validate and package from the source directory:
+Validate and package from the source directory. The Node verifier runs Node integration tests; use `bun run verify:bun` for the original full suite:
 
 ```sh
-bun run verify
-bun run harness check --json
-bun run package:distribution <new-output-directory>
+npm install
+node scripts/verify.mjs
+node bin/harness.mjs check --json
+node scripts/package-distribution.mjs <new-output-directory>
 ```

@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {parse as parseYaml} from 'yaml';
 import { fileHash, hash, readJson, safePath } from './fs.mjs';
 
 export const AGENT_FILE = 'AGENTS.md';
@@ -35,7 +36,7 @@ export const agentInstructions = `${AGENT_BLOCK_START}
 - Read applicable project instructions first. If docs/agent_guide.md or MEMORY.md exists locally, read only relevant conventions and lessons. Continue from public files when private material is absent; do not require downloading it.
 - If docs/decision/coding-style/RULES.md exists, apply adopted rules within this task's scope; candidate rules are references only. Personal preferences do not override current user requirements, applicable instructions or existing tool configuration. Explain material conflicts.
 - Use applicable installed Skills. Load Harness Kit through the actual host mechanism or CLI for onboarding, development, repair, review or recovery. Implement small changes directly; clarify scope and acceptance for complex work. Preserve frameworks and user edits.
-- Use harness doctor for diagnosis, harness check for conventions and harness run for configured verification. If unavailable, verify the installation and Bun. Never report unrun, unconfigured, timed-out or skipped work as passed.
+- Use harness doctor for diagnosis, harness check for conventions and harness run for configured verification. If unavailable, verify the installation and selected Node.js/Bun runtime. Never report unrun, unconfigured, timed-out or skipped work as passed.
 - For complex or cross-session work, use harness task start/resume/status to preserve goals, harness run --work ID to associate verification, harness task accept for checked criteria, and harness task finish only after completion gates hold.
 - Delegate independent work only when authorized and real host tools are available. Provide goals, writable files, interface dependencies, applicable rules and verification commands. Assign one writer per shared file and independently check changes and evidence.
 - Reproduce failures and distinguish implementation, configuration and environment causes before retrying. Report changes, actual outcomes and remaining blockers; refresh relevant evidence after project inputs change.
@@ -61,7 +62,7 @@ export function cursorFrontmatter(text) {
   const match = /^(?:\uFEFF)?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
   if (!match) return { status: 'invalid', message: 'Cursor rule requires YAML frontmatter with alwaysApply: true' };
   try {
-    const parsed = Bun.YAML.parse(match[1]);
+    const parsed = parseYaml(match[1]);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || parsed.alwaysApply !== true || [...match[1].matchAll(/^alwaysApply\s*:/gm)].length !== 1) throw new Error('alwaysApply must be true exactly once');
     return { status: 'valid' };
   } catch (error) { return { status: 'invalid', message: `Invalid Cursor frontmatter: ${error.message}` }; }

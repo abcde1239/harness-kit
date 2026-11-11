@@ -1,6 +1,6 @@
 # 公开与内部资料边界
 
-本仓库的公开交付是 Bun CLI、核心模块、测试、跨宿主 Skill、插件打包器与使用文档。独立 Skill、Codex/Claude 插件和 DSH 原生插件通过 Release 附件分发，见[安装指南](../guides/installation.md)。内部开发资料可以进入私有 Git，但不进入公开仓库或其历史。
+本仓库的公开交付是 Node.js/Bun CLI、核心模块、测试、跨宿主 Skill、插件打包器与使用文档。独立 Skill、Codex/Claude 插件和 DSH 原生插件通过 Release 附件分发，见[安装指南](../guides/installation.md)。内部开发资料可以进入私有 Git，但不进入公开仓库或其历史。
 
 | 范围 | 本项目位置 | 处理方式 |
 |---|---|---|
@@ -19,6 +19,6 @@
 
 提交公开版本时，从私有源目录执行 `export`，核对 manifest 的路径、来源与 SHA-256，再执行 `publication-check`。只在这个不含 `.git` 和内部资料的新快照中建立提交。保留发布清单和检查报告于私有源目录。后续修改必须重新生成或复验，不能沿用旧报告。
 
-公开快照应能独立运行 `bun run verify` 和 `bun run harness lint --json`，不需要内部 PRD、任务表或 memory。CI 使用 Bun，配置 Windows 和 Linux 两种环境；实际通过情况以 GitHub Actions 的运行结果为准。
+公开快照应能独立运行 `node scripts/verify.mjs`、`bun run verify:bun` 和 `node bin/harness.mjs lint --json`，不需要内部 PRD、任务表或 memory。CI 使用 Bun，配置 Windows 和 Linux 两种环境；实际通过情况以 GitHub Actions 的运行结果为准。
 
 若同步到已有公开仓库，还需审计目标仓库的历史及托管附属内容。直接把私有仓库改成公开会暴露可达历史，删除当前文件不能代替历史审阅。工具不会自动改变仓库可见性或强推历史。

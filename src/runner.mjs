@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { safePath } from './fs.mjs';
 import { effectiveTests } from './config.mjs';
+import {isBun} from './runtime.mjs';
+import {runProcess} from './subprocess.mjs';
 
 export function taskOrder(tasks, selected) {
   const byId = new Map(tasks.map(t => [t.id, t])), visiting = new Set(), visited = new Set(), result = [];
@@ -17,7 +19,7 @@ export function taskOrder(tasks, selected) {
 }
 function launchCommand(argv) {
   const [command, ...args] = argv;
-  if (command === 'bun') return { command: process.execPath, args };
+  if (command === (isBun?'bun':'node')) return { command: process.execPath, args };
   if (process.platform !== 'win32' || /\.exe$/i.test(command)) return { command, args };
   const candidates = path.isAbsolute(command) ? [command] : (process.env.PATH ?? '').split(path.delimiter).flatMap(dir => [path.join(dir,command), ...['.exe','.cmd','.bat'].map(ext => path.join(dir,command+ext))]);
   const resolved = candidates.find(p => fs.existsSync(p) && fs.statSync(p).isFile());
@@ -30,30 +32,11 @@ async function runTask(root, config, task, signal) {
   const w = config.workspaces.find(w => w.id === task.workspace);
   const cwd = safePath(root, w.root === '.' ? task.cwd : `${w.root}/${task.cwd}`, { allowMissing: false });
   const launch = launchCommand(task.argv);
-  const start = Date.now(); let output = '', reason = null; const readers=[];
-  // Nested package scripts use the same Bun, even when PATH starts with a
-  // downloader/proxy named bun. This only changes the child environment.
-  const taskEnv={...process.env,PATH:`${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH??''}`,HARNESS_ACTIVE:'1'};
-  const child = Bun.spawn([launch.command,...launch.args], { cwd, windowsHide:true, windowsVerbatimArguments:launch.windowsVerbatimArguments, detached:process.platform !== 'win32', env:taskEnv, stdin:'ignore',stdout:'pipe',stderr:'pipe' });
-  async function capture(stream) {
-    const reader=stream.getReader(); readers.push(reader);
-    try { while(true) {const {done,value}=await reader.read(); if(done)break;output=(output+Buffer.from(value).toString()).slice(-32768);} }
-    finally {reader.releaseLock();}
-  }
-  const streams = Promise.all([capture(child.stdout),capture(child.stderr)]);
-  function stop(why) {
-    reason = why;
-    if (process.platform === 'win32') Bun.spawnSync(['taskkill','/pid',String(child.pid),'/T','/F'],{windowsHide:true,stdout:'ignore',stderr:'ignore',timeout:2000});
-    else { try { process.kill(-child.pid,'SIGKILL'); } catch {} }
-    try {child.kill('SIGKILL');} catch {}
-    for(const reader of readers) {try {reader.cancel().catch(()=>{});} catch {}}
-  }
-  const timeout=setTimeout(()=>stop('timeout'),task.timeoutMs), abort=()=>stop('cancelled');
-  signal?.addEventListener('abort',abort,{once:true}); if(signal?.aborted)abort();
-  try {
-    const code=await child.exited; await streams;
-    return {id:task.id,workspace:task.workspace,required:task.required,status:reason?'blocked':code===0?'passed':'failed',code,reason,durationMs:Date.now()-start,output};
-  } finally {clearTimeout(timeout);signal?.removeEventListener('abort',abort);}
+  const start=Date.now();
+  // Keep nested calls on the selected runtime without rewriting project commands.
+  const taskEnv={...process.env,PATH:path.dirname(process.execPath)+path.delimiter+(process.env.PATH??''),HARNESS_ACTIVE:'1'};
+  const result=await runProcess([launch.command,...launch.args],{cwd,env:taskEnv,timeoutMs:task.timeoutMs,signal,windowsVerbatimArguments:launch.windowsVerbatimArguments});
+  return {id:task.id,workspace:task.workspace,required:task.required,status:result.reason?'blocked':result.exitCode===0?'passed':'failed',code:result.exitCode,reason:result.reason,durationMs:Date.now()-start,output:result.output};
 }
 export async function verify(root, config, { selected, signal } = {}) {
   if (process.env.HARNESS_ACTIVE) throw new Error('Recursive harness invocation refused; configure underlying commands instead');

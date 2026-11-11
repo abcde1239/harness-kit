@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { version, description } from '../package.json';
+import packageMetadata from '../package.json' with {type:'json'};
+import {isMain} from '../src/runtime.mjs';
+const {version,description}=packageMetadata;
 import { hash, json, safePath } from '../src/fs.mjs';
 import { skillFiles } from './package-skill.mjs';
 import { validateSkill } from './validate-skill.mjs';
@@ -28,7 +30,7 @@ function marketplaces(plugin) {
 }
 const instructions = `# Harness Kit ${version}
 
-安装任选一种，不需要运行 bun setup。内置脚本需要 Bun >= 1.3.4；Git检查另需Git。
+安装任选一种，不需要运行 bun setup。内置脚本需要 Node.js >= 22.12.0 或 Bun >= 1.3.4；Git检查另需Git。
 
 ## 交给 Agent 安装
 
@@ -41,7 +43,7 @@ Agent 安装入口见 AGENT-INSTALL.md；同目录 install-plugin.mjs 可独立�
 将 harness-kit-skill-${version}.zip 解压后的 harness-kit 完整目录放进宿主原生技能目录。
 Codex 可使用 ~/.agents/skills/harness-kit；DSH 可使用 <project>/.dsh/skills/harness-kit。
 确认目录内直接包含 SKILL.md、scripts 和 references。在新会话要求使用 Harness Kit 接入当前项目。
-Agent 使用 bun <安装后的技能绝对路径>/scripts/harness.mjs <command> --root <项目绝对路径> --json。
+Agent 使用 node <安装后的技能绝对路径>/scripts/harness.mjs <command> --root <项目绝对路径> --json。
 
 ## Codex 插件
 
@@ -92,7 +94,7 @@ export async function packageDistribution(destination = path.join(repository,'ar
     ['install-plugin.mjs',fs.readFileSync(path.join(repository,'scripts/install-plugin.mjs'))],
   ]);
   const entries=[...files].map(([name,bytes])=>({path:name,sha256:hash(bytes),bytes:bytes.length}));
-  files.set('distribution.json',Buffer.from(json({version,requirements:{bun:'>=1.3.4'},entries})));
+  files.set('distribution.json',Buffer.from(json({version,requirements:{runtime:{anyOf:[{node:'>=22.12.0'},{bun:'>=1.3.4'}]}},entries})));
   files.set('SHA256SUMS',Buffer.from(entries.filter(e=>e.path.endsWith('.zip')||e.path==='install-plugin.mjs').map(e=>`${e.sha256}  ${e.path}`).join('\n')+'\n'));
   fs.mkdirSync(path.dirname(destination),{recursive:true});
   const staging = `${destination}.staging-${crypto.randomUUID()}`;
@@ -109,9 +111,9 @@ export async function packageDistribution(destination = path.join(repository,'ar
     if(path.dirname(staging)!==path.dirname(destination)||!path.basename(staging).startsWith(path.basename(destination)+'.staging-'))throw new Error('Unsafe staging cleanup');
     fs.rmSync(staging,{recursive:true,force:true});throw error;
   }
-  return {status:'packaged',version,destination,archives:entries.filter(e=>e.path.endsWith('.zip')),files:files.size,requiresSetup:false,runtime:'Bun >= 1.3.4',published:false};
+  return {status:'packaged',version,destination,archives:entries.filter(e=>e.path.endsWith('.zip')),files:files.size,requiresSetup:false,runtime:'Node.js >= 22.12.0 or Bun >= 1.3.4',published:false};
 }
-if(import.meta.main) {
+if(isMain(import.meta.url)) {
   try {
     if(process.argv.length>3)throw new Error('Usage: bun scripts/package-distribution.mjs [new-output-directory]');
     console.log(json(await packageDistribution(process.argv[2])));
