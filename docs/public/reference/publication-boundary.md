@@ -1,6 +1,6 @@
 # 公开与内部资料边界
 
-本仓库的公开交付是 Node.js/Bun CLI、核心模块、测试、跨宿主 Skill、插件打包器与使用文档。独立 Skill、Codex/Claude 插件和 DSH 原生插件通过 Release 附件分发，见[安装指南](../guides/installation.md)。内部开发资料可以进入私有 Git，但不进入公开仓库或其历史。
+本仓库的公开交付是 Node.js/Bun CLI、核心模块、测试、跨宿主 Skill、插件打包器与使用文档。独立 Skill、Codex/Claude 插件和 DSH 原生插件通过 Release 附件分发，见[安装指南](/guides/installation)。内部开发资料可以进入私有 Git，但不进入公开仓库或其历史。
 
 | 范围 | 本项目位置 | 处理方式 |
 |---|---|---|

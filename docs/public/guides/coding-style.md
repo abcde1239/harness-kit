@@ -49,4 +49,4 @@ Update this coding profile using the additional projects, preserving my edits an
 List new evidence, counterexamples, stale sources and rules that may need adjustment.
 ```
 
-更新按规则 ID 合并，不会以重新生成的文案覆盖个人修改。完整的提炼与采用方法见[Skill 参考](../../../skills/harness-kit/references/coding-style.md)。
+更新按规则 ID 合并，不会以重新生成的文案覆盖个人修改。完整的提炼与采用方法见[Skill 参考](/guides/coding-style)。

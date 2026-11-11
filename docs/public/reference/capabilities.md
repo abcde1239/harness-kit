@@ -1,6 +1,6 @@
 # 能力与适用范围
 
-[文档导航](../README.md) · [安装](../guides/installation.md) · [使用](../guides/usage.md)
+[文档导航](/) · [安装](/guides/installation) · [使用](/guides/usage)
 
 Harness Kit 给现有 Agent 宿主提供项目接入、可恢复工作记录和统一验证。适合已有代码和测试，希望跨宿主保留项目约定、保护人工改动，并判断一次任务是否满足验收的项目。
 

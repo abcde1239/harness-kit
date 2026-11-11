@@ -4,6 +4,7 @@ artifacts/
 coverage/
 dist/
 build/
+docs/public/.vitepress/dist/
 .harness/answers.json
 .harness/plan.json
 .env

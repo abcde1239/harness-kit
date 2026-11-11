@@ -2,6 +2,8 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
+[文档站](https://abcde1239.github.io/harness-kit/) · 本地预览：`bun run docs:dev` · 构建：`bun run docs:build`
+
 Harness Kit 帮你把编码 Agent 接入现有项目，运行项目里的测试，并保存下次继续工作需要的信息。安装 Skill 或插件后，在 Agent 会话中说明目标即可开始。
 
 [快速开始](#让-agent-安装已发布版本) · [安装指南](docs/public/guides/installation.md) · [使用指南](docs/public/guides/usage.md) · [版本下载](https://github.com/abcde1239/harness-kit/releases)

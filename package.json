@@ -20,13 +20,17 @@
     "harness": "node bin/harness.mjs",
     "setup": "node scripts/install.mjs",
     "package:skill": "node scripts/package-skill.mjs",
-    "package:distribution": "node scripts/package-distribution.mjs"
+    "package:distribution": "node scripts/package-distribution.mjs",
+    "docs:dev": "vitepress dev docs/public",
+    "docs:build": "vitepress build docs/public",
+    "docs:preview": "vitepress preview docs/public"
   },
   "dependencies": {
     "smol-toml": "1.9.1",
     "yaml": "2.9.1"
   },
   "devDependencies": {
-    "esbuild": "0.25.12"
+    "esbuild": "0.25.12",
+    "vitepress": "1.6.4"
   }
 }

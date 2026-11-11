@@ -2,13 +2,13 @@
 
 为新旧项目接入 Agent 指令、开发流程与统一验证。需要 **Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4**；Git 功能另需 Git。分发包内置解析库，不需要额外安装 npm 依赖；源码开发需先安装依赖。旧 v0.5.0 包仍要求 Bun。
 
-核心按配置执行，扫描适配器提供建议。Go 和 JavaScript 保留专用发现逻辑；Python、Rust、JVM、.NET、PHP、Ruby、C/C++、Dart、Elixir 和 Swift 通过项目标记识别工作区，并要求显式测试命令。其他技术栈可通过 `harness.adapters.json` 注册声明式适配器，见[适配器参考](../../../skills/harness-kit/references/adapters.md)。
+核心按配置执行，扫描适配器提供建议。Go 和 JavaScript 保留专用发现逻辑；Python、Rust、JVM、.NET、PHP、Ruby、C/C++、Dart、Elixir 和 Swift 通过项目标记识别工作区，并要求显式测试命令。其他技术栈可通过 `harness.adapters.json` 注册声明式适配器，见[适配器参考](/reference/adapters)。
 
 ## 安装后开始使用
 
 独立 Skill、Codex/Claude 插件和 DSH 原生插件的下载、安装、升级与排障统一见[安装指南](installation.md)。安装后用自然语言提出目标；Agent 直接调用实际技能目录内的 CLI，无需 setup 或全局 harness 命令。
 
-本页的 harness 示例面向已安装可选终端短命令的用户；Skill/插件调用使用 node <已安装技能目录>/scripts/harness.mjs，并显式提供 --root <项目绝对路径>。完整文档入口见[文档导航](../README.md)。
+本页的 harness 示例面向已安装可选终端短命令的用户；Skill/插件调用使用 node <已安装技能目录>/scripts/harness.mjs，并显式提供 --root <项目绝对路径>。完整文档入口见[文档导航](/)。
 
 要从自己维护的项目中总结编码风格与架构习惯，可直接说明项目路径和目标。画像与规则的保存、采用及复核方式见[编码习惯提炼](coding-style.md)，无需新增 CLI 命令。
 
@@ -99,7 +99,7 @@ harness task finish
 
 源码/配置变化会使旧验收与验证过期；验收还通过 definitionDigest 绑定任务目标、标题、scope 和 criterion 要求，任务定义变化也使旧验收过期。完整验证记录必须覆盖全部配置的任务和工作区，缺失条目不能作为完成依据。已完成任务也可能变为 needs-attention，resume 可重新打开，保留旧证据供复核。任务位于 `.harness/tasks/<id>.json`、活动指针位于 `.harness/active-task.json`，均为内部资料。恢复只呈现上下文并切换活动任务，不自动实施、运行测试或重放外部副作用。更新有锁保护，冲突时不擅自删除锁；异常残留需先确认没有其他写者。
 
-完整说明见[任务与验收](../../../skills/harness-kit/references/tasks.md)。
+完整说明见[任务与验收](/reference/tasks)。
 
 ## 可选：Codex 本地会话接入
 
@@ -133,9 +133,9 @@ Skill 按需选择接入、改动、修复、评审或发布路径。小任务�
 
 Agent 使用随 Skill 提供的非交互 JSON 接口，不会打开人类终端菜单。如果当前会话尚未显示新 Skill，打开新会话再选择；也可显式指定安装目录下的 SKILL.md。
 
-多 Agent 协作需要实际宿主委派工具和授权。Skill 提供[主 Agent、实现 Agent、只读复核及交接提示词](../../../skills/harness-kit/references/collaboration.md)，规定工作任务 ID、独占写入范围、接口、依赖、验收和集成责任；没有工具或任务不适合拆分时串行完成。主 Agent 检查真实 diff 并执行集成验证，不把子任务自述作为完成证明。不同宿主使用实际提供的工具，不假造通用委派 API。开发与恢复细节见[开发流程](../../../skills/harness-kit/references/development.md)。
+多 Agent 协作需要实际宿主委派工具和授权。Skill 提供[主 Agent、实现 Agent、只读复核及交接提示词](/reference/collaboration)，规定工作任务 ID、独占写入范围、接口、依赖、验收和集成责任；没有工具或任务不适合拆分时串行完成。主 Agent 检查真实 diff 并执行集成验证，不把子任务自述作为完成证明。不同宿主使用实际提供的工具，不假造通用委派 API。开发与恢复细节见[开发流程](/reference/development)。
 
-维护的 Agent 指令、职责模板、默认提示词和 Hooks 注入指令统一使用英文；用户文档与回复仍可使用中文，用户原文和代码保持原样。需要判断某种 Agent 行为是否值得改进时，可使用 [Agent 专家](../../../skills/harness-kit/references/roles/agent-expert.md)：
+维护的 Agent 指令、职责模板、默认提示词和 Hooks 注入指令统一使用英文；用户文档与回复仍可使用中文，用户原文和代码保持原样。需要判断某种 Agent 行为是否值得改进时，可使用 [Agent 专家](/reference/roles/agent-expert)：
 
 ```text
 Use the harness-kit Agent expert to review this behavior: <observed behavior>.
@@ -145,7 +145,7 @@ Decide whether to constrain, enable, simplify or leave it unchanged. Propose the
 
 该职责按需分析上下文、工具、工作流、提示词和验证中的原因，不要求每项开发都增加一次审核。提出建议与实际验证改善效果分别报告。
 
-当前提供 **自包含 Skill、宿主插件与可选交互 CLI**。它们复用同一套治理/runner/任务核心；插件负责宿主发现与打包，不提供新模型、权限或后台执行引擎。源 Skill 位于 [skills/harness-kit/SKILL.md](../../../skills/harness-kit/SKILL.md)。
+当前提供 **自包含 Skill、宿主插件与可选交互 CLI**。它们复用同一套治理/runner/任务核心；插件负责宿主发现与打包，不提供新模型、权限或后台执行引擎。源 Skill 位于 [skills/harness-kit/SKILL.md](https://github.com/abcde1239/harness-kit/blob/main/skills/harness-kit/SKILL.md)。
 
 从源码生成分发包：
 
@@ -157,7 +157,7 @@ bun run package:distribution artifacts/distribution/0.7.0
 
 Codex/Claude 插件目录同时含根 `plugin.json` portable manifest 与 `.claude-plugin/plugin.json` 兼容入口；技能位于插件根的 skills/，不放在 manifest 目录内。分发包附 INSTALL.md；该命令只生成本地产物，不推送仓库或上架公共目录。原 `bun run package:skill` 保留为只生成技能目录的接口。
 
-接入后目录、文档公开边界、框架原生测试和 monorepo 组织见 [目标项目布局](../../../skills/harness-kit/references/project-layout.md)。CLI 提供所选宿主入口、配置、协作指南、目录职责说明和 gitignore；缺少根 README 时补充公开入口。详细公开文档按 docs/public/guides、reference、examples 分类；业务代码、框架配置及 CI 接线由项目按需要适配。hooks 仅适配明确选择的 Codex 本地模式，在显式接入并获宿主信任后生效；本轮不配置其他宿主的 hooks、权限或模型设置。
+接入后目录、文档公开边界、框架原生测试和 monorepo 组织见 [目标项目布局](/reference/project-layout)。CLI 提供所选宿主入口、配置、协作指南、目录职责说明和 gitignore；缺少根 README 时补充公开入口。详细公开文档按 docs/public/guides、reference、examples 分类；业务代码、框架配置及 CI 接线由项目按需要适配。hooks 仅适配明确选择的 Codex 本地模式，在显式接入并获宿主信任后生效；本轮不配置其他宿主的 hooks、权限或模型设置。
 
 ## 自动化与高级计划模式
 
@@ -205,7 +205,7 @@ harness init --answers answers.json --yes --json
 
 ## 配置契约
 
-根文件为 `harness.config.json`，`schemaVersion` 必须为 1。未知字段拒绝加载，避免拼写错误悄悄失效。完整可运行示例见本项目根配置；多工作区示例见 [examples/monorepo.config.json](../../../examples/monorepo.config.json)。
+根文件为 `harness.config.json`，`schemaVersion` 必须为 1。未知字段拒绝加载，避免拼写错误悄悄失效。完整可运行示例见本项目根配置；多工作区示例见 [examples/monorepo.config.json](https://github.com/abcde1239/harness-kit/blob/main/examples/monorepo.config.json)。
 
 | 字段 | 说明 |
 |---|---|
@@ -249,7 +249,7 @@ bun bin/harness.mjs publication-check --root D:/project --manifest .harness/publ
 
 目标必须不存在。只导出显式允许的文件，不复制 `.git` 或私有历史，不推送。memory/decision 默认禁止；已知内部文件的完全相同复制件也会被阻断。导出结果进入已有公开仓库前，仍须单独审计该仓库历史。
 
-构建产物使用 [manifest 模板](../../../examples/publication.manifest.json)：填写真实输出、全部来源和 SHA-256；转换后的产物还需要 reviewer/reference，表示人工确认来源完整。模板里的示例值不能通过检查。根输出目录每个实际文件都必须列入，额外文件、摘要变化、来源不明、内部来源、内部链接、符号链接或未审计归档均阻断。
+构建产物使用 [manifest 模板](https://github.com/abcde1239/harness-kit/blob/main/examples/publication.manifest.json)：填写真实输出、全部来源和 SHA-256；转换后的产物还需要 reviewer/reference，表示人工确认来源完整。模板里的示例值不能通过检查。根输出目录每个实际文件都必须列入，额外文件、摘要变化、来源不明、内部来源、内部链接、符号链接或未审计归档均阻断。
 
 报告绑定策略、manifest 和实际产物摘要。上传步骤只能使用检查过的同一份文件；修改或重新构建后必须重验。本工具不执行上传，也无法限制用户绕过门禁。源码映射、搜索索引等同样需要来源声明；不自动推断任意生成器的完整数据流。
 

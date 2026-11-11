@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Harness Kit">
+  <rect width="48" height="48" rx="12" fill="#2563eb"/>
+  <path d="M13 15h22M13 24h16M13 33h11" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="35" cy="33" r="4" fill="#93c5fd"/>
+</svg>

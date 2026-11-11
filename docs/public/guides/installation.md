@@ -1,6 +1,6 @@
 # 安装指南
 
-[文档导航](../README.md) · [日常使用](usage.md)
+[文档导航](/) · [日常使用](usage.md)
 
 从 [v0.7.0 Release](https://github.com/abcde1239/harness-kit/releases/tag/v0.7.0) 下载一种安装包。Skill 和插件都包含完整 CLI，**不需要运行 bun setup、配置 Harness Kit 的 PATH 或安装全局 harness 命令**。需要 Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4，二选一。Git 功能另需 Git，包内不附带运行时。
 
@@ -14,7 +14,7 @@ Install the Harness Kit plugin from https://github.com/abcde1239/harness-kit.
 Ask whether I want the default location or a custom directory, then complete installation and configuration.
 ```
 
-Agent 从你提供的[安装入口](../../../INSTALL.md)开始，识别目标宿主并显示默认绝对路径。选定位置后，独立安装器下载同一 Release 的匹配包与 SHA256SUMS，校验并注册插件；已有文件或来源冲突会保留并说明。安装后会核对宿主状态，必要时提示新会话或重启。用户无需手动解压或运行 setup。
+Agent 从你提供的[安装入口](https://github.com/abcde1239/harness-kit/blob/main/INSTALL.md)开始，识别目标宿主并显示默认绝对路径。选定位置后，独立安装器下载同一 Release 的匹配包与 SHA256SUMS，校验并注册插件；已有文件或来源冲突会保留并说明。安装后会核对宿主状态，必要时提示新会话或重启。用户无需手动解压或运行 setup。
 
 Windows 默认保存到 `%LOCALAPPDATA%/harness-kit/plugins/<宿主>`，其他平台为 `~/.local/share/harness-kit/plugins/<宿主>`；可自选持久目录。宿主内部缓存位置由宿主管理。独立 Skill 模式默认 `~/.agents/skills/harness-kit`，自定义位置必须符合目标宿主实际发现设置。
 
