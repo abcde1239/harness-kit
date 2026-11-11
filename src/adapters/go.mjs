@@ -1,10 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { safePath } from '../fs.mjs';
+import { workspaceId } from './recipes.mjs';
 export function discoverGo(root, files) {
   const facts = [], workspaces = [], tasks = [], questions = [];
-  for (const file of files.filter(f => f === 'go.mod' || f.endsWith('/go.mod'))) {
-    const directory = path.posix.dirname(file), id = directory === '.' ? 'root' : directory.replace(/[^a-zA-Z0-9._-]/g, '-');
+  const modules = files.filter(f => f === 'go.mod' || f.endsWith('/go.mod'));
+  for (const file of modules) {
+    const directory = path.posix.dirname(file), id = workspaceId(directory,modules.map(f=>path.posix.dirname(f)));
     facts.push({ source: file, capability: 'go-module' });
     workspaces.push({ id, root: directory, tests: { include: ['**/*_test.go'] } });
     tasks.push({ id: `${id}:go-test`, workspace: id, kind: 'test', argv: ['go','test','./...'] });

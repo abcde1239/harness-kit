@@ -53,6 +53,15 @@ test('Node verification, durable acceptance and source freshness retain their ga
  call(entry,root,['task','finish','sum'],{expected:1});
 });
 
+test('portable Node CLI discovers and validates a project-owned stack without language-specific runtime',()=>{
+ const root=fixture('custom stack',{'project.custom':'','suite/result.check':'','harness.adapters.json':{schemaVersion:1,recipes:[{id:'custom-stack',markers:['**/project.custom'],tests:{detect:['**/*.check'],include:['suite/**']},tasks:[{id:'test',argv:[process.execPath,'-e','if (2+3!==5) process.exit(1)']}]}]}});
+ assert.equal(call(entry,root,['init','--private','--yes']).readiness.status,'ready');
+ const config=JSON.parse(fs.readFileSync(path.join(root,'harness.config.json'),'utf8'));
+ assert.equal(config.tasks[0].id,'root:custom-stack:test');assert.deepEqual(config.tests.detect.includes('**/test_*.py'),true);
+ fs.mkdirSync(path.join(root,'src'));fs.writeFileSync(path.join(root,'src/misplaced.check'),'');
+ const result=call(entry,root,['check'],{expected:1});assert.ok(result.findings.some(f=>f.ruleId==='tests.layout'&&f.path==='src/misplaced.check'));
+});
+
 test('Node hooks are standalone after relocation and respect local TOML disable',()=>{
  const root=project('hooks');assert.equal(init(entry,root,['--hooks']).hooks.status,'configured');
  const runtime=path.join(root,'.harness/hooks/runtime.mjs'),event={session_id:'node-session',hook_event_name:'SessionStart'};

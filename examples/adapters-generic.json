@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "recipes": [
+    {
+      "id": "python",
+      "markers": ["**/pyproject.toml"],
+      "exclude": ["vendor/**"],
+      "tests": {
+        "detect": ["**/test_*.py", "**/*_test.py"],
+        "include": ["tests/**/*.py"]
+      },
+      "tasks": [
+        { "id": "test", "argv": ["python", "-m", "pytest"], "timeoutMs": 120000 }
+      ]
+    },
+    {
+      "id": "rust",
+      "markers": ["**/Cargo.toml"],
+      "nested": "outermost",
+      "tasks": [
+        { "id": "test", "argv": ["cargo", "test", "--workspace"], "timeoutMs": 180000 }
+      ]
+    }
+  ]
+}

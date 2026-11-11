@@ -13,6 +13,8 @@ Harness Kit connects coding agents to existing projects, runs the project's test
 - **Coordinate multiple Agents.** Assign responsibilities and use role prompts with the host's delegation tools.
 - **Document your coding conventions.** Derive scoped style and architecture rules from selected projects, with code evidence and counterexamples. See the [coding-style workflow](skills/harness-kit/references/coding-style.md).
 
+Discover workspaces across common stacks, or use `harness.adapters.json` to declare custom markers, commands, and test paths. See [technology adapters](skills/harness-kit/references/adapters.md).
+
 Implement and verify small changes directly. Save plans, assignments, and handoffs when the work warrants them. Keep using Superpowers, OpenSpec, or your team's existing process.
 
 ## Environment
@@ -39,7 +41,7 @@ The installer and plugin package come from the selected Release. Repository link
 
 ### Install the Skill
 
-Download [harness-kit-skill-0.6.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.6.0/harness-kit-skill-0.6.0.zip). Put the complete `harness-kit` directory in your host's Skill directory. For a Codex user installation:
+Download [harness-kit-skill-0.7.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-skill-0.7.0.zip). Put the complete `harness-kit` directory in your host's Skill directory. For a Codex user installation:
 
 ```text
 ~/.agents/skills/harness-kit/
@@ -65,8 +67,8 @@ Use harness-kit to implement pagination and save the task and acceptance criteri
 
 | Host | Package |
 |---|---|
-| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.6.0/harness-kit-marketplace-0.6.0.zip) |
-| DeepSeek Harness | [Native DSH plugin ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.6.0/harness-kit-dsh-0.6.0.zip) |
+| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-marketplace-0.7.0.zip) |
+| DeepSeek Harness | [Native DSH plugin ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-dsh-0.7.0.zip) |
 
 Extract the package and run the commands for your host. Replace the paths with the extracted directories' absolute paths:
 
@@ -126,7 +128,7 @@ Running `harness` without arguments opens a Chinese menu. Use `harness help --al
 - [Documentation index (Chinese)](docs/public/README.md)
 - [Multi-agent collaboration](skills/harness-kit/references/collaboration.md)
 - [Persistent tasks](skills/harness-kit/references/tasks.md)
-- [v0.6.0 release notes (Chinese)](docs/public/releases/v0.6.0.md)
+- [v0.7.0 release notes (Chinese)](docs/public/releases/v0.7.0.md)
 
 Validate and package from the source directory. The Node verifier runs Node integration tests; use `bun run verify:bun` for the original full suite:
 

@@ -2,7 +2,7 @@
 
 [文档导航](../README.md) · [日常使用](usage.md)
 
-从 [v0.6.0 Release](https://github.com/abcde1239/harness-kit/releases/tag/v0.6.0) 下载一种安装包。Skill 和插件都包含完整 CLI，**不需要运行 bun setup、配置 Harness Kit 的 PATH 或安装全局 harness 命令**。需要 Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4，二选一。Git 功能另需 Git，包内不附带运行时。
+从 [v0.7.0 Release](https://github.com/abcde1239/harness-kit/releases/tag/v0.7.0) 下载一种安装包。Skill 和插件都包含完整 CLI，**不需要运行 bun setup、配置 Harness Kit 的 PATH 或安装全局 harness 命令**。需要 Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4，二选一。Git 功能另需 Git，包内不附带运行时。
 
 ## 把链接交给 Agent
 
@@ -23,16 +23,16 @@ Release 附件包含 `AGENT-INSTALL.md` 和独立的 `install-plugin.mjs`，无�
 手动调用示例：
 
 ```text
-node install-plugin.mjs --source https://github.com/abcde1239/harness-kit/releases/tag/v0.6.0 --host codex --location default
+node install-plugin.mjs --source https://github.com/abcde1239/harness-kit/releases/tag/v0.7.0 --host codex --location default
 ```
 
-v0.6.0 安装器与包内 CLI 均支持 Node.js 或 Bun；使用 Bun 时将命令中的 node 替换为 bun。旧 v0.5.0 包仍需 Bun。
+v0.7.0 安装器与包内 CLI 均支持 Node.js 或 Bun；使用 Bun 时将命令中的 node 替换为 bun。旧 v0.5.0 包仍需 Bun。
 
 自选目录使用 `--location <绝对路径>`，预览加 `--dry-run`。Claude 使用 `--host claude`；DSH 使用 `--host dsh --profile <实际profile>`。同名 marketplace 已指向其他来源时先审阅冲突，不静默覆盖。只安装插件不会自动改当前项目的测试或可见性配置。
 
 ## 独立 Skill
 
-下载 `harness-kit-skill-0.6.0.zip`，将其中完整 harness-kit 目录放在宿主技能根的直接下一层。Codex 可使用：
+下载 `harness-kit-skill-0.7.0.zip`，将其中完整 harness-kit 目录放在宿主技能根的直接下一层。Codex 可使用：
 
 ```text
 <项目>/.agents/skills/harness-kit/SKILL.md
@@ -45,7 +45,7 @@ DSH 启用原生 Skill 文件系统 provider 时可使用 `<项目>/.dsh/skills/
 
 ## Codex 插件
 
-下载 `harness-kit-marketplace-0.6.0.zip`，解压后用其中 marketplace 目录的绝对路径：
+下载 `harness-kit-marketplace-0.7.0.zip`，解压后用其中 marketplace 目录的绝对路径：
 
 ```powershell
 codex plugin marketplace add "D:/tools/harness-kit/marketplace"
@@ -67,7 +67,7 @@ claude plugin install harness-kit@harness-kit-local
 
 ## DeepSeek Harness 原生插件
 
-下载 `harness-kit-dsh-0.6.0.zip`，将路径替换为解压后 harness-kit 包根的绝对路径：
+下载 `harness-kit-dsh-0.7.0.zip`，将路径替换为解压后 harness-kit 包根的绝对路径：
 
 ```powershell
 dsh plugin --profile web add "D:/tools/harness-kit-native/harness-kit"

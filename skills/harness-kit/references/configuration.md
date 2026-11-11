@@ -1,5 +1,7 @@
 # Configuration and non-interactive invocation
 
+For technology-neutral discovery and custom stack recipes, see [technology adapters](adapters.md). The adapter registry suggests workspaces and tasks; explicit `harness.config.json` and real project commands remain authoritative.
+
 Resolve all relative path arguments against `--root`. Do not write target-project answers into the Skill directory.
 
 ## Installed Skill entry point

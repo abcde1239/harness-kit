@@ -1,10 +1,14 @@
-import { test } from 'bun:test';
+import { test, setDefaultTimeout } from 'bun:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fixture,write,config } from './helpers.mjs';
 import { HOSTS } from '../src/host.mjs';
+
+// Match helpers' original CLI budget without relying on which test file first
+// imports that cached module. Bun resets the default between test files.
+setDefaultTimeout(15000);
 
 const cli=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../bin/harness.mjs');
 function run(root,...args) {

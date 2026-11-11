@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { safePath, matches } from '../fs.mjs';
+import { workspaceId } from './recipes.mjs';
 
 export function discoverJavascript(root, files) {
   const facts = [], workspaces = [], tasks = [], questions = [], packages = [];
@@ -22,7 +23,7 @@ export function discoverJavascript(root, files) {
     else questions.push({ id: 'workspace-patterns', message: 'Provide explicit workspaces; pnpm packages declaration could not be parsed', type: 'manual' });
   }
   for (const p of packages) {
-    const wId = p.root === '.' ? 'root' : p.root.replace(/[^a-zA-Z0-9._-]/g, '-');
+    const wId = workspaceId(p.root,packages.map(p=>p.root));
     const declared = p.root === '.' || (patterns.some(g => !g.startsWith('!') && matches(p.root, g)) && !patterns.some(g => g.startsWith('!') && matches(p.root, g.slice(1))));
     facts.push({ source: p.file, capability: 'javascript-package', declaredWorkspace: declared, testFrameworks: Object.keys({ ...p.pkg.dependencies, ...p.pkg.devDependencies }).filter(k => ['vitest','jest','@playwright/test'].includes(k)) });
     if (!declared && patterns.length) { questions.push({ id: `workspace:${wId}`, message: `${p.root} is not declared in root workspaces; include explicitly if needed`, type: 'manual' }); continue; }

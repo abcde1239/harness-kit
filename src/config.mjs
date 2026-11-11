@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { readJson, relativePath, safePath } from './fs.mjs';
+import { defaultTestPatterns } from './adapters/test-patterns.mjs';
 
 export const CONFIG = 'harness.config.json';
 const object = (v, label) => { if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error(`${label} must be an object`); };
@@ -16,8 +17,8 @@ function documents(v) {
   for (const k of ['publicRoots','internalRoots','publicPatterns','internalPatterns']) if (v[k] !== undefined) paths(v[k], `documents.${k}`, k.endsWith('Patterns'));
 }
 function tests(v) {
-  keys(v, ['include','exclude','artifacts','requireConfiguredTask'], 'tests');
-  for (const k of ['include','exclude']) if (v[k] !== undefined) paths(v[k], `tests.${k}`, true);
+  keys(v, ['detect','include','exclude','artifacts','requireConfiguredTask'], 'tests');
+  for (const k of ['detect','include','exclude']) if (v[k] !== undefined) paths(v[k], `tests.${k}`, true);
   if (v.artifacts !== undefined) paths(v.artifacts, 'tests.artifacts');
   if (v.requireConfiguredTask !== undefined) bool(v.requireConfiguredTask, 'requireConfiguredTask');
 }
@@ -27,7 +28,7 @@ export function defaults() {
     repository: { visibility: 'unknown' },
     workspaces: [{ id: 'root', root: '.' }],
     documents: { defaultAudience: 'internal', publicRoots: ['docs/public'], internalRoots: ['docs/prd','docs/decision','docs/verification','.harness'], publicPatterns: ['README.md','AGENTS.md'], internalPatterns: ['docs/structure.md','docs/agent_guide.md','**/MEMORY.md','**/memory/**','**/memories/**','**/decision/**','**/decisions/**'] },
-    tests: { include: [], exclude: [], artifacts: ['artifacts','coverage'], requireConfiguredTask: false },
+    tests: { detect: [...defaultTestPatterns], include: [], exclude: [], artifacts: ['artifacts','coverage'], requireConfiguredTask: false },
     tasks: [], publicationTargets: [], rules: {}, baseline: []
   };
 }

@@ -2,7 +2,7 @@
 
 为新旧项目接入 Agent 指令、开发流程与统一验证。需要 **Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4**；Git 功能另需 Git。分发包内置解析库，不需要额外安装 npm 依赖；源码开发需先安装依赖。旧 v0.5.0 包仍要求 Bun。
 
-核心按配置执行，扫描适配器提供建议。Go、TS、Vite、pnpm 和 Bun 是发现配方；其他栈可以直接声明工作区、测试布局和命令。
+核心按配置执行，扫描适配器提供建议。Go 和 JavaScript 保留专用发现逻辑；Python、Rust、JVM、.NET、PHP、Ruby、C/C++、Dart、Elixir 和 Swift 通过项目标记识别工作区，并要求显式测试命令。其他技术栈可通过 `harness.adapters.json` 注册声明式适配器，见[适配器参考](../../../skills/harness-kit/references/adapters.md)。
 
 ## 安装后开始使用
 
@@ -150,10 +150,10 @@ Decide whether to constrain, enable, simplify or leave it unchanged. Propose the
 从源码生成分发包：
 
 ```powershell
-bun run package:distribution artifacts/distribution/0.6.0
+bun run package:distribution artifacts/distribution/0.7.0
 ```
 
-输出目录必须不存在；省略参数时也使用 `artifacts/distribution/0.6.0`。产物包括 `skill/harness-kit`、`marketplace/plugins/harness-kit/skills/harness-kit`、Codex 的 `marketplace/.agents/plugins/marketplace.json`、Claude 的 `marketplace/.claude-plugin/marketplace.json`，以及 `native-dsh/harness-kit`。对应 ZIP 为 `harness-kit-skill-0.6.0.zip`（顶层 harness-kit）、`harness-kit-marketplace-0.6.0.zip`（顶层 marketplace）和 `harness-kit-dsh-0.6.0.zip`（顶层 harness-kit）。
+输出目录必须不存在；省略参数时也使用 `artifacts/distribution/0.7.0`。产物包括 `skill/harness-kit`、`marketplace/plugins/harness-kit/skills/harness-kit`、Codex 的 `marketplace/.agents/plugins/marketplace.json`、Claude 的 `marketplace/.claude-plugin/marketplace.json`，以及 `native-dsh/harness-kit`。对应 ZIP 为 `harness-kit-skill-0.7.0.zip`（顶层 harness-kit）、`harness-kit-marketplace-0.7.0.zip`（顶层 marketplace）和 `harness-kit-dsh-0.7.0.zip`（顶层 harness-kit）。
 
 Codex/Claude 插件目录同时含根 `plugin.json` portable manifest 与 `.claude-plugin/plugin.json` 兼容入口；技能位于插件根的 skills/，不放在 manifest 目录内。分发包附 INSTALL.md；该命令只生成本地产物，不推送仓库或上架公共目录。原 `bun run package:skill` 保留为只生成技能目录的接口。
 
@@ -222,7 +222,7 @@ harness init --answers answers.json --yes --json
 
 `covers` 用于声明根任务已验证哪些工作区；它不会自动禁用其他 ID 的子任务，配置时选择根聚合或逐包运行以避免重复执行。工具不会猜测任意 shell 脚本的行为。Vite 依赖本身不会生成测试任务；Go 每个 module 独立发现。复杂 YAML、复杂 workspace 模式、多个锁文件和聚合脚本会要求显式配置。
 
-`answers.json` 可包含 visibility、hosts（宿主 ID 数组）、managers（按工作区 ID）、testCommands（argv 或 null）、完整 config，以及 acknowledge（已阅问题 ID）。宿主选择也记录于 plan 和 managed 状态，不是 harness.config.json 新字段。自定义框架通过 config.tasks 接入，不必编写新适配器。
+`answers.json` 可包含 visibility、hosts（宿主 ID 数组）、managers（按工作区 ID）、testCommands（argv 或 null）、完整 config，以及 acknowledge（已阅问题 ID）。宿主选择也记录于 plan 和 managed 状态，不是 harness.config.json 新字段。自定义框架优先通过 config.tasks 接入；需要自动发现工作区时，再使用 `harness.adapters.json`，不需要编写 JavaScript 适配器。
 
 ## 验证与渐进治理
 

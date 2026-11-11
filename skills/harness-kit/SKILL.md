@@ -23,6 +23,7 @@ Use English for maintained agent instructions, role/task prompts, generated agen
 | Assign specialist responsibilities | [Role selection and task brief](references/roles.md); load only relevant profiles |
 | Evaluate whether an agent behavior needs a constraint or capability improvement | [Agent expert](references/roles/agent-expert.md); use observed evidence and scoped evaluation |
 | Distill coding style or architecture conventions | [Coding style](references/coding-style.md); produce evidence-backed profiles and scoped rules |
+| Connect a stack outside the built-in recipes | [Technology adapters](references/adapters.md); use project-owned data recipes or explicit tasks |
 | Prepare public artifacts or audit publication boundaries | [Publication checks](references/publication.md), only when relevant |
 
 For small changes, establish scope, implement and verify directly. Persist plans and task records when decisions, recovery or handoffs warrant them. Do not add documents or questions solely to exercise the Skill.

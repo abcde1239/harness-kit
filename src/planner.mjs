@@ -4,6 +4,7 @@ import { CONFIG, validateConfig } from './config.mjs';
 import { atomicWrite, digest, fileHash, hash, json, readJson, safePath } from './fs.mjs';
 import { managedPaths, directories, readme, structure, guide, gitignore } from './templates.mjs';
 import { HOSTS, agentBlock, cursorFrontmatter, normalizeHosts, planAgentEntry, selectedHosts } from './host.mjs';
+import { ADAPTERS_FILE } from './adapters/recipes.mjs';
 
 const STATE = '.harness/managed.json';
 export function makePlan(root, answers = {}) {
@@ -59,7 +60,7 @@ export function makePlan(root, answers = {}) {
     return { path: name, before, after, action, content };
   });
   files.push(...entries);
-  const plan = { version: 1, root: fs.realpathSync(root), hosts, files, directories, stateBefore: fileHash(root, STATE), unanswered, facts: scan.facts };
+  const plan = { version: 1, root: fs.realpathSync(root), hosts, files, directories, stateBefore: fileHash(root, STATE), adapterDigest: fileHash(root, ADAPTERS_FILE), unanswered, facts: scan.facts };
   return { ...plan, digest: digest(plan) };
 }
 export function applyPlan(root, plan) {
@@ -69,6 +70,7 @@ export function applyPlan(root, plan) {
   if (plan.directories.some(p=>!directories.includes(p) && p!=='docs/public')) throw new Error('Plan contains unsupported directories');
   if (plan.unanswered.length) throw new Error('Resolve plan.unanswered using answers before apply');
   if (fileHash(root, STATE) !== plan.stateBefore) throw new Error('Managed state changed since plan');
+  if (Object.hasOwn(plan,'adapterDigest') && fileHash(root, ADAPTERS_FILE) !== plan.adapterDigest) throw new Error('Adapter declarations changed since plan');
   // Legacy Codex-only plans remain applicable. New selections accumulate and
   // must contain exactly one managed entry for every selected file.
   const hosts = plan.hosts === undefined ? selectedHosts(root) : normalizeHosts(plan.hosts);

@@ -27,7 +27,7 @@ export function lint(root, config, { useBaseline = true } = {}) {
       if (owners.length) continue;
       const local = w.root === '.' ? file : file.slice(w.root.length+1);
       if (policy.exclude.some(p => matches(local,p))) continue;
-      const looksLikeTest = /(?:\.test\.[^/]+|\.spec\.[^/]+|_test\.go)$/.test(local);
+      const looksLikeTest = policy.detect.some(pattern => matches(local,pattern));
       if (looksLikeTest && policy.artifacts.some(p => under(local,p))) add('tests.artifacts',file,'Test code is inside an artifact directory',w.id);
       else if (looksLikeTest && policy.include.length && !policy.include.some(p => matches(local,p))) add('tests.layout',file,'Test is outside the configured framework discovery paths',w.id);
     }

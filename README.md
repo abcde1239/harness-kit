@@ -13,6 +13,8 @@ Harness Kit 帮你把编码 Agent 接入现有项目，运行项目里的测试�
 - **协调多 Agent 协作。** 按任务分配职责，使用角色提示词和宿主委派工具推进协作。
 - **整理自己的编码习惯。** 从指定项目提炼有代码依据的风格和架构规则，按适用范围用于后续开发与复核，见[使用方法](docs/public/guides/coding-style.md)。
 
+项目接入支持常见技术栈的工作区识别，也可用 `harness.adapters.json` 声明自定义标记、命令和测试路径，见[适配器参考](skills/harness-kit/references/adapters.md)。
+
 小改动直接实施和验证，复杂任务再保存计划、分工和交接。可以继续使用 Superpowers、OpenSpec 或团队已有的开发流程。
 
 ## 环境配置
@@ -39,7 +41,7 @@ Agent 会显示完整安装路径，保留已有修改，并核对宿主插件�
 
 ### 安装 Skill
 
-下载 [harness-kit-skill-0.6.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.6.0/harness-kit-skill-0.6.0.zip)，把完整 harness-kit 目录放入宿主的技能目录。以 Codex 用户目录为例：
+下载 [harness-kit-skill-0.7.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-skill-0.7.0.zip)，把完整 harness-kit 目录放入宿主的技能目录。以 Codex 用户目录为例：
 
 ```text
 ~/.agents/skills/harness-kit/
@@ -65,8 +67,8 @@ Use harness-kit to implement pagination and save the task and acceptance criteri
 
 | 宿主 | 安装包 |
 |---|---|
-| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.6.0/harness-kit-marketplace-0.6.0.zip) |
-| DeepSeek Harness | [DSH 原生插件 ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.6.0/harness-kit-dsh-0.6.0.zip) |
+| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-marketplace-0.7.0.zip) |
+| DeepSeek Harness | [DSH 原生插件 ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-dsh-0.7.0.zip) |
 
 解压后选择对应宿主的命令，将路径替换为解压目录的绝对路径：
 
@@ -126,7 +128,7 @@ harness doctor    # 诊断接入状态和验证记录
 - [文档导航](docs/public/README.md)
 - [多 Agent 协作](skills/harness-kit/references/collaboration.md)
 - [可恢复任务](skills/harness-kit/references/tasks.md)
-- [v0.6.0 版本说明](docs/public/releases/v0.6.0.md)
+- [v0.7.0 版本说明](docs/public/releases/v0.7.0.md)
 
 在源码目录验证和打包；`node scripts/verify.mjs` 运行 Node 集成测试，`bun run verify:bun` 运行原有完整测试：
 

@@ -67,7 +67,7 @@ Internal material may be tracked in private Git. In an already public repository
 
 Use `docs/verification` for acceptance methods and links to commands or tests, framework directories for executable tests, and output directories for reports. Scripts orchestrate rather than duplicate assertions. Vite is not a test framework, and discovering a dependency does not prove its framework is configured.
 
-The current discovery logic recognizes common Go/JS entry points and framework dependencies. It does not execute arbitrary framework configuration or fully interpret include/exclude settings. Static test-file recognition covers `.test.*`, `.spec.*`, and `_test.go`; actual runners and project-specific lint handle other names. `tests.include` governs paths and does not rewrite the framework's own discovery configuration.
+Discovery uses a shared registry for Go/JS and common Python, Rust, JVM, .NET, PHP, Ruby, C/C++, Dart, Elixir and Swift project markers. It does not evaluate framework configuration or infer a test command from a manifest alone. Project-owned `harness.adapters.json` recipes can add other stacks without changing the CLI; see [technology adapters](adapters.md). Static test-file recognition includes common language conventions and can be replaced with `tests.detect` per project or workspace. `tests.detect` identifies test files, while `tests.include` governs allowed paths; neither rewrites native runner discovery.
 
 When multiple stacks share a directory, recipes without path restrictions remain unrestricted. For strict layouts, list every applicable path. `not-configured` means tests are not configured, not that they passed.
 
