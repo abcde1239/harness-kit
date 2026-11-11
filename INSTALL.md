@@ -25,7 +25,7 @@ node <absolute-path-to-downloaded-install-plugin.mjs> --source <user-repository-
 node <absolute-path-to-downloaded-install-plugin.mjs> --source <same-link> --host codex --location default
 ```
 
-Use the selected runtime; substitute bun for node if using Bun. The installer supports both runtimes, but existing v0.5.0 plugin archives require Bun. Use newly built distributions for Node-only operation; report a missing package runtime before claiming readiness.
+Use the selected runtime; substitute bun for node if using Bun. Release v0.6.0 and later packages support either runtime. Older v0.5.0 archives still require Bun; report a missing package runtime before claiming readiness.
 
 Use --host claude for Claude, --host dsh --profile <actual-profile> for DSH, or --host skill for a standalone Skill. Replace --location default with --location <absolute-path> for a custom directory. The script accepts GitHub repository, Release page and Release ZIP links. ZIP links pin the owning Release and select the matching host archive. Repository and documentation links resolve the latest stable Release. Downloaded source alone is not an installed Skill.
 

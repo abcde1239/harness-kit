@@ -23,7 +23,7 @@ Harness Kit 给现有 Agent 宿主提供项目接入、可恢复工作记录和�
 
 ## 宿主支持分为两层
 
-| 宿主 | 项目指令入口 | v0.5.0 原生插件 |
+| 宿主 | 项目指令入口 | 原生插件 |
 |---|---|---|
 | Codex | AGENTS.md，可选本地 hooks | 提供，隔离 CLI 安装实测通过 |
 | Claude Code | CLAUDE.md | 提供，隔离 CLI 安装实测通过 |

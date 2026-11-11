@@ -15,11 +15,9 @@ Harness Kit connects coding agents to existing projects, runs the project's test
 
 Implement and verify small changes directly. Save plans, assignments, and handoffs when the work warrants them. Keep using Superpowers, OpenSpec, or your team's existing process.
 
-**Availability:** The v0.5.0 downloads below still require Bun and do not include Node support, coding-style distillation, specialist role profiles (including the Agent expert), or the link-install entry point. Build a distribution from current source for Node support, coding-style distillation, and specialist roles. See below for link installation of released packages.
-
 ## Environment
 
-Current source and newly built packages support **Node.js >= 22.12.0 or Bun >= 1.3.4** in the Agent's execution environment. Git checks also require Git. Skills and plugins include the CLI; no `bun setup` or global `harness` command is needed.
+Requires **Node.js >= 22.12.0 or Bun >= 1.3.4** in the Agent's execution environment. Git checks also require Git. Skills and plugins include the CLI; no `bun setup` or global `harness` command is needed.
 
 ## Let your Agent install a released version
 
@@ -35,13 +33,13 @@ First ask whether I want the default installation location or a custom directory
 
 The Agent shows the full installation path, preserves existing edits, and checks the host's plugin status. A custom location stores persistent plugin source files; caches remain host-managed. A restart or new session may be required.
 
-The installer comes from repository source; the plugin package comes from the latest stable Release, currently v0.5.0. Link installation does not add unreleased source features to older packages. For Node-only use, build a distribution from current source; v0.5.0 archives still require Bun.
+The installer and plugin package come from the selected Release. Repository links install the latest stable version; use a Release link to pin a version.
 
 ## Manual installation
 
 ### Install the Skill
 
-Download [harness-kit-skill-0.5.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.5.0/harness-kit-skill-0.5.0.zip). Put the complete `harness-kit` directory in your host's Skill directory. For a Codex user installation:
+Download [harness-kit-skill-0.6.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.6.0/harness-kit-skill-0.6.0.zip). Put the complete `harness-kit` directory in your host's Skill directory. For a Codex user installation:
 
 ```text
 ~/.agents/skills/harness-kit/
@@ -67,8 +65,8 @@ Use harness-kit to implement pagination and save the task and acceptance criteri
 
 | Host | Package |
 |---|---|
-| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.5.0/harness-kit-marketplace-0.5.0.zip) |
-| DeepSeek Harness | [Native DSH plugin ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.5.0/harness-kit-dsh-0.5.0.zip) |
+| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.6.0/harness-kit-marketplace-0.6.0.zip) |
+| DeepSeek Harness | [Native DSH plugin ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.6.0/harness-kit-dsh-0.6.0.zip) |
 
 Extract the package and run the commands for your host. Replace the paths with the extracted directories' absolute paths:
 
@@ -128,7 +126,7 @@ Running `harness` without arguments opens a Chinese menu. Use `harness help --al
 - [Documentation index (Chinese)](docs/public/README.md)
 - [Multi-agent collaboration](skills/harness-kit/references/collaboration.md)
 - [Persistent tasks](skills/harness-kit/references/tasks.md)
-- [v0.5.0 release notes (Chinese)](docs/public/releases/v0.5.0.md)
+- [v0.6.0 release notes (Chinese)](docs/public/releases/v0.6.0.md)
 
 Validate and package from the source directory. The Node verifier runs Node integration tests; use `bun run verify:bun` for the original full suite:
 

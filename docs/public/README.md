@@ -8,7 +8,7 @@
 | 把链接交给 Agent，选择位置后自动安装配置 | [Agent 安装入口](../../INSTALL.md) |
 | 接入项目、选择宿主、运行验证、诊断问题 | [使用指南](guides/usage.md) |
 | 判断适不适合自己的项目 | [能力与适用范围](reference/capabilities.md) |
-| 查看版本变化与升级方式 | [v0.5.0 版本说明](releases/v0.5.0.md) |
+| 查看版本变化与升级方式 | [v0.6.0 版本说明](releases/v0.6.0.md) |
 | 查看生成目录、monorepo 和框架适配 | [目标项目布局](../../skills/harness-kit/references/project-layout.md) |
 | 多 Agent 分工、只读复核和交接 | [协作提示词](../../skills/harness-kit/references/collaboration.md) |
 | 选择产品、设计、前后端、测试等职责 | [角色提示词与任务单](../../skills/harness-kit/references/roles.md) |

@@ -1,6 +1,6 @@
 # 使用指南
 
-为新旧项目接入 Agent 指令、开发流程与统一验证。当前源码与新构建包支持 **Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4**；Git 功能另需 Git。分发包内置解析库，不需要额外安装 npm 依赖；源码开发需先安装依赖。已发布 v0.5.0 包仍要求 Bun。
+为新旧项目接入 Agent 指令、开发流程与统一验证。需要 **Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4**；Git 功能另需 Git。分发包内置解析库，不需要额外安装 npm 依赖；源码开发需先安装依赖。旧 v0.5.0 包仍要求 Bun。
 
 核心按配置执行，扫描适配器提供建议。Go、TS、Vite、pnpm 和 Bun 是发现配方；其他栈可以直接声明工作区、测试布局和命令。
 
@@ -150,10 +150,10 @@ Decide whether to constrain, enable, simplify or leave it unchanged. Propose the
 从源码生成分发包：
 
 ```powershell
-bun run package:distribution artifacts/distribution/0.5.0
+bun run package:distribution artifacts/distribution/0.6.0
 ```
 
-输出目录必须不存在；省略参数时也使用 `artifacts/distribution/0.5.0`。产物包括 `skill/harness-kit`、`marketplace/plugins/harness-kit/skills/harness-kit`、Codex 的 `marketplace/.agents/plugins/marketplace.json`、Claude 的 `marketplace/.claude-plugin/marketplace.json`，以及 `native-dsh/harness-kit`。对应 ZIP 为 `harness-kit-skill-0.5.0.zip`（顶层 harness-kit）、`harness-kit-marketplace-0.5.0.zip`（顶层 marketplace）和 `harness-kit-dsh-0.5.0.zip`（顶层 harness-kit）。
+输出目录必须不存在；省略参数时也使用 `artifacts/distribution/0.6.0`。产物包括 `skill/harness-kit`、`marketplace/plugins/harness-kit/skills/harness-kit`、Codex 的 `marketplace/.agents/plugins/marketplace.json`、Claude 的 `marketplace/.claude-plugin/marketplace.json`，以及 `native-dsh/harness-kit`。对应 ZIP 为 `harness-kit-skill-0.6.0.zip`（顶层 harness-kit）、`harness-kit-marketplace-0.6.0.zip`（顶层 marketplace）和 `harness-kit-dsh-0.6.0.zip`（顶层 harness-kit）。
 
 Codex/Claude 插件目录同时含根 `plugin.json` portable manifest 与 `.claude-plugin/plugin.json` 兼容入口；技能位于插件根的 skills/，不放在 manifest 目录内。分发包附 INSTALL.md；该命令只生成本地产物，不推送仓库或上架公共目录。原 `bun run package:skill` 保留为只生成技能目录的接口。
 
