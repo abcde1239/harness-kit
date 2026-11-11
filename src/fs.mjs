@@ -48,12 +48,13 @@ export function atomicWrite(root, name, content) {
   finally { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); }
 }
 export const defaultIgnore = ['.git', 'node_modules', '.harness', 'artifacts', 'coverage', 'dist', 'build'];
-export function walk(root, { ignore = defaultIgnore } = {}) {
+export function walk(root, { ignore = defaultIgnore, prune = [] } = {}) {
   const result = [];
   function visit(dir, prefix) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       if (ignore.includes(entry.name)) continue;
       const name = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if(prune.some(p=>under(name,p)))continue;
       if (entry.isSymbolicLink()) result.push({ path: name, type: 'symlink' });
       else if (entry.isDirectory()) visit(path.join(dir, entry.name), name);
       else if (entry.isFile()) result.push({ path: name, type: 'file' });

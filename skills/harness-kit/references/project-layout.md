@@ -4,11 +4,15 @@
 
 ## 实际生成范围
 
-CLI 的 plan/apply 管理 `harness.config.json`、`docs/agent_guide.md`、`docs/structure.md`、`.gitignore`，在缺少根 `README.md` 时补充公开入口。已有项目 README 保留；已有 gitignore 和目录说明发生差异时给出冲突建议。默认目录包括 docs/prd、docs/decision、docs/verification、docs/public/guides、docs/public/reference、docs/public/examples 和 scripts。没有内容的目录不会自动成为 Git 跟踪项。
+CLI 的 plan/apply 管理 `harness.config.json`、所选宿主原生指令入口、`docs/agent_guide.md`、`docs/structure.md`、`.gitignore`，在缺少根 `README.md` 时补充公开入口。已有宿主入口通过受管段合并，保留外部正文及用户修改；已有项目 README 保留；已有 gitignore 和目录说明发生差异时给出冲突建议。默认目录包括 docs/prd、docs/decision、docs/verification、docs/public/guides、docs/public/reference、docs/public/examples 和 scripts。没有内容的目录不会自动成为 Git 跟踪项。
 
-apply 维护 `.harness/managed.json`；向导保存 `.harness/plan.json`。Skill 的答案可放 `.harness/answers.json`。计划包含完整建议内容，应作为内部开发资料管理。
+`--hosts` 选择 codex/claude/gemini/cursor/opencode/dsh。dsh 即 DeepSeek Harness（别名 deepseek-harness）；Codex/OpenCode/dsh 共用 AGENTS.md，Claude 为 CLAUDE.md，Gemini 为 GEMINI.md，Cursor 为 .cursor/rules/harness-kit.mdc。新项目显式选择只生成所选入口；未指定默认 Codex，历史选择累计保留，不因重接少选而删除文件。选择保存在接入状态，不给 config schema 添加 hosts。dsh 默认还读取 CLAUDE.md 与 local overlays，同组内容完全一致（trim 后）才去重，已有不同内容须复核；详细插件与 Skill 发现边界见[配置与计划](configuration.md)。
 
-已有文件按摘要判断是否安全更新；冲突保留原文件。不会自动生成业务源码、测试用例、框架配置、CI workflow、AGENTS.md、verify.sh 或各 Agent 品牌目录。原 gen-new 的 `.agent/*`、指南和 verify.sh 保留；它们的内容不意味着已有业务测试通过。
+apply 维护 `.harness/managed.json`；向导保存 `.harness/plan.json`。Skill 的答案可放 `.harness/answers.json`。run 将输入摘要与验证范围保存到 `.harness/verification.json`，doctor 只读核对是否仍适用。需要恢复的工作任务位于 `.harness/tasks/<id>.json`，活动指针为 `.harness/active-task.json`；任务不自动运行。计划和任务资料应作为内部开发资料管理。
+
+显式使用 `init --hooks` 时，另合并 `.codex/hooks.json` 并生成 `.harness/hooks` 下的项目运行器、归属和会话摘要。该适配仅用于获信任的 Codex 本地会话，含机器路径，应作为本地配置管理；默认初始化不写 hooks。
+
+已有文件按摘要判断是否安全更新；冲突保留原文件。不会自动生成业务源码、测试用例、框架配置、CI workflow 或 verify.sh，也不自动设置宿主模型、权限或非 Codex hooks。原 gen-new 的 `.agent/*`、指南和 verify.sh 保留；它们的内容不意味着已有业务测试通过。静态入口存在不代表实际会话已加载，需核实宿主局部/全局规则。
 
 ## 单项目参考布局
 
@@ -19,12 +23,16 @@ project/
 ├── harness.config.json       工作区、文档边界、测试路径、任务、baseline
 ├── README.md                 根项目说明，默认公开
 ├── .gitignore                依赖、产物、本地环境与临时记录
-├── AGENTS.md                 可选，沿用现有协作入口并链接 agent_guide
+├── AGENTS.md / CLAUDE.md / GEMINI.md  按宿主选择生成，受管段保留用户正文
+├── .cursor/rules/            选择 Cursor 时生成 harness-kit.mdc
 ├── MEMORY.md                 可选，内部开发经验
 ├── .harness/
 │   ├── managed.json          apply 的管理摘要
 │   ├── answers.json          Skill 回答记录，按需保存
-│   └── plan.json             可审阅计划
+│   ├── plan.json             可审阅计划
+│   ├── verification.json     与当前输入关联的本地验证证据
+│   ├── active-task.json      当前工作任务指针，按需存在
+│   └── tasks/                可恢复目标、人工验收、备注和验证关联
 ├── docs/
 │   ├── agent_guide.md        协作与验证约定
 │   ├── structure.md          各目录文档职责与边界（内部）
@@ -41,7 +49,7 @@ project/
 └── artifacts/、coverage/    按实际框架配置存放运行产物
 ```
 
-默认公开路径包括根 README.md 与 docs/public；显式配置继续优先，已有项目若 publicPatterns 已覆盖默认值，接入新约定时应把 README.md 合并进去。`MEMORY.md`、memory/decision 等受保护路径始终不可公开。默认内部范围包括 docs/prd、docs/decision、docs/verification、docs/structure.md、docs/agent_guide.md 和 .harness。其他过程目录、任务记录和 Agent 上下文应在配置中加入 internalRoots/internalPatterns；不要用宽泛公开规则代替分类。
+默认公开路径包括根 README.md 与 docs/public。没有既有治理配置时，新生成的通用宿主入口可纳入建议公开规则；已有入口及显式 publicPatterns 不自动扩大，需要审阅后合并适用范围。自定义 Agent 指令含内部内容时应另行分类，不整体放行。`MEMORY.md`、memory/decision 等受保护路径始终不可公开。默认内部范围包括 docs/prd、docs/decision、docs/verification、docs/structure.md、docs/agent_guide.md 和 .harness。其他过程目录、任务记录和 Agent 上下文应在配置中加入 internalRoots/internalPatterns；不要用宽泛公开规则代替分类。
 
 自带 gitignore 忽略依赖、常见根构建目录、产物、本地 env（保留 .env.example/.env.sample）、日志、操作系统临时文件，以及 .harness 的本地答案和计划。私有仓库保留内部文档和 managed.json 可提交；声明为公开仓库时额外忽略默认内部文档、memory/decision 和整个 .harness。自定义内部路径仍需补充忽略规则。已有 gitignore 保留并由 Agent 合并差异。
 
@@ -81,8 +89,9 @@ apps/services/packages 只是示例名；现有目录不迁移。配置中的 wo
 
 ## 统一验证与发布
 
-- `harness lint`：只检查项目约定；公开仓库同时检查 Git index。
-- `harness verify`：约定检查加配置任务，保留每个工作区的结果。
+- `harness check`：只检查项目约定；公开仓库同时检查 Git index。
+- `harness run`：约定检查加配置任务，保留每个工作区的结果和本地验证记录。
+- `harness doctor`：诊断接入与证据是否适用；不会执行测试或确认真实会话加载。
 - 有 scripts/verify.sh 或 package verify 入口时，明确它与 harness 谁调用谁，避免递归。`test` 脚本应调用真实测试 runner。
 - CI 使用相同配置和检查入口；当前 CLI 不自动写 workflow，需要在 CI 安装 Bun、配置任务需要的工具，并提供可用的 Harness Kit CLI。
 - 公开导出到独立新目录，例如 artifacts/public-snapshot，检查真实 manifest 和文件；该目录不带私有 Git 历史。原私有仓库直接转公开还需 history 与平台资料审阅。

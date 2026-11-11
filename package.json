@@ -1,9 +1,9 @@
 {
   "name": "harness-kit",
-  "version": "0.2.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
-  "description": "Configurable project harness generation and publication governance",
+  "description": "Agent project onboarding, collaborative development and evidence-based verification",
   "engines": { "bun": ">=1.3.4" },
   "packageManager": "bun@1.3.4",
   "bin": { "harness": "bin/harness.mjs", "harness-kit": "bin/harness.mjs" },
@@ -12,6 +12,7 @@
     "verify": "bun scripts/verify.mjs",
     "harness": "bun bin/harness.mjs",
     "setup": "bun scripts/install.mjs",
-    "package:skill": "bun scripts/package-skill.mjs"
+    "package:skill": "bun scripts/package-skill.mjs",
+    "package:distribution": "bun scripts/package-distribution.mjs"
   }
 }

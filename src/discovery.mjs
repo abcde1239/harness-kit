@@ -8,7 +8,14 @@ export function inspect(root) {
   const entries = walk(root), files = entries.filter(e => e.type === 'file').map(e => e.path);
   if (fs.existsSync(safePath(root, CONFIG))) {
     const config = loadConfig(root);
-    return { facts: [{ source: CONFIG, capability: 'explicit-config' }], questions: config.repository.visibility === 'unknown' ? [visibilityQuestion] : [], suggestedConfig: config, files };
+    // Discover drift without replacing an explicit, user-owned contract.
+    const recipes = [discoverJavascript(root,files),discoverGo(root,files)];
+    const roots = new Set(config.workspaces.map(w=>w.root));
+    const workspaceCandidates = recipes.flatMap(r=>r.workspaces);
+    const workspaces = [...new Map(workspaceCandidates.filter(w=>!roots.has(w.root)).map(w=>[w.root,w])).values()];
+    const tasks = recipes.flatMap(r=>r.tasks).filter(t=>!config.tasks.some(existing=>existing.id===t.id || (existing.workspace===t.workspace && existing.kind===t.kind)));
+    const drift = { workspaces, tasks, questions: recipes.flatMap(r=>r.questions), notice:'Suggestions only; explicit configuration is unchanged.' };
+    return { facts: [{ source: CONFIG, capability: 'explicit-config' }], questions: config.repository.visibility === 'unknown' ? [visibilityQuestion] : [], suggestedConfig: config, drift, files };
   }
   const config = defaults(), facts = [], questions = [visibilityQuestion], ws = new Map();
   for (const adapter of [discoverJavascript, discoverGo]) {

@@ -26,7 +26,7 @@ export function defaults() {
     schemaVersion: 1,
     repository: { visibility: 'unknown' },
     workspaces: [{ id: 'root', root: '.' }],
-    documents: { defaultAudience: 'internal', publicRoots: ['docs/public'], internalRoots: ['docs/prd','docs/decision','docs/verification','.harness'], publicPatterns: ['README.md'], internalPatterns: ['docs/structure.md','docs/agent_guide.md','**/MEMORY.md','**/memory/**','**/memories/**','**/decision/**','**/decisions/**'] },
+    documents: { defaultAudience: 'internal', publicRoots: ['docs/public'], internalRoots: ['docs/prd','docs/decision','docs/verification','.harness'], publicPatterns: ['README.md','AGENTS.md'], internalPatterns: ['docs/structure.md','docs/agent_guide.md','**/MEMORY.md','**/memory/**','**/memories/**','**/decision/**','**/decisions/**'] },
     tests: { include: [], exclude: [], artifacts: ['artifacts','coverage'], requireConfiguredTask: false },
     tasks: [], publicationTargets: [], rules: {}, baseline: []
   };

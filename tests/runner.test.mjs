@@ -54,3 +54,15 @@ test('Windows cmd shim launches with restricted arguments',async()=>{
   assert.equal((await verify(root,c)).exitCode,0);
   c.tasks[0].argv.push('unsafe&arg');assert.equal((await verify(root,c)).tasks[0].status,'blocked');
 });
+
+test('nested package scripts use the current Bun instead of a PATH downloader proxy',async()=>{
+  const root=fixture({'package.json':JSON.stringify({scripts:{test:'bun check.mjs'}}),'check.mjs':'console.log("native Bun ran");','proxy/bun.cmd':'@echo off\r\nexit /b 77\r\n','proxy/bun':'#!/bin/sh\nexit 77\n'});
+  if(process.platform!=='win32')fs.chmodSync(path.join(root,'proxy/bun'),0o755);
+  const previous=process.env.PATH;
+  process.env.PATH=`${path.join(root,'proxy')}${path.delimiter}${previous??''}`;
+  try {
+    const result=await verify(root,config(root,{tasks:[{id:'test',argv:['bun','run','test']}]}));
+    assert.equal(result.exitCode,0,JSON.stringify(result));
+    assert.ok(result.tasks[0].output.includes('native Bun ran'));
+  }finally{if(previous===undefined)delete process.env.PATH;else process.env.PATH=previous;}
+});

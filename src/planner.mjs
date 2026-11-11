@@ -3,12 +3,13 @@ import { inspect } from './discovery.mjs';
 import { CONFIG, validateConfig } from './config.mjs';
 import { atomicWrite, digest, fileHash, hash, json, readJson, safePath } from './fs.mjs';
 import { managedPaths, directories, readme, structure, guide, gitignore } from './templates.mjs';
+import { HOSTS, agentBlock, cursorFrontmatter, normalizeHosts, planAgentEntry, selectedHosts } from './host.mjs';
 
 const STATE = '.harness/managed.json';
 export function makePlan(root, answers = {}) {
   const scan = inspect(root);
   let config = structuredClone(scan.suggestedConfig);
-  const allowed = ['visibility','managers','testCommands','config','acknowledge'];
+  const allowed = ['visibility','managers','testCommands','config','acknowledge','hosts'];
   for (const k of Object.keys(answers)) if (!allowed.includes(k)) throw new Error(`Unknown answers field: ${k}`);
   if (answers.config) config = answers.config;
   if (answers.visibility) config.repository = { visibility: answers.visibility };
@@ -23,7 +24,7 @@ export function makePlan(root, answers = {}) {
     if (fs.existsSync(safePath(root, pkgPath))) {
       const pkg = readJson(root, pkgPath);
       for (const [name,kind] of [['test','test'],['lint','lint'],['typecheck','typecheck'],['harness-lint','lint']]) if (pkg.scripts?.[name] && !config.tasks.some(t => t.id === `${w.id}:${name}`) && !(kind === 'test' && Object.hasOwn(answers.testCommands ?? {}, w.id))) {
-        if (/no test specified|--recursive|(?:^|\s)-r(?:\s|$)|--workspaces|turbo\s|nx\s|--filter|harness.*\s(?:verify|lint)/.test(pkg.scripts[name])) continue;
+        if (/no test specified|--recursive|(?:^|\s)-r(?:\s|$)|--workspaces|turbo\s|nx\s|--filter|\bharness(?:-kit)?(?:\.mjs)?\s+(?:verify|lint|run|check|init|setup)\b/.test(pkg.scripts[name])) continue;
         config.tasks.push({ id: `${w.id}:${name}`, workspace: w.id, kind, argv: [manager,'run',name] });
       }
     }
@@ -36,6 +37,18 @@ export function makePlan(root, answers = {}) {
     return !(answers.acknowledge ?? []).includes(q.id) && !answers.config;
   });
   const previous = fs.existsSync(safePath(root, STATE)) ? readJson(root, STATE) : { files: {} };
+  const hosts = selectedHosts(root, answers.hosts);
+  const entryFiles = new Set(), entries = [];
+  for (const host of hosts) if (!entryFiles.has(HOSTS[host].file)) {
+    entries.push(planAgentEntry(root, previous, host)); entryFiles.add(HOSTS[host].file);
+  }
+  // Only freshly generated generic instructions may be classified automatically.
+  // Existing host files may contain private team notes, even with our block added.
+  // Existing/explicit policy remains a user decision and is never broadened.
+  if (!answers.config && fileHash(root, CONFIG) === null) {
+    config.documents.publicPatterns = [...new Set([...config.documents.publicPatterns, ...entries.filter(f => f.action === 'create').map(f => f.path)])];
+    config = validateConfig(config, root);
+  }
   const contents = { [CONFIG]: json(config), 'docs/agent_guide.md': guide, 'docs/structure.md': structure, '.gitignore': gitignore(config.repository.visibility) };
   // An existing project introduction is never replaced with a generic template.
   if (fileHash(root,'README.md') === null || previous.files?.['README.md']) contents['README.md'] = readme;
@@ -45,7 +58,8 @@ export function makePlan(root, answers = {}) {
     const action = before === after ? 'unchanged' : before === null ? 'create' : previous.files?.[name] === before ? 'update' : 'conflict';
     return { path: name, before, after, action, content };
   });
-  const plan = { version: 1, root: fs.realpathSync(root), files, directories, stateBefore: fileHash(root, STATE), unanswered, facts: scan.facts };
+  files.push(...entries);
+  const plan = { version: 1, root: fs.realpathSync(root), hosts, files, directories, stateBefore: fileHash(root, STATE), unanswered, facts: scan.facts };
   return { ...plan, digest: digest(plan) };
 }
 export function applyPlan(root, plan) {
@@ -55,18 +69,31 @@ export function applyPlan(root, plan) {
   if (plan.directories.some(p=>!directories.includes(p) && p!=='docs/public')) throw new Error('Plan contains unsupported directories');
   if (plan.unanswered.length) throw new Error('Resolve plan.unanswered using answers before apply');
   if (fileHash(root, STATE) !== plan.stateBefore) throw new Error('Managed state changed since plan');
+  // Legacy Codex-only plans remain applicable. New selections accumulate and
+  // must contain exactly one managed entry for every selected file.
+  const hosts = plan.hosts === undefined ? selectedHosts(root) : normalizeHosts(plan.hosts);
+  if (plan.hosts !== undefined && (JSON.stringify(hosts) !== JSON.stringify(plan.hosts) || JSON.stringify(selectedHosts(root, hosts)) !== JSON.stringify(hosts))) throw new Error('Invalid host selection in plan');
+  const hostFiles = new Set(Object.values(HOSTS).map(host => host.file));
+  const selectedFiles = new Set(hosts.map(id => HOSTS[id].file));
+  if ([...selectedFiles].some(file => !plan.files.some(f => f.path === file)) || plan.files.some(f => hostFiles.has(f.path) && !selectedFiles.has(f.path))) throw new Error('Plan host entries do not match selected hosts');
   for (const dir of plan.directories) safePath(root, dir);
   for (const f of plan.files) {
     if (f.action === 'conflict') continue; // Preserve unowned/user-modified files and surface them in result.
     if (fileHash(root, f.path) !== f.before || hash(f.content) !== f.after) throw new Error(`Stale plan: ${f.path}`);
     if (f.path === CONFIG) validateConfig(JSON.parse(f.content), root);
+    if (hostFiles.has(f.path)) {
+      const block = agentBlock(f.content);
+      if (block.status !== 'present' || block.hash !== f.blockHash) throw new Error('Invalid Agent block in plan');
+      if (f.path === HOSTS.cursor.file && cursorFrontmatter(f.content).status !== 'valid') throw new Error('Invalid Cursor frontmatter in plan');
+    }
   }
   const changed = [], backups = [], previous = plan.stateBefore ? readJson(root, STATE) : { files: {} };
-  const state = { version: 1, files: { ...previous.files } };
+  const state = { version: 1, hosts, files: { ...previous.files }, blocks: { ...previous.blocks } };
   try {
     for (const f of plan.files) {
       if (f.action === 'conflict') continue;
       state.files[f.path] = f.after;
+      if (hostFiles.has(f.path)) state.blocks[f.path] = f.blockHash;
       if (f.action === 'unchanged') continue;
       backups.push({ path: f.path, before: f.before === null ? null : fs.readFileSync(safePath(root, f.path)), written: f.after });
       atomicWrite(root, f.path, f.content); changed.push(f.path);

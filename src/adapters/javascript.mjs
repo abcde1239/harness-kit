@@ -42,7 +42,7 @@ export function discoverJavascript(root, files) {
       if (/--recursive|(?:^|\s)-r(?:\s|$)|--workspaces|turbo\s|nx\s|--filter/.test(scripts[script])) {
         questions.push({ id: `aggregate:${wId}:${script}`, message: `${p.file} ${script} appears to aggregate other workspaces; declare covers to avoid duplicate execution`, type: 'manual' }); continue;
       }
-      if (/harness(?:-kit)?(?:\.mjs)?\s+(verify|lint)/.test(scripts[script])) continue;
+      if (/harness(?:-kit)?(?:\.mjs)?\s+(verify|lint|run|check|init|setup)\b/.test(scripts[script])) continue;
       tasks.push({ id: `${wId}:${script}`, workspace: wId, kind, argv: [manager, 'run', script] });
     }
   }

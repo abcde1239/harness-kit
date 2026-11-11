@@ -7,6 +7,7 @@ import {install} from '../scripts/install.mjs';
 import {packageSkill} from '../scripts/package-skill.mjs';
 import {validateSkill} from '../scripts/validate-skill.mjs';
 import {inspect} from '../src/discovery.mjs';
+import {version} from '../package.json';
 setDefaultTimeout(15000);
 
 test('portable installed Skill bundle executes independently from source repository',async()=>{
@@ -99,4 +100,52 @@ test('distributed Skill adapts gen-new monorepo, runs native tests and enforces 
   write(root,'artifacts/public/MEMORY.md','Private project notes');
   const leaked=run('publication-check','--manifest','.harness/publication.json');
   assert.equal(leaked.code,1);assert.ok(leaked.data.findings.some(f=>f.protected));
+});
+
+test('installed bundle performs one-command onboarding, records current evidence and connects local hooks',async()=>{
+  const base=fixture(),skillDir=path.join(base,'installed skill'),binDir=path.join(base,'bin');
+  const target=fixture({'package.json':{packageManager:'bun@1.3.4',scripts:{test:'bun test ./tests'}},'AGENTS.md':'# User project rules\nKeep my convention.\n','tests/smoke.test.ts':"import {test,expect} from 'bun:test';test('smoke',()=>expect(2+3).toBe(5));"});
+  await install({skillDir,binDir});
+  const entry=path.join(skillDir,'scripts/harness.mjs');
+  const call=(...args)=>{
+    const r=Bun.spawnSync([process.execPath,entry,...args,'--root',target,'--json'],{cwd:target,stdout:'pipe',stderr:'pipe',env:{...process.env,HARNESS_ACTIVE:''}});
+    return {code:r.exitCode,data:JSON.parse(Buffer.from(r.stdout.length?r.stdout:r.stderr).toString())};
+  };
+  const result=call('init','--private','--hooks','--yes');
+  assert.equal(result.code,0,JSON.stringify(result.data));
+  assert.equal(result.data.verification.tasks[0].status,'passed');
+  assert.equal(result.data.readiness.status,'ready');
+  assert.equal(result.data.hooks.status,'configured');
+  assert.ok(fs.readFileSync(path.join(target,'AGENTS.md'),'utf8').startsWith('# User project rules\nKeep my convention.\n'));
+  assert.ok(fs.existsSync(path.join(skillDir,'references/collaboration.md')));
+  assert.ok(fs.existsSync(path.join(target,'.harness/hooks/runtime.mjs')));
+  write(target,'src/new.ts','export const changed=true;');
+  assert.equal(call('doctor').data.status,'needs-attention');
+  assert.equal(call('run').data.readiness.status,'ready');
+  assert.equal(call('--version').data.version,version);
+});
+
+test('portable bundle configures five other hosts and resumes a verified work task',async()=>{
+  const base=fixture(),skillDir=path.join(base,'portable skill'),target=fixture({
+    'package.json':{packageManager:'bun@1.3.4',scripts:{test:'bun test ./tests'}},
+    'tests/sum.test.ts':"import {test,expect} from 'bun:test'; test('sum',()=>expect(2+3).toBe(5));",
+    'CLAUDE.md':'# Existing team instructions\nPreserve this.\n'
+  });
+  await packageSkill(skillDir);
+  const call=(...args)=>{
+    const r=Bun.spawnSync([process.execPath,path.join(skillDir,'scripts/harness.mjs'),...args,'--root',target,'--json'],{cwd:target,stdout:'pipe',stderr:'pipe',env:{...process.env,HARNESS_ACTIVE:''}});
+    const data=JSON.parse(Buffer.from(r.stdout.length?r.stdout:r.stderr).toString());
+    assert.equal(r.exitCode,0,JSON.stringify(data));return data;
+  };
+  const initialized=call('init','--private','--hosts','claude,gemini,cursor,opencode,dsh','--yes');
+  assert.equal(initialized.readiness.checks.find(c=>c.entry?.host==='dsh').entry.loaded,'not-confirmed');
+  for(const file of ['CLAUDE.md','GEMINI.md','.cursor/rules/harness-kit.mdc','AGENTS.md']) assert.ok(fs.existsSync(path.join(target,file)),file);
+  assert.ok(fs.readFileSync(path.join(target,'CLAUDE.md'),'utf8').startsWith('# Existing team instructions\nPreserve this.\n'));
+  call('task','start','sum','--title','Verify sum','--accept','Two plus three is five');
+  call('task','note','--note','Confirmed fixture uses native Bun tests','--next','Run acceptance');
+  assert.equal(call('task','resume','sum').task.notes.length,1);
+  call('run','--work','sum');
+  call('task','accept','--criterion','c1','--evidence','Native sum test passes with expected value 5');
+  assert.equal(call('task','finish').status,'completed');
+  assert.equal(call('task','status').status,'completed');
 });

@@ -19,7 +19,7 @@ test('fresh project exports its default root README and public sections without 
   const c=JSON.parse(fs.readFileSync(path.join(root,'harness.config.json'),'utf8'));
   const result=exportSnapshot(root,c,'artifacts/public');
   assert.equal(result.exitCode,0,JSON.stringify(result));
-  assert.deepEqual(result.manifest.entries.map(e=>e.path).sort(),['README.md','docs/public/guides/start.md']);
+  assert.deepEqual(result.manifest.entries.map(e=>e.path).sort(),['AGENTS.md','README.md','docs/public/guides/start.md']);
   assert.equal(fs.existsSync(path.join(root,'artifacts/public/docs/structure.md')),false);
   assert.equal(checkManifest(root,c,result.manifest).exitCode,0);
 });

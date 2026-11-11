@@ -1,4 +1,4 @@
 interface:
-  display_name: "Harness Kit 项目治理"
-  short_description: "扫描项目并问答适配 harness-lint，保留测试约定与内部文档边界"
-  default_prompt: "使用 $harness-kit 为当前项目配置适合的 harness-lint，先扫描并只询问缺失需求，再应用改造并验证。"
+  display_name: "Harness Kit 开发与验证"
+  short_description: "多宿主接入与任务验收，支持开发修复及经授权的多 Agent 协作"
+  default_prompt: "使用 $harness-kit 接入当前项目的宿主指令，保留已有工作流，按需记录可恢复任务并完成实际验证与验收。"

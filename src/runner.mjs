@@ -31,7 +31,10 @@ async function runTask(root, config, task, signal) {
   const cwd = safePath(root, w.root === '.' ? task.cwd : `${w.root}/${task.cwd}`, { allowMissing: false });
   const launch = launchCommand(task.argv);
   const start = Date.now(); let output = '', reason = null; const readers=[];
-  const child = Bun.spawn([launch.command,...launch.args], { cwd, windowsHide:true, windowsVerbatimArguments:launch.windowsVerbatimArguments, detached:process.platform !== 'win32', env:{...process.env,HARNESS_ACTIVE:'1'}, stdin:'ignore',stdout:'pipe',stderr:'pipe' });
+  // Nested package scripts use the same Bun, even when PATH starts with a
+  // downloader/proxy named bun. This only changes the child environment.
+  const taskEnv={...process.env,PATH:`${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH??''}`,HARNESS_ACTIVE:'1'};
+  const child = Bun.spawn([launch.command,...launch.args], { cwd, windowsHide:true, windowsVerbatimArguments:launch.windowsVerbatimArguments, detached:process.platform !== 'win32', env:taskEnv, stdin:'ignore',stdout:'pipe',stderr:'pipe' });
   async function capture(stream) {
     const reader=stream.getReader(); readers.push(reader);
     try { while(true) {const {done,value}=await reader.read(); if(done)break;output=(output+Buffer.from(value).toString()).slice(-32768);} }

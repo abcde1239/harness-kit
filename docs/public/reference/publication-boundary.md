@@ -1,6 +1,6 @@
 # 公开与内部资料边界
 
-本仓库的公开交付是 Bun CLI、核心模块、测试、Codex Skill 与使用文档。内部开发资料可以进入私有 Git，但不进入公开仓库或其历史。
+本仓库的公开交付是 Bun CLI、核心模块、测试、跨宿主 Skill、插件打包器与使用文档。独立 Skill、Codex/Claude 插件和 DSH 原生插件通过 Release 附件分发，见[安装指南](../guides/installation.md)。内部开发资料可以进入私有 Git，但不进入公开仓库或其历史。
 
 | 范围 | 本项目位置 | 处理方式 |
 |---|---|---|
@@ -8,7 +8,7 @@
 | 详细公开文档 | docs/public/guides、reference、examples | 按公开清单导出 |
 | 产品实现 | bin、src、scripts | 公开；脚本不能依赖内部任务表 |
 | 自动测试及合成 fixtures | tests | 公开；真实项目资料不放入 fixtures |
-| Skill 与参考资料 | skills/harness-kit | 公开；安装时构建自包含 CLI |
+| Skill 与参考资料 | skills/harness-kit | 公开；分发打包时构建自包含 CLI，消费者使用 Release 附件 |
 | 示例、包配置与 CI | examples、package.json、harness.config.json、.gitignore、.github/workflows | 公开 |
 | PRD、决策、开发任务和验收过程 | docs/prd、docs/decision、docs/tasks、docs/verification、docs/harness-*.md | 保留私有源目录 |
 | 内部协作说明 | docs/structure.md、docs/agent_guide.md | 保留私有源目录；通用目录说明通过 Skill 参考文档公开 |
