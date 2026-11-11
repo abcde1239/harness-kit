@@ -1,62 +1,101 @@
 # Harness Kit
 
-为新旧项目接入 **Agent 指令与统一验证**，保留已有框架和用户修改。支持 Codex、Claude Code、Gemini CLI、Cursor、OpenCode、DeepSeek Harness（dsh），提供可恢复任务、monorepo、经授权的多 Agent 协作与按需公开检查。
+**让 Agent 按项目约定开发，用测试和验收记录确认完成。**
 
-安装自包含 **Skill 或本地插件包**，在 Agent 会话中说明目标即可使用，无需运行 setup 或配置 Harness Kit 的 PATH。执行验证仍需 **Bun ≥ 1.3.4**；Git 检查另需 Git。
+Harness Kit 为编码 Agent 提供项目接入、任务恢复和统一验证。安装 Skill 或插件后，直接在现有 Agent 中说明目标：接入项目、完成改动、运行已有测试，或继续上次保存的任务。
 
-## 安装
+[快速开始](#快速开始) · [安装指南](docs/public/guides/installation.md) · [使用指南](docs/public/guides/usage.md) · [版本下载](https://github.com/abcde1239/harness-kit/releases)
 
-从 [v0.5.0 Release](https://github.com/abcde1239/harness-kit/releases/tag/v0.5.0) 选择一种安装包，具体命令见[安装指南](docs/public/guides/installation.md)：
+## 它能帮你做什么
 
-- **Skill**：[下载 Skill ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.5.0/harness-kit-skill-0.5.0.zip)，将完整 harness-kit 目录放入宿主原生技能目录。
-- **Codex / Claude 插件**：[下载 Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.5.0/harness-kit-marketplace-0.5.0.zip)，添加其中 marketplace 目录，再安装 harness-kit@harness-kit-local。
-- **DeepSeek Harness 原生插件**：[下载 DSH ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.5.0/harness-kit-dsh-0.5.0.zip)，通过 dsh plugin 安装解压后的包目录。
+- **接入已有项目。** 为所选 Agent 配置项目指令，保留现有框架、测试布局和用户修改。
+- **接续未完成的工作。** 保存任务目标、验收条件、备注和下一步，供新会话或其他 Agent 接手。
+- **用当前结果判断完成。** 运行项目已有的测试和检查；源码或配置变化后，旧验证结果会过期。需要记录验收的任务，完成前还要逐项确认验收条件。
 
-插件包含同一份打包 Skill。请使用上述命名附件；GitHub 自动生成的 Source code 是开发源码，其中 Skill 脚本是开发入口，单独复制源码技能目录不能替代自包含包。
+小改动直接实施和验证，复杂任务再保存计划、分工和交接。可以继续使用 Superpowers、OpenSpec 或团队已有的开发流程。
 
-在新会话中输入：
+## 快速开始
+
+需要 **Bun ≥ 1.3.4**；Git 相关检查另需 Git。Skill 和插件可直接使用，无需运行 `bun setup` 或安装全局 `harness` 命令。
+
+### 安装 Skill
+
+下载 [harness-kit-skill-0.5.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.5.0/harness-kit-skill-0.5.0.zip)，把完整 harness-kit 目录放入宿主的技能目录。以 Codex 用户目录为例：
 
 ```text
-使用 harness-kit 接入当前项目并验证，保留现有框架，内部开发文档不公开。
-使用 harness-kit 实现这项改动，允许多 Agent 分工，集成后按项目要求验证。
+~/.agents/skills/harness-kit/
+├── SKILL.md
+├── scripts/
+├── references/
+└── agents/
 ```
 
-Agent 直接调用已安装技能内的 `scripts/harness.mjs`，不需要全局 `harness` 命令。不同宿主或插件可能使用命名空间，以实际发现的技能为准。本地包与 marketplace 配置不代表已上架公共目录。
+开启新会话，确认技能已被发现，然后说：
 
-从源码生成分发包：`bun run package:distribution <新的输出目录>`。它同时生成独立 Skill、Codex/Claude 兼容的本地 marketplace、DSH 原生插件和对应 ZIP；已有输出目录不覆盖。
+```text
+使用 harness-kit 接入当前项目，保留现有框架，并运行项目已有的测试。
+```
 
-## 可选：终端短命令
+接入后，你可以继续提出开发任务：
 
-习惯直接在终端操作时，才在源码目录运行 `bun run setup`，安装 `harness` 短命令；若 bin 目录不在 PATH，按安装器提示设置。Skill/插件用户无需这一步。
+```text
+使用 harness-kit 实现分页功能，保存任务和验收条件，方便下次继续。
+```
+
+### 使用插件
+
+| 宿主 | 安装包 |
+|---|---|
+| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.5.0/harness-kit-marketplace-0.5.0.zip) |
+| DeepSeek Harness | [DSH 原生插件 ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.5.0/harness-kit-dsh-0.5.0.zip) |
+
+解压后按[安装指南](docs/public/guides/installation.md)中的宿主命令安装。请使用上述安装附件；GitHub 的 Source code 下载用于源码开发。
+
+## 怎么工作
+
+1. **接入项目。** 识别工作区、现有指令和测试命令，为所选宿主补充项目入口，保留已有内容。
+2. **推进任务。** 按项目要求实施改动。需要跨会话恢复或协作时，保存目标、验收项和交接信息。
+3. **验证结果。** 执行约定检查和配置的任务，记录本次验证覆盖的范围。保存了验收条件的工作任务，需要当前完整验证和逐项验收后才能完成。
+
+多 Agent 协作提供分工、复核和交接提示词，由宿主的委派工具执行。具体能力与限制见[能力说明](docs/public/reference/capabilities.md)。
+
+## 支持的 Agent
+
+| Agent | 项目指令 | 安装方式 |
+|---|---|---|
+| Codex | AGENTS.md | Skill / 插件 |
+| Claude Code | CLAUDE.md | 插件 |
+| Gemini CLI | GEMINI.md | 项目指令接入 |
+| Cursor | .cursor/rules/harness-kit.mdc | 项目指令接入 |
+| OpenCode | AGENTS.md | 项目指令接入 |
+| DeepSeek Harness | AGENTS.md | Skill / 原生插件 |
+
+DSH 原生插件目前依据 developer preview 接口适配，真实 profile 安装仍待验证。各宿主的技能发现设置和加载规则见[安装指南](docs/public/guides/installation.md)。
+
+## 终端用法
+
+偏好手动操作时，可在源码目录运行可选的 `bun run setup`，安装短命令：
 
 ```sh
-harness init     # 中文向导：接入、保留已有内容并运行首次验证
-harness check    # 只检查项目约定
-harness run      # 检查约定并执行项目已有的验证任务
+harness init      # 接入项目，运行首次验证
+harness run       # 检查约定并运行配置的任务
+harness check     # 只检查项目约定
+harness doctor    # 诊断接入状态和验证记录
 ```
 
-也可以一次完成：`harness init --private --test "bun test ./tests" --yes`。已有测试脚本可识别时省略 `--test`。裸 `harness` 打开菜单；遇到接入或环境问题运行 `harness doctor`。
+裸命令 `harness` 打开中文菜单；`harness help --all` 查看高级用法。项目配置、monorepo、可恢复任务和可选 hooks 见[使用指南](docs/public/guides/usage.md)。
 
-其他宿主用 `harness init --hosts claude,gemini,cursor,opencode,dsh --private --yes`，只需 DeepSeek Harness 时用 `--hosts dsh`（别名 `deepseek-harness`）。新项目只接入所选宿主，已有项目保留历史选择；默认接入 Codex。dsh 接入复用 AGENTS.md；其 developer preview 的 profile 和插件配置会影响实际加载，详见使用指南。
+## 文档与开发
 
-初始化建立宿主原生指令入口和治理配置，并报告首次验证结果。已有指令使用受管段合并；用户修改冲突保留。静态检查不代表真实 Agent 会话已加载，也不代表未配置的测试通过。
+- [文档导航](docs/public/README.md)
+- [多 Agent 协作](skills/harness-kit/references/collaboration.md)
+- [可恢复任务](skills/harness-kit/references/tasks.md)
+- [v0.5.0 版本说明](docs/public/releases/v0.5.0.md)
 
-需要 Codex 本地会话自动检查验证证据时，使用 `harness init --hooks`，再在新会话 `/hooks` 中审阅信任。普通使用无需配置 hooks。
+在源码目录验证和打包：
 
-需要跨会话恢复时，使用 `harness task start <id> --title "目标" --accept "验收条件"` 保存任务，再用 `task resume` 接续、`run --work <id>` 验证。人工验收证据和当前完整验证均满足后才可 `task finish`，详见使用指南。
-
-Skill 按任务选择轻量开发、修复、评审或协作流程，复用已有 Superpowers、OpenSpec 等工作流；多 Agent 需要宿主提供实际委派工具。旧命令继续兼容，高级接口见 `harness help --all`。
-
-## 文档
-
-- [文档导航](docs/public/README.md)：按安装、使用、能力与发布查阅
-- [安装指南](docs/public/guides/installation.md)：独立 Skill、Codex/Claude 插件和 DSH 原生插件
-- [能力与适用范围](docs/public/reference/capabilities.md)：当前解决的问题、差异与限制
-- [使用指南](docs/public/guides/usage.md)：接入、诊断、验证记录与高级配置
-- [目标项目布局](skills/harness-kit/references/project-layout.md)：生成范围、框架测试及 monorepo
-- [多 Agent 协作提示词](skills/harness-kit/references/collaboration.md)：任务边界、验收、复核和交接
-- [可恢复任务](skills/harness-kit/references/tasks.md)：目标、验收证据、恢复与完成门禁
-- [公开与内部资料边界](docs/public/reference/publication-boundary.md)：按需发布检查
-- [v0.5.0 版本说明](docs/public/releases/v0.5.0.md)：变更、升级和验证范围
-
-开发验证：`bun run verify`；项目约定检查：`bun run harness check --json`。
+```sh
+bun run verify
+bun run harness check --json
+bun run package:distribution <新的输出目录>
+```
