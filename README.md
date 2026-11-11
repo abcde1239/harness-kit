@@ -1,8 +1,6 @@
 # Harness Kit
 
-**让 Agent 按项目约定开发，用测试和验收记录确认完成。**
-
-Harness Kit 为编码 Agent 提供项目接入、任务恢复和统一验证。安装 Skill 或插件后，直接在现有 Agent 中说明目标：接入项目、完成改动、运行已有测试，或继续上次保存的任务。
+Harness Kit 帮你把编码 Agent 接入现有项目，运行项目里的测试，并保存下次继续工作需要的信息。安装 Skill 或插件后，在 Agent 会话中说明目标即可开始。
 
 [快速开始](#快速开始) · [安装指南](docs/public/guides/installation.md) · [使用指南](docs/public/guides/usage.md) · [版本下载](https://github.com/abcde1239/harness-kit/releases)
 
@@ -10,7 +8,7 @@ Harness Kit 为编码 Agent 提供项目接入、任务恢复和统一验证。�
 
 - **接入已有项目。** 为所选 Agent 配置项目指令，保留现有框架、测试布局和用户修改。
 - **接续未完成的工作。** 保存任务目标、验收条件、备注和下一步，供新会话或其他 Agent 接手。
-- **用当前结果判断完成。** 运行项目已有的测试和检查；源码或配置变化后，旧验证结果会过期。需要记录验收的任务，完成前还要逐项确认验收条件。
+- **检查改动是否通过验证。** 运行项目已有的测试和检查；源码或配置变化后，之前的验证结果会过期。
 
 小改动直接实施和验证，复杂任务再保存计划、分工和交接。可以继续使用 Superpowers、OpenSpec 或团队已有的开发流程。
 
@@ -55,22 +53,22 @@ Harness Kit 为编码 Agent 提供项目接入、任务恢复和统一验证。�
 
 1. **接入项目。** 识别工作区、现有指令和测试命令，为所选宿主补充项目入口，保留已有内容。
 2. **推进任务。** 按项目要求实施改动。需要跨会话恢复或协作时，保存目标、验收项和交接信息。
-3. **验证结果。** 执行约定检查和配置的任务，记录本次验证覆盖的范围。保存了验收条件的工作任务，需要当前完整验证和逐项验收后才能完成。
+3. **验证结果。** 运行测试和检查，核对验收条件。保存为工作任务时，只有当前完整验证通过、验收项逐一确认后，才能标记完成。
 
 多 Agent 协作提供分工、复核和交接提示词，由宿主的委派工具执行。具体能力与限制见[能力说明](docs/public/reference/capabilities.md)。
 
 ## 支持的 Agent
 
-| Agent | 项目指令 | 安装方式 |
+| Agent | 项目指令入口 | 原生插件 |
 |---|---|---|
-| Codex | AGENTS.md | Skill / 插件 |
-| Claude Code | CLAUDE.md | 插件 |
-| Gemini CLI | GEMINI.md | 项目指令接入 |
-| Cursor | .cursor/rules/harness-kit.mdc | 项目指令接入 |
-| OpenCode | AGENTS.md | 项目指令接入 |
-| DeepSeek Harness | AGENTS.md | Skill / 原生插件 |
+| Codex | AGENTS.md | 支持 |
+| Claude Code | CLAUDE.md | 支持 |
+| Gemini CLI | GEMINI.md | 暂无 |
+| Cursor | .cursor/rules/harness-kit.mdc | 暂无 |
+| OpenCode | AGENTS.md | 暂无 |
+| DeepSeek Harness | AGENTS.md | 实验支持 |
 
-DSH 原生插件目前依据 developer preview 接口适配，真实 profile 安装仍待验证。各宿主的技能发现设置和加载规则见[安装指南](docs/public/guides/installation.md)。
+Gemini CLI、Cursor 和 OpenCode 可通过 CLI 的 `init --hosts` 生成项目指令，具体步骤见[使用指南](docs/public/guides/usage.md)。DSH 插件按 developer preview 接口开发，尚未在实际 DSH 环境中验证安装；尝试前请查看[安装指南](docs/public/guides/installation.md)中的兼容范围。
 
 ## 终端用法
 
