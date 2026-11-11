@@ -1,53 +1,57 @@
-# 开发、修复、评审与恢复
+# Development, repair, review, and recovery
 
-本流程复用当前项目的测试和开发方法。短任务在当前会话完成；需要交接或跨会话恢复时，使用[持久任务](tasks.md)保存目标、验收与下一步，复用已有规格资料，不再手写重复任务 JSON。
+Reuse the project's testing tools and development process. Complete short tasks in the current session. For recovery or handoff, use [persistent tasks](tasks.md) to save goals, acceptance, and next steps, reusing existing specifications rather than writing duplicate task JSON.
 
-## 开始改动
+## Before changing code
 
-先核实用户目标、影响范围和验收方式，读取相关代码及已有方案。已有 OpenSpec change、Spec Kit 任务或团队流程时继续使用原记录，不再生成第二份方案。修改前查看现有未完成改动，明确自己负责的文件和接口。
+Confirm the user's goal, affected scope, and acceptance method. Read relevant code and existing plans. Continue an existing OpenSpec change, Spec Kit task, or team record instead of creating a second plan. Inspect unfinished changes and establish ownership of files and contracts.
 
-项目已接入时运行 `doctor` 了解当前配置、宿主入口和验证证据。只有配置缺失或需要调整时使用 `init`；不为每个任务重新初始化。诊断不会执行测试，缺失或过期的记录不能当作测试结论。
+Read existing style conventions. If `docs/decision/coding-style/RULES.md` exists, apply only adopted rules within this task's scope; candidate rules are reference material. Personal preferences do not override current explicit user requirements, applicable project instructions, or existing tool configuration. Escalate material conflicts to the lead. Use [style distillation](coding-style.md) only when requested to derive, update, or transfer rules; ordinary development does not scan other projects automatically. Include applicable rule IDs and scope in implementation and review briefs.
 
-按工作量选择：
+For an onboarded project, run `doctor` to understand configuration, host entries, and evidence. Use `init` only when configuration is missing or needs adjustment, not for every task. Diagnosis does not run tests; missing or stale evidence is not a test result.
 
-- 小范围且验收明确：实现后运行适用检查，不强制先写 PRD、拆 Agent 或创建新测试。
-- 行为改变或缺陷修复：使用能观察目标行为的测试；已有测试不足时补有意义的覆盖。项目要求 TDD 时遵循它，避免只验证实现细节。
-- 跨模块或有方案取舍：记录目标、接口、步骤和验收；经授权且依赖可拆时使用[多 Agent 协作](collaboration.md)。
+Choose proportionate work:
 
-命令统一前缀为 `bun <skill>/scripts/harness.mjs`，补充 `--root <project> --json`。先使用 `run --task <runnerID>` 做有意义的局部验证；集成后执行项目要求的完整 `run`。已创建工作任务时用 `run --work <工作任务ID>` 关联结果，`--task` 仍指 runner 选择。局部通过时报告范围，不将未选工作区称为已验证。
+- Small changes with clear acceptance: implement and run relevant checks; do not force a PRD, multiple Agents, or new tests.
+- Behavior changes or bug fixes: validate observable outcomes and add meaningful coverage where existing tests are insufficient. Follow TDD when the project requires it; avoid assertions that merely mirror implementation.
+- Cross-module work or material alternatives: record the goal, contracts, steps, and acceptance. Use [multi-Agent collaboration](collaboration.md) when authorized and independently separable.
 
-## 修复失败
+When professional responsibilities are requested or useful, select [role prompts](roles.md), carrying existing requirements, interfaces, and file ownership. Do not add a full fixed workflow merely to use roles. For an observed Agent behavior problem or an explicit request to improve Agent output, use the [Agent expert](roles/agent-expert.md) to assess evidence and proportionate changes. This is an optional diagnostic role, not a mandatory stage for every task.
 
-验证失败时先区分原因，再行动：
+Use `bun <skill>/scripts/harness.mjs` with `--root <project> --json`. Start with meaningful local validation via `run --task <runnerID>`; after integration run the project's required full `run`. If a work task exists, associate results with `run --work <work-task-id>`. `--task` still selects a runner task. Report partial scope and never call unselected workspaces verified.
 
-| 原因 | 下一步 |
+## Failed validation
+
+Identify the cause before acting:
+
+| Cause | Next action |
 |---|---|
-| 行为断言失败 | 复现原症状，比较预期与实现，修复根因后重跑相关测试 |
-| 配置、路径或任务依赖错误 | 核实 cwd、argv、workspace 和依赖，最小修改后重验 |
-| 工具缺失、服务不可用或无凭据 | 报告缺少条件，继续独立可做部分；不能改成可选任务来伪造成功 |
-| 超时、取消或测试不稳定 | 保留原因并检查资源/服务；只有新证据支持时调整超时或重试 |
-| 用户文件冲突 | 比较建议与现有内容，在授权范围合并并保留其他修改 |
+| Behavioral assertion failure | Reproduce the symptom, compare expectation and implementation, fix the cause, then rerun relevant tests |
+| Configuration, path, or dependency error | Check cwd, argv, workspace, and dependencies; make the smallest correction and validate again |
+| Missing tools, services, or credentials | Report the missing condition and continue independent work; do not make required tasks optional to manufacture success |
+| Timeout, cancellation, or instability | Preserve the cause and examine resources/services; change timeouts or retry only with new evidence |
+| User-file conflict | Compare the proposal with current content, merge within authorization, and preserve unrelated edits |
 
-同一失败原因最多进行两轮有证据的修复尝试；仍失败或需要新权限/外部条件时停止自动重试，报告定位、已尝试步骤和所需条件。用户已指定其他预算时按其预算执行。不要仅反复重跑、删除失败测试、放宽必需性或修改证据文件。
+Limit evidence-based repair attempts for the same cause to two rounds unless the user specifies another budget. If still failing or needing new permissions/external conditions, stop automatic retries and report the diagnosis, attempts, and required conditions. Do not merely rerun, delete failing tests, weaken required checks, or edit evidence files.
 
-## 恢复与交接
+## Recovery and handoff
 
-需要恢复时先创建明确验收，再记录实际进展：
+For recovery, define acceptance before recording progress:
 
 ```sh
-harness task start auth-fix --title "修复认证边界" --accept "约定的边界行为可复现并通过" --scope src/auth
-harness task note --note "已定位原因" --next "修复后执行认证回归"
+harness task start auth-fix --title "Fix authentication boundaries" --accept "The specified boundary behavior can be reproduced and passes" --scope src/auth
+harness task note --note "Located the cause" --next "Fix and run authentication regression tests"
 harness task resume auth-fix
 ```
 
-恢复时重读用户最新要求、task status/resume、相关 diff 和 `doctor`；核实上次验证后文件是否变化，重新取得失效的证据。resume 只呈现上下文并切换活动任务，不自动执行测试或其他动作。记录“步骤完成”不能证明未写入完成点的外部副作用只执行了一次；提交、部署或其他外部动作重试前核实实际状态。
+On resume, reread current user requirements, task status/resume, relevant diff, and `doctor`. Check what changed since validation and replace stale evidence. Resume presents context and switches the active task; it does not run tests or other actions. A completion note cannot prove an external effect was executed only once if no durable completion record exists. Check actual state before retrying commits, deployment, or other external actions.
 
-## 评审与完成
+## Review and completion
 
-评审围绕需求、错误分支、兼容性、验证范围和现有修改；不以 Agent 自述替代源码或实际运行结果。多 Agent 的独立复核可使用协作参考中的 reviewer 模板。
+Review requirements, failure branches, compatibility, validation scope, and existing changes. Do not substitute Agent claims for source or actual results. Independent multi-Agent review can use the reviewer prompt in the collaboration reference.
 
-收尾时检查实际文件变化及验收项，先归纳必要 memory，再运行配置要求的验证。持久任务使用完整 `run --work <id>`，逐项核实 `task accept --criterion <id> --evidence ...`，最后 `task finish`。验收声明与真实验证分别记录；门禁不能自动证明人工证据的语义真实性。
+Inspect actual changes and acceptance, consolidate necessary memory, then run required validation. Persistent tasks require full `run --work <id>`, individually verified `task accept --criterion <id> --evidence ...`, then `task finish`. Acceptance declarations and execution evidence remain distinct; gates cannot automatically prove the semantics of human evidence.
 
-`.harness/verification.json` 是与源码/配置范围关联的本地运行记录，不是签名、自动评审或公开报告；不手工修改它以制造通过。相关输入变化后重新运行并核对人工验收，doctor 的旧通过也不能替代当前证据。
+`.harness/verification.json` is a local record tied to source/configuration scope, not a signature, automatic review, or public report. Never edit it to manufacture success. After relevant inputs change, rerun validation and reassess acceptance. An old doctor result is not current evidence.
 
-汇报具体行为变化、运行范围、结果与剩余限制。项目 memory 去除重复或过时条目；不将原始 stdout、临时猜测或私有资料放入公开文档。验证后若又修改受追踪 memory 或其他文件，需重新验证并重新核对验收，才能完成任务。
+Report behavior changes, executed scope, results, and limitations. Deduplicate or retire obsolete memory. Do not place raw stdout, temporary guesses, or private material in public documentation. If tracked memory or any other tracked input changes after validation, revalidate and reassess acceptance before finishing the task.

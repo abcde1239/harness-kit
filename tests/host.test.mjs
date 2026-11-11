@@ -54,16 +54,16 @@ test('user edits to an Agent block conflict without losing surrounding content',
 test('a previously owned old block can update while retaining new user text outside it', () => {
   const root = fixture();
   applyPlan(root, makePlan(root, answers));
-  const oldBlock = `${AGENT_BLOCK_START}\nUse the old commands.\n${AGENT_BLOCK_END}`;
-  write(root, 'AGENTS.md', `# User header\n\n${oldBlock}\n\nUser footer\n`);
+  const oldBlock = `${AGENT_BLOCK_START}\n使用旧版验证命令。\n${AGENT_BLOCK_END}`;
+  write(root, 'AGENTS.md', `# 用户约定\n\n${oldBlock}\n\n保留用户原文。\n`);
   const state = JSON.parse(read(root, '.harness/managed.json'));
   state.blocks['AGENTS.md'] = hash(oldBlock);
   write(root, '.harness/managed.json', json(state));
   const plan = makePlan(root, answers), entry = plan.files.find(f => f.path === 'AGENTS.md');
   assert.equal(entry.action, 'update');
   applyPlan(root, plan);
-  assert.ok(read(root, 'AGENTS.md').startsWith('# User header\n\n'));
-  assert.ok(read(root, 'AGENTS.md').endsWith('\n\nUser footer\n'));
+  assert.ok(read(root, 'AGENTS.md').startsWith('# 用户约定\n\n'));
+  assert.ok(read(root, 'AGENTS.md').endsWith('\n\n保留用户原文。\n'));
   assert.ok(read(root, 'AGENTS.md').includes(agentInstructions));
 });
 

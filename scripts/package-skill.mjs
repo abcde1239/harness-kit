@@ -15,6 +15,7 @@ export async function skillFiles() {
   const build=await Bun.build({entrypoints:[path.join(repo,'bin/harness.mjs')],target:'bun',format:'esm',minify:false});
   if(!build.success)throw new Error(build.logs.join('\n'));
   result.set('scripts/harness.mjs',Buffer.from(await build.outputs[0].text()));
+  result.set('scripts/install-plugin.mjs',fs.readFileSync(path.join(repo,'scripts/install-plugin.mjs')));
   return result;
 }
 export async function packageSkill(destination) {

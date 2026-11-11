@@ -4,7 +4,7 @@
 
 | 范围 | 本项目位置 | 处理方式 |
 |---|---|---|
-| 使用入口 | 根 README.md | 公开 |
+| 使用入口 | 根 README.md、README.en.md、INSTALL.md | 公开 |
 | 详细公开文档 | docs/public/guides、reference、examples | 按公开清单导出 |
 | 产品实现 | bin、src、scripts | 公开；脚本不能依赖内部任务表 |
 | 自动测试及合成 fixtures | tests | 公开；真实项目资料不放入 fixtures |

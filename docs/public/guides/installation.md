@@ -4,6 +4,30 @@
 
 从 [v0.5.0 Release](https://github.com/abcde1239/harness-kit/releases/tag/v0.5.0) 下载一种安装包。Skill 和插件都包含完整 CLI，**不需要运行 bun setup、配置 Harness Kit 的 PATH 或安装全局 harness 命令**。Bun ≥ 1.3.4 必须在 Agent 执行环境可用；Git 功能另需 Git。分发包不附带 Bun。
 
+## 把链接交给 Agent
+
+将仓库链接交给 Agent。它会读取当前源码的安装入口，并安装最新正式 Release；也可以提供 Release 链接固定版本：
+
+```text
+Read https://github.com/abcde1239/harness-kit/blob/main/INSTALL.md.
+Install the Harness Kit plugin from https://github.com/abcde1239/harness-kit.
+Ask whether I want the default location or a custom directory, then complete installation and configuration.
+```
+
+Agent 从你提供的[安装入口](../../../INSTALL.md)开始，识别目标宿主并显示默认绝对路径。选定位置后，独立安装器下载同一 Release 的匹配包与 SHA256SUMS，校验并注册插件；已有文件或来源冲突会保留并说明。安装后会核对宿主状态，必要时提示新会话或重启。用户无需手动解压或运行 setup。
+
+Windows 默认保存到 `%LOCALAPPDATA%/harness-kit/plugins/<宿主>`，其他平台为 `~/.local/share/harness-kit/plugins/<宿主>`；可自选持久目录。宿主内部缓存位置由宿主管理。独立 Skill 模式默认 `~/.agents/skills/harness-kit`，自定义位置必须符合目标宿主实际发现设置。
+
+**版本说明：** 当前仓库包含 `INSTALL.md` 与 `scripts/install-plugin.mjs`；v0.5.0 附件未包含该安装器，Agent 需从仓库获取脚本后安装同版 ZIP。当前源码的风格提炼、专业角色等新增能力不包含在 v0.5.0 包中；安装已发布版本不会自动带入这些功能。未答复位置问题时脚本只返回问题，不会开始安装。DSH 需明确实际 profile；没有 DSH CLI 时不伪称原生安装成功。
+
+手动调用示例：
+
+```text
+bun install-plugin.mjs --source https://github.com/abcde1239/harness-kit --host codex --location default
+```
+
+自选目录使用 `--location <绝对路径>`，预览加 `--dry-run`。Claude 使用 `--host claude`；DSH 使用 `--host dsh --profile <实际profile>`。同名 marketplace 已指向其他来源时先审阅冲突，不静默覆盖。只安装插件不会自动改当前项目的测试或可见性配置。
+
 ## 独立 Skill
 
 下载 `harness-kit-skill-0.5.0.zip`，将其中完整 harness-kit 目录放在宿主技能根的直接下一层。Codex 可使用：
@@ -60,7 +84,7 @@ web 替换为实际 profile。Desktop 用户先退出应用，使用 **Desktop �
 开启新会话，确认宿主发现 harness-kit，再提出：
 
 ```text
-使用 harness-kit 接入当前项目并验证，保留现有框架，内部开发文档不公开。
+Use harness-kit to onboard and verify this project, preserve its framework, and keep internal development documents private.
 ```
 
 Agent 根据实际加载的 SKILL.md 位置调用：

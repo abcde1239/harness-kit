@@ -30,6 +30,12 @@ const instructions = `# Harness Kit ${version}
 
 安装任选一种，不需要运行 bun setup。内置脚本需要 Bun >= 1.3.4；Git检查另需Git。
 
+## 交给 Agent 安装
+
+将仓库或本 Release 链接交给 Agent，要求它先询问默认位置还是自选目录，再完成安装配置。
+Agent 安装入口见 AGENT-INSTALL.md；同目录 install-plugin.mjs 可独立运行，不需要源码。
+脚本未提供 --location 时只返回位置问题，不执行安装。
+
 ## Skill
 
 将 harness-kit-skill-${version}.zip 解压后的 harness-kit 完整目录放进宿主原生技能目录。
@@ -82,10 +88,12 @@ export async function packageDistribution(destination = path.join(repository,'ar
     [`harness-kit-marketplace-${version}.zip`,zipFiles(prefix(marketplace,'marketplace'))],
     [`harness-kit-dsh-${version}.zip`,zipFiles(prefix(native,'harness-kit'))],
     ['INSTALL.md',Buffer.from(instructions)],
+    ['AGENT-INSTALL.md',fs.readFileSync(path.join(repository,'INSTALL.md'))],
+    ['install-plugin.mjs',fs.readFileSync(path.join(repository,'scripts/install-plugin.mjs'))],
   ]);
   const entries=[...files].map(([name,bytes])=>({path:name,sha256:hash(bytes),bytes:bytes.length}));
   files.set('distribution.json',Buffer.from(json({version,requirements:{bun:'>=1.3.4'},entries})));
-  files.set('SHA256SUMS',Buffer.from(entries.filter(e=>e.path.endsWith('.zip')).map(e=>`${e.sha256}  ${e.path}`).join('\n')+'\n'));
+  files.set('SHA256SUMS',Buffer.from(entries.filter(e=>e.path.endsWith('.zip')||e.path==='install-plugin.mjs').map(e=>`${e.sha256}  ${e.path}`).join('\n')+'\n'));
   fs.mkdirSync(path.dirname(destination),{recursive:true});
   const staging = `${destination}.staging-${crypto.randomUUID()}`;
   fs.mkdirSync(staging);

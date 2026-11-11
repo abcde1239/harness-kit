@@ -1,4 +1,4 @@
 interface:
-  display_name: "Harness Kit 开发与验证"
-  short_description: "多宿主接入与任务验收，支持开发修复及经授权的多 Agent 协作"
-  default_prompt: "使用 $harness-kit 接入当前项目的宿主指令，保留已有工作流，按需记录可恢复任务并完成实际验证与验收。"
+  display_name: "Harness Kit: Agent Workflows"
+  short_description: "Connect projects, verify changes, and resume agent tasks"
+  default_prompt: "Use $harness-kit to connect this project's host instructions, preserve its workflow, and complete the requested work with current verification and acceptance evidence."

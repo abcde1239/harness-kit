@@ -84,21 +84,21 @@ export function hookEvent(root,input) {
   const event=input.hook_event_name;
   if(!['SessionStart','Stop'].includes(event))return {};
   const config=loadConfig(root);
-  if(!config.tasks.some(t=>t.enabled))return {systemMessage:'Harness Kit：尚未配置验证任务，不能将配置完成报告为工程验证通过。'};
+  if(!config.tasks.some(t=>t.enabled))return {systemMessage:'Harness Kit: no verification tasks are configured. Configuration completion is not engineering verification.'};
   if(typeof input.session_id!=='string'||!input.session_id.trim())throw new Error('Hook requires session_id');
   const session=`.harness/hooks/sessions/${hash(input.session_id)}.json`;
   if(event==='SessionStart') {
     // Resume/compaction must not erase the session's unverified source changes.
     if(!fs.existsSync(safePath(root,session)))atomicWrite(root,session,json({version:1,inputDigest:inputSnapshot(root,config).digest}));
-    return {hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'此项目使用 Harness Kit。按 AGENTS.md 和相关 Skill 开发；修改完成后运行 harness run，以当前验证证据报告结果。harness doctor 可恢复检查状态。'}};
+    return {hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'This project uses Harness Kit. Follow applicable AGENTS.md instructions and Skills. After changes, run harness run and report current verification evidence. Use harness doctor to inspect the current state.'}};
   }
-  if(!fs.existsSync(safePath(root,session)))return {systemMessage:'Harness Kit：本次会话没有启动快照，无法自动判断修改范围；按项目指令运行 harness run。'};
+  if(!fs.existsSync(safePath(root,session)))return {systemMessage:'Harness Kit: this session has no initial snapshot, so its change scope cannot be determined automatically. Run harness run as required by project instructions.'};
   const start=readJson(root,session),current=inputSnapshot(root,config);
   if(start.inputDigest===current.digest)return {};
   const evidence=verificationEvidence(root,config);
   if(evidence.status==='passed')return {};
-  const reason=`本次项目文件有修改，但当前完整验证证据为 ${evidence.status}。运行 harness run 并检查实际结果；仅修复本任务范围内的问题，环境缺失或失败无法解决时明确报告阻塞。不要将未运行或失败说成通过。`;
+  const reason=`Project files changed in this session, but current complete verification evidence is ${evidence.status}. Run harness run and inspect actual results. Fix only issues within this task's scope; report unresolved failures or missing environment requirements. Never report unrun or failed checks as passed.`;
   // Continue at most once; never override other hooks with continue:false.
-  if(input.stop_hook_active===true)return {systemMessage:`Harness Kit：已提醒一次，自动继续已停止。${reason}`};
+  if(input.stop_hook_active===true)return {systemMessage:`Harness Kit: verification was already requested once; automatic continuation has stopped. ${reason}`};
   return {decision:'block',reason};
 }

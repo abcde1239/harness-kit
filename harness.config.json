@@ -23,6 +23,8 @@
     ],
     "publicPatterns": [
       "README.md",
+      "README.en.md",
+      "INSTALL.md",
       "package.json",
       "bun.lock",
       "src/**",

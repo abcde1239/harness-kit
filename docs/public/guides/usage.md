@@ -10,6 +10,8 @@
 
 本页的 harness 示例面向已安装可选终端短命令的用户；Skill/插件调用使用 bun <已安装技能目录>/scripts/harness.mjs，并显式提供 --root <项目绝对路径>。完整文档入口见[文档导航](../README.md)。
 
+要从自己维护的项目中总结编码风格与架构习惯，可直接说明项目路径和目标。画像与规则的保存、采用及复核方式见[编码习惯提炼](coding-style.md)，无需新增 CLI 命令。
+
 ## 可选：人类终端短命令
 
 希望手动使用中文菜单和 `harness` 短命令时，才在下载/克隆后的源码目录执行 `bun run setup`。安装器在 Bun 用户 bin 中写入 `harness` / `harness-kit`，默认也安装 Codex Skill 到 `$CODEX_HOME/skills/harness-kit`（未设置时 `~/.codex/skills/harness-kit`），不覆盖无归属或用户已修改的文件。它不修改系统 PATH 或 shell profile；若 bin 目录不在 PATH，按报告提示自行添加后重开终端。此步骤不影响 Skill/插件直接调用包内 CLI 的方式。
@@ -120,10 +122,10 @@ SessionStart 提供项目验证提示并记录本会话输入摘要；Stop 在�
 在宿主实际加载 Skill 后，用自然语言说明任务：
 
 ```text
-使用 harness-kit 接入当前项目并验证，保留现有测试框架，内部开发文档不公开。
+Use harness-kit to onboard and verify this project, preserve its test framework, and keep internal development documents private.
 ```
 
-日常也可直接使用：`使用 harness-kit 修复这个问题，复现后最小修改，并运行项目验证。` 需要并行时明确授权：`使用 harness-kit 实现这项改动，允许多 Agent 分工，集成后统一验收。` 显式调用方式以宿主实际发现的技能为准，插件可能带命名空间；不能假定同一符号语法通用。下方 CLI 示例中的 `harness` 是可选短命令，未安装时由 Agent 使用包内 `bun <已安装技能目录>/scripts/harness.mjs`。
+日常也可直接使用：`Use harness-kit to reproduce and fix this issue with a minimal change, then run project verification.` 需要并行时明确授权：`Use harness-kit to implement this change. Multi-agent delegation is authorized; integrate the work and verify acceptance.` 显式调用方式以宿主实际发现的技能为准，插件可能带命名空间；不能假定同一符号语法通用。下方 CLI 示例中的 `harness` 是可选短命令，未安装时由 Agent 使用包内 `bun <已安装技能目录>/scripts/harness.mjs`。
 
 对于 dsh，启用 dsh-skill 与 dsh-skill-filesystem 后，将打包出的完整自包含目录放到 `<projectRoot>/.dsh/skills/harness-kit` 或 `<projectRoot>/.agents/skills/harness-kit`，也可按实际 provider 配置使用用户技能目录（默认 `~/.dsh/skills`、`~/.agents/skills`）。当前安装器默认的 Codex Skill 目录不会自动变成 dsh 技能目录。目录型技能须为扫描根的直接子目录；亦支持根顶层 `<name>.md` flat 技能，不递归任意嵌套树。Harness Kit 包含脚本与引用，应保留完整目录；先确认会话目录中出现 harness-kit 再加载。该 provider 监测技能目录/frontmatter 变化，正文在加载时重读；这与项目指令插件没有持续 watcher 的机制不同。详见 [dsh skill-filesystem 官方说明](https://github.com/deepseek-ai/deepseek-harness/blob/fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159/packages/skill/skill-filesystem/README.md)。
 
@@ -132,6 +134,16 @@ Skill 按需选择接入、改动、修复、评审或发布路径。小任务�
 Agent 使用随 Skill 提供的非交互 JSON 接口，不会打开人类终端菜单。如果当前会话尚未显示新 Skill，打开新会话再选择；也可显式指定安装目录下的 SKILL.md。
 
 多 Agent 协作需要实际宿主委派工具和授权。Skill 提供[主 Agent、实现 Agent、只读复核及交接提示词](../../../skills/harness-kit/references/collaboration.md)，规定工作任务 ID、独占写入范围、接口、依赖、验收和集成责任；没有工具或任务不适合拆分时串行完成。主 Agent 检查真实 diff 并执行集成验证，不把子任务自述作为完成证明。不同宿主使用实际提供的工具，不假造通用委派 API。开发与恢复细节见[开发流程](../../../skills/harness-kit/references/development.md)。
+
+维护的 Agent 指令、职责模板、默认提示词和 Hooks 注入指令统一使用英文；用户文档与回复仍可使用中文，用户原文和代码保持原样。需要判断某种 Agent 行为是否值得改进时，可使用 [Agent 专家](../../../skills/harness-kit/references/roles/agent-expert.md)：
+
+```text
+Use the harness-kit Agent expert to review this behavior: <observed behavior>.
+Compare the original goal with the actual instructions, tool results and output.
+Decide whether to constrain, enable, simplify or leave it unchanged. Propose the smallest justified change and a behavioral check, including a valid contrasting case.
+```
+
+该职责按需分析上下文、工具、工作流、提示词和验证中的原因，不要求每项开发都增加一次审核。提出建议与实际验证改善效果分别报告。
 
 当前提供 **自包含 Skill、宿主插件与可选交互 CLI**。它们复用同一套治理/runner/任务核心；插件负责宿主发现与打包，不提供新模型、权限或后台执行引擎。源 Skill 位于 [skills/harness-kit/SKILL.md](../../../skills/harness-kit/SKILL.md)。
 

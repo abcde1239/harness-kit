@@ -1,16 +1,16 @@
-# 按需公开检查
+# Publication checks on request
 
-仅在用户明确要求公开准备、检查或导出时使用。始终明确当前配置的 public 范围；不能为让检查通过把整个仓库设为 public。
+Use this workflow only when the user explicitly requests publication preparation, checks, or export. State the configured public scope. Never classify the entire repository as public merely to pass a check.
 
-统一调用 `bun <skill>/scripts/harness.mjs <command> --root <project> --json`：
+Use `bun <skill>/scripts/harness.mjs <command> --root <project> --json`:
 
-- `export --destination artifacts/public-snapshot --manifest-out .harness/publication.json`：写入全新目录，不复制 .git/私有历史，不推送。已有目标目录时使用另一个用户可理解的新目录，不能删除旧结果腾位置。
-- `publication-check --manifest .harness/publication.json`：实际文件集合、输出及来源 SHA-256、已知内部复制件、链接等检查。输出变化后重新检查。
-- `review-template --out .harness/review.json`：产生与 refs/策略绑定的证据模板。reviewer/reference、remoteRefs 和平台各项必须由真实审阅支撑，不能为通过门禁编造证据。
-- `audit-history --evidence .harness/review.json`：所有本地 refs 可达历史，包括已删 memory、侧分支/标签。浅克隆、缺对象、LFS/submodule 等未覆盖资源阻断。
+- `export --destination artifacts/public-snapshot --manifest-out .harness/publication.json`: write to a new directory without copying `.git` or private history, and without pushing. If the destination exists, choose another clearly named directory; do not delete an earlier result to make room.
+- `publication-check --manifest .harness/publication.json`: check the actual file set, output and source SHA-256 digests, known copies of internal files, and links. Repeat after changing the output.
+- `review-template --out .harness/review.json`: generate an evidence template bound to refs and policy. The reviewer, reference, remote refs, and platform declarations must reflect actual review; never invent evidence to pass a gate.
+- `audit-history --evidence .harness/review.json`: inspect history reachable from all local refs, including deleted memory, side branches, and tags. Shallow history, missing objects, and uncovered LFS or submodule resources block clearance.
 
-私有转公开并不等于 HEAD 文件检查。远端 refs 完整性及 Issues/PR/Wiki/Release/Actions 等目前依赖显式人工审阅声明；工具不自动认证托管平台状态。精确相同 blob 的重命名可检测，任意内容改写不能保证自动追踪。
+Making a private repository public requires more than checking HEAD files. Completeness of remote refs and review of Issues, PRs, Wiki, Releases, Actions, and similar platform data currently rely on explicit human review declarations. The tool does not authenticate platform state automatically. Renames of identical blobs can be detected; arbitrary content rewrites cannot be traced reliably.
 
-构建清单：version 1、target、artifactRoot、entries。每项 path、sha256、sources（每个 source 的 path/sha256）；转换产物还需 review.reviewer/reference。来源未明、未列出的实际文件或归档无法深度审计时拒绝公开，不添加虚构来源。
+A build manifest uses version 1, `target`, `artifactRoot`, and `entries`. Each entry contains `path`, `sha256`, and `sources`, with a path and SHA-256 for every source. Transformed outputs also need `review.reviewer` and `review.reference`. Block publication when provenance is unknown, actual files are absent from the manifest, or archive contents cannot be audited deeply enough. Do not fabricate provenance.
 
-检查后仍不得自行切换可见性、上传、强推、清理历史。报告审计覆盖范围和未覆盖项，保留用户原有权限边界。
+Passing checks does not authorize changing visibility, uploading, force-pushing, or rewriting history. Report audit coverage and gaps, and preserve the user's existing permission boundaries.

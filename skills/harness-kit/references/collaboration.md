@@ -1,89 +1,98 @@
-# 多 Agent 协作与可直接使用的提示词
+# Multi-agent collaboration and reusable prompts
 
-使用前确认用户或适用项目指令允许委派，且宿主提供实际的子 Agent 工具。没有工具、任务过小、接口尚未明确或同一文件难以拆分时，由一个 Agent 串行完成。以下是可修改的工作提示词，不是运行时调度器，也不会增加权限。
+Use delegation only when the user or applicable project instructions authorize it and the host provides real subagent tools. Work serially when tools are unavailable, the task is too small, or file ownership cannot be separated. An unresolved interface blocks implementation that depends on it; independent investigation, interaction sketches, and test design can still proceed in parallel. These prompts guide work; they do not provide a scheduler or additional permissions.
 
-## 分工方式
+## Ownership and dependencies
 
-主 Agent 负责目标、接口、任务依赖、文件所有权、集成与最终验收。可并行处理独立模块、只读调查、测试执行或独立复核；相互依赖的接口先确定再实施。默认每个文件同一时间只有一个写入负责人，共享类型、配置和入口由主 Agent 或明确指定的一人管理。
+The lead owns the goal, interfaces, task dependencies, file ownership, integration, and final acceptance. Independent modules, read-only investigation, suitable tests, and independent review may run in parallel. Resolve shared contracts before starting dependent implementation. Assign one writer per file at a time; the lead or a named owner manages shared types, configuration, and entry points.
 
-独立模块可以并行，不等于可以同时执行相互影响的安装、迁移、构建输出或 Git 操作。共享工作目录先划定写入范围；已有独立工作树时按项目规则使用，创建与清理不能丢失用户改动。
+Independent modules do not make conflicting installs, migrations, build outputs, or Git operations safe to run concurrently. Define write scopes in shared directories. Use existing worktrees according to project rules; creating or cleaning them must preserve user changes.
 
-每个任务都应带上：目标、输入、读写范围、依赖接口、验收命令和停止条件。子 Agent 交付后，主 Agent 检查实际 diff、确认契约一致，运行集成验证；复核者提出发现，不替其他人悄悄改代码。
+Every assignment includes the goal, inputs, read/write scope, interface dependencies, verification commands, and stop conditions. After delivery, the lead checks the actual diff and contracts and runs integration verification. Reviewers report findings rather than silently changing another owner's code.
 
-需要持久交接时，主 Agent 通过 `task start` 建立工作任务和 criterion ID；子 Agent 在提示词中带工作任务 ID、负责的验收项和证据。`run --work <工作任务ID>` 关联完整验证，人工核实后逐项 accept，再 finish。不同宿主使用实际可用的委派工具；同一任务 ID 不代表各宿主的 Agent ID 相同，也不提供统一工具 API。
+For product, UX/UI, architecture, frontend, backend, QA, code review, documentation, or Agent behavior improvement, use the [role catalog](roles.md). Load only relevant profiles and combine them with the assignment boundaries. A role need not be a separate Agent, and no role mandates a technology stack. Keep reusable instructions and delegation prompts in English; preserve original user requirements and code as evidence, and communicate with the user in their requested language.
 
-## 主 Agent 提示词
+For durable handoff, the lead creates a work task and criterion IDs through `task start`. Include the work ID, assigned criteria, and evidence in each assignment. `run --work <work-id>` links full verification; after checking real evidence, accept each criterion and finish. Use each host's actual tools: a shared work ID is not a shared Agent ID or a cross-host delegation API.
 
-```text
-作为本任务的集成负责人，完成：<用户目标>。
-先读取适用项目指令、相关 memory、现有方案与未完成修改。
-工作任务 ID：<已有 ID，或需要恢复时通过 task start 创建>；验收项：<criterion ID 与可观察结果>。
-
-允许多 Agent 协作；仅拆分能独立验收的工作。确定共享接口后再委派。
-任务拆分请给出：任务目标、输入依赖、独占写入范围、只读范围、输出契约、验收命令。
-共享入口/类型/配置由 <负责人> 管理。不同 Agent 不同时编辑同一文件；新发现需改边界外文件时先报告，由你协调归属。
-不要覆盖或还原他人修改。依赖任务按顺序执行；没有可用委派工具时串行完成，不声称已创建子 Agent。
-
-你负责核对实际 diff、集成，收尾合并必要 memory 后运行 harness run --work <工作任务ID>，确认局部结果没有冒充完整验收。
-逐项核实人工证据后 task accept，满足当前完整验证与全部验收才 task finish。
-失败时定位原因，限制修复重试；报告行为变化、验证证据与残余问题。
-```
-
-## 实现 Agent 提示词
+## Lead agent prompt
 
 ```text
-任务：<一个可独立完成的结果>。
-工作任务 ID：<持久任务 ID 或明确不使用>；负责验收：<criterion ID、预期行为>。
-项目：<已核实的绝对路径>。
-输入：<需求/现有接口/相关文件及必要上下文>。
-依赖：<已确定接口；尚未完成的依赖及等待条件>。
-独占写入：<文件或目录>。
-只读：<共享入口/配置/其他模块>。
-输出契约：<导出、参数、返回值、错误状态与兼容要求>。
-验收：<可观察行为、测试命令、运行目录>。
+Act as integration lead for: <user goal>.
+Read applicable project instructions, relevant memory, existing plans, and unfinished changes.
+Work task: <existing ID, or create with task start when durable tracking is needed>.
+Acceptance: <criterion IDs and observable outcomes>.
 
-只在分配范围内实施，不覆盖他人修改，不自行扩大任务或委派。
-需要修改共享文件、接口不成立或依赖受阻时，报告具体问题和最小建议，由集成负责人调整归属。
-按现有框架验证；缺工具/未运行/失败必须如实区分。
-完成返回：工作任务/验收 ID、改动文件与行为、接口变化、实际运行命令及结果、未覆盖项、待集成事项。
-人工验收、活动任务切换和 finish 由集成负责人维护，不将子任务报告自行当作完整完成。
+Multi-agent collaboration is authorized for this assignment. Split only independently assessable work.
+Resolve shared interfaces before dependent implementation; independent research or test design may start earlier.
+For each assignment provide the goal, input dependencies, exclusive writes, read-only scope, output contract, verification commands, and stop conditions.
+Select the professional profiles needed and pass their prompts with confirmed project context.
+Shared entry points, types, and configuration belong to <owner>. Allow one writer per file at a time.
+Coordinate requests to change files outside an assignment; preserve all unrelated changes.
+Sequence dependent work. If no delegation tools are available, work serially and do not claim subagents were created.
+
+Check actual diffs, integrate deliveries, and consolidate relevant memory before final verification.
+When a work task exists, run harness run --work <work-id>; do not present partial checks as complete acceptance.
+Verify each criterion's evidence before task accept. Use task finish only with current full verification and all acceptance satisfied.
+Diagnose failures and bound retries; report behavior changes, actual evidence, and remaining limitations.
 ```
 
-## 只读复核 Agent 提示词
+## Implementation agent prompt
 
 ```text
-只读复核 <实现范围> 是否满足 <需求/验收标准>。
-工作任务 ID：<ID>；关注验收项：<criterion ID 与原始要求>。
-可读取：<相关源码、任务与验证资料>；不修改文件，不执行会写入项目的命令。
-独立核实实现与已有调用方，重点查行为错误、接口兼容、权限/资料边界及漏测路径。
-将代码和运行证据作为判断依据；实现者报告只作线索。
-输出可操作发现：严重程度、文件与准确位置、触发条件、影响、建议及证据。
-没有发现时说明复核范围和未验证部分，不以“无发现”替代测试通过。
+Task: <one independently assessable result>.
+Work task: <ID, or explicitly unused>. Assigned acceptance: <criterion IDs and expected behavior>.
+Project: <verified absolute root>.
+Inputs: <requirements, existing interfaces, relevant files, and necessary context>.
+Dependencies: <confirmed interfaces, pending deliveries, and wait conditions>.
+Exclusive writes: <files or directories>.
+Read-only: <shared entry points, configuration, and other modules>.
+Output contract: <exports, arguments, results, errors, and compatibility requirements>.
+Verification: <observable behavior, commands, working directory, permitted artifacts>.
+Stop conditions: <missing decisions, scope conflicts, unavailable dependencies, or retry budget>.
+
+Implement only the assigned result. Preserve others' changes; do not expand scope or delegate further.
+If a shared file must change, a contract is invalid, or a dependency is blocked, report the issue and smallest proposal so the lead can coordinate ownership.
+Use the existing framework and report missing tools, unrun checks, and failures honestly.
+Return work/criterion IDs, changed files and behavior, interface changes, actual commands and results, uncovered paths, and integration needs.
+The lead owns manual acceptance, active-task changes, and finish; a subtask report does not complete the whole task.
 ```
 
-需要评审者运行会产生缓存、报告或临时 fixture 的测试时，主 Agent 显式给出允许的临时目录和测试范围；不要同时要求“绝对只读”又要求可能写入项目的验证。
-
-## 交接与恢复提示词
+## Read-only reviewer prompt
 
 ```text
-接手任务：<目标>，接续已有工作，不重做已验证步骤。
-工作任务 ID：<ID>；开始读取 task status/resume，不自动执行恢复步骤。
-先读：<用户最新要求、任务记录、适用指令、相关 memory>。
-当前改动：<文件与行为>。
-已确定接口：<契约>；尚未确定：<问题>。
-验证证据：<命令、范围、结果、相关记录>。
-验收记录：<criterion ID、人工依据、当前或过期状态>。
-阻塞与尝试：<原因、已做尝试、为何停止>。
-下一步：<最小动作>。
-你的独占写入范围：<范围>；其余文件只读并联系 <集成负责人>。
-
-恢复前核实当前 diff 和 harness doctor，证据过期则重验并核对验收。
-不得根据旧状态假定外部副作用尚未执行，也不得伪造完成或通过证据。
+Review whether <implementation scope> satisfies <original requirements and acceptance>.
+Work task: <ID>. Focus criteria: <criterion IDs and original requirements>.
+Readable inputs: <relevant code, task records, and verification evidence>.
+Do not modify files or run commands that write to the project.
+Independently inspect implementation and callers for behavior errors, compatibility, authorization/data boundaries, and missing validation.
+Use code and actual execution evidence for conclusions; treat implementer reports as leads.
+Report actionable findings with severity, exact file/location, trigger, impact, recommendation, and evidence.
+If no findings are found, state reviewed scope and unverified behavior; no findings is not a claim that tests passed.
 ```
 
-## 协作结束时检查
+If tests require caches, reports, or fixtures, the lead must explicitly authorize their output directories and test scope. Do not combine absolute read-only requirements with commands that may write to the project.
 
-- 每个交付与实际文件一致，未越过写入范围，用户原修改得到保留。
-- 共享契约与调用方匹配，集成负责人已运行必要的集成验证。
-- 任务报告明确通过、失败、阻断、未运行及未覆盖范围。
-- 只归纳有长期价值的开发经验到项目 memory；临时沟通、完整日志和他人报告无需逐条抄录。
+## Handoff and recovery prompt
+
+```text
+Continue task: <goal>, preserving existing work and previously verified progress.
+Work task: <ID>. Read task status/resume first; do not automatically execute recovery steps.
+Read: <latest user requirements, task records, applicable instructions, relevant memory>.
+Current changes: <files and behavior>.
+Confirmed interfaces: <contracts>. Unresolved decisions: <questions>.
+Verification evidence: <commands, scope, results, records>.
+Acceptance: <criterion IDs, human evidence, current or stale state>.
+Blockers and attempts: <cause, previous attempts, and stop reason>.
+Next action: <smallest useful step>.
+Exclusive writes: <scope>. Other files are read-only; coordinate with <lead>.
+
+Check the actual diff and harness doctor before resuming. Reverify stale evidence and reassess acceptance.
+Do not infer that an external side effect has not happened from old state, and never manufacture completion or passing evidence.
+```
+
+## Completion checks
+
+- Deliveries match real files, remain in scope, and preserve user changes.
+- Callers and shared contracts agree, and the lead has run necessary integration checks.
+- Reports distinguish passed, failed, blocked, unrun, and uncovered behavior.
+- Keep durable engineering lessons in project memory; do not copy every message, log, or subagent report.

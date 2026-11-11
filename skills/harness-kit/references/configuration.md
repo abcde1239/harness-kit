@@ -1,20 +1,20 @@
-# 配置与非交互调用
+# Configuration and non-interactive invocation
 
-所有相对路径参数以 `--root` 为基准。不要在技能目录写目标项目答案。
+Resolve all relative path arguments against `--root`. Do not write target-project answers into the Skill directory.
 
-## 已安装技能的入口
+## Installed Skill entry point
 
-独立 Skill 和插件内 Skill 的分发包都包含完整 `scripts/harness.mjs`。以宿主实际加载的 SKILL.md 所在目录为技能根，直接运行 `bun <已安装技能目录>/scripts/harness.mjs <command> --root <项目绝对路径> --json`。无需先执行 bun run setup、安装全局 harness 或调整 Harness Kit 的 PATH；Bun ≥ 1.3.4 仍需可执行，分发包不附带 Bun，Git 功能另需 Git。不要假设插件缓存固定在某个用户路径，也不要依赖源码 checkout 的位置。源码 skills/harness-kit 中的脚本是开发入口，独立安装须使用 ZIP 或打包产物，不只复制源码技能目录。
+Standalone and plugin Skill distributions include a complete `scripts/harness.mjs`. Locate the Skill root from the SKILL.md actually loaded by the host, then run `bun <installed-skill-directory>/scripts/harness.mjs <command> --root <absolute-project-path> --json`. No setup, global harness command, or Harness Kit PATH change is required. Bun >= 1.3.4 must still be executable; packages do not include Bun. Git features also require Git. Do not assume a fixed plugin cache path or depend on a source checkout. The script under the source skills/harness-kit directory is a development entry point; install a ZIP or packaged output rather than copying that source directory alone.
 
-下面省略统一前缀的示例，均由 Agent 补齐上述实际路径。用户可以只用自然语言请求接入、开发或验证。可选的源码 `bun run setup` 仅为人类终端提供短命令，不是 Skill/插件运行前置步骤。插件安装名与技能调用名可能带宿主命名空间，以实际发现结果为准。
+The examples below omit this shared prefix; supply the actual paths when invoking them. Users can request onboarding, development, or validation in their preferred language. The optional source `bun run setup` only provides short commands for human terminals. Plugin installation names and Skill invocation names may have host namespaces; use the actual discovered names.
 
-单工作区优先短接口：`init --private --test "bun test ./tests" --yes`，已有脚本可发现时省略 `--test`。暂不测试需明确使用 `--no-tests`；不要把缺失自动当作无测试。复杂配置或需分开审阅时使用以下 answers / plan 接口。
+For a single workspace, prefer `init --private --test "bun test ./tests" --yes`. Omit `--test` when an existing script is discoverable. Explicitly use `--no-tests` only when testing is intentionally not configured; missing information does not imply no tests. Use answers/plan for complex configuration or separate review.
 
-宿主选择用 `init --hosts claude,gemini,cursor,opencode,dsh`，也支持 codex。dsh 即 DeepSeek Harness，接受别名 deepseek-harness；仅接入它时用 `init --hosts dsh --private --yes`。新项目显式选择只生成这些入口；未选时默认 Codex，已有项目累计保留历史选择。复杂答案可给 `hosts: ["claude", "dsh"]`。选择存于 plan.hosts 和 managed 状态，不属于 harness.config.json schema，不要新增 config.hosts。
+Select hosts with `init --hosts claude,gemini,cursor,opencode,dsh`; codex is also supported. dsh means DeepSeek Harness, with deepseek-harness as an alias; use `init --hosts dsh --private --yes` for it alone. Explicit selection in a new project creates only those entries; the default is Codex. Existing projects retain prior selections and add new ones. Complex answers can include `hosts: ["claude", "dsh"]`. Selection belongs to plan.hosts and managed state, not harness.config.json; do not invent config.hosts.
 
-DeepSeek Harness 仍处于 developer preview。本工具只生成/合并 AGENTS.md 并复用任务与验证，不安装 dsh、不配置其插件、模型或权限。默认 dsh-base 的 agent-instructions 插件读取 AGENTS.md、CLAUDE.md 及追加的 AGENTS.local.md/CLAUDE.local.md；同一候选组仅 trim 后完全相同才去重，不能依赖 Codex 的 AGENTS.override.md 语义。自定义 profile、filesystem provider、候选名、项目根标记和 maxBytes 会改变实际加载；外部修改靠后续结构化文件操作或 resume 对账，没有持续 watcher。用真实会话核实指令来源与预算提示，不把文件存在当加载证明。
+DeepSeek Harness remains a developer preview. Project onboarding generates/merges AGENTS.md and reuses tasks and validation; it does not install dsh or configure its plugins, model, or permissions. Native plugin installation is a separate [installation workflow](installation.md). The default dsh-base agent-instructions plugin reads AGENTS.md and CLAUDE.md, followed by AGENTS.local.md/CLAUDE.local.md. Files in the same candidate group are deduplicated only when their trimmed contents match exactly; Codex AGENTS.override.md semantics do not apply. Custom profiles, filesystem providers, candidate names, root markers, and maxBytes affect loading. External edits reconcile after later structured file operations or resume; there is no continuous watcher. Confirm sources and budget notices in a real session rather than inferring loading from file existence.
 
-Skill 发现是独立机制。启用 dsh-skill 与 dsh-skill-filesystem 时，可把完整自包含技能目录放到 `<projectRoot>/.dsh/skills/harness-kit` 或 `<projectRoot>/.agents/skills/harness-kit`；用户目录默认也扫描 `~/.dsh/skills` 和 `~/.agents/skills`，实际根受环境与 provider 配置影响。目录型技能须为扫描根的直接子目录；亦支持根顶层 `<name>.md` flat 技能，不递归任意嵌套树。本技能包含 scripts/references，应保留完整目录。先查看会话目录中是否出现 harness-kit，再按宿主实际机制加载；CLI 短命令不依赖 Skill 发现，勿假定 `$harness-kit` 是跨宿主通用语法。
+Skill discovery is separate. With dsh-skill and dsh-skill-filesystem enabled, place the complete self-contained Skill under `<projectRoot>/.dsh/skills/harness-kit` or `<projectRoot>/.agents/skills/harness-kit`. User discovery defaults also include `~/.dsh/skills` and `~/.agents/skills`, subject to environment and provider settings. Directory Skills must be direct children of a discovery root. Top-level `<name>.md` flat Skills are supported, but arbitrary nested trees are not scanned recursively. Keep this Skill's scripts/references together. Confirm harness-kit appears in the session catalog before loading it through the host's actual mechanism. CLI short commands do not depend on Skill discovery; `$harness-kit` is not universal host syntax.
 
 ```json
 {
@@ -23,42 +23,42 @@ Skill 发现是独立机制。启用 dsh-skill 与 dsh-skill-filesystem 时，�
 }
 ```
 
-`managers` 是工作区 ID 到 bun/pnpm/npm/yarn 的映射。`acknowledge` 只放已经检查处理的问题 ID。完整 `config` 可替代扫描建议；请从 inspect.suggestedConfig 修改，保留适用项目字段。
+`managers` maps workspace IDs to bun/pnpm/npm/yarn. Add only reviewed and resolved issue IDs to `acknowledge`. A complete `config` can replace discovery suggestions; start from inspect.suggestedConfig and preserve applicable project fields.
 
 ## schemaVersion 1
 
-- repository：`visibility` 为 private/public/unknown；unknown 阻断仓库发布检查。
-- workspaces：数组，`id`、项目根相对 `root`，可选 `tests`/`documents`。
-- documents：`defaultAudience: internal`，publicRoots/internalRoots，publicPatterns/internalPatterns。内部规则优先，子工作区不能放宽根策略。只有显式公开路径可发布。
-- tests：include/exclude glob、artifacts 路径、requireConfiguredTask。保留框架扫描约定；glob 支持 `*`、`**`、`?`。
-- tasks：id、workspace、argv 数组、cwd（相对工作区）、dependsOn、kind（test/lint/typecheck/build/custom）、required、enabled、timeoutMs、covers（覆盖工作区）。同一任务去重，检测循环；根聚合已有子测试时用 covers 明确范围，避免重复执行。
-- publicationTargets：id、manifest。只有公开检查需要配置。
-- rules：tests.layout、tests.configured、tests.artifacts、documents.links、tasks.graph；error/warning/off。
-- baseline：普通历史问题的 fingerprint 数组，不能包含公开问题豁免。
+- repository: visibility is private/public/unknown; unknown blocks repository publication checks.
+- workspaces: array of id, project-relative root, and optional tests/documents.
+- documents: defaultAudience: internal, publicRoots/internalRoots, publicPatterns/internalPatterns. Internal rules take precedence; child workspaces cannot weaken root policy. Only explicitly public paths may be published.
+- tests: include/exclude globs, artifacts paths, requireConfiguredTask. Preserve native framework discovery. Globs support `*`, `**`, and `?`.
+- tasks: id, workspace, argv array, cwd relative to the workspace, dependsOn, kind (test/lint/typecheck/build/custom), required, enabled, timeoutMs, and covers (workspace coverage). Tasks deduplicate by ID and cycles are rejected. Use covers for the actual scope of an existing aggregate task; avoid separately running the same underlying tests twice.
+- publicationTargets: id and manifest; needed only for publication checks.
+- rules: tests.layout, tests.configured, tests.artifacts, documents.links, tasks.graph; values error/warning/off.
+- baseline: fingerprints of ordinary historical findings; publication violations cannot be exempted.
 
-省略字段沿用默认；未知字段或版本被拒绝。根 README.md 默认公开；没有既有治理配置时，新生成的通用宿主入口可纳入建议公开规则，已有入口或显式策略不自动放宽。详细公开内容放 docs/public/guides、reference、examples。内部默认包含 docs/prd、docs/decision、docs/verification、.harness、docs/structure.md 和 docs/agent_guide.md。显式数组替换该字段默认值，改造旧配置时审阅合并新约定，并检查自定义 Agent 指令是否含内部信息。不要添加不存在于 schema 的 fields。
+Omitted fields use defaults; unknown fields and versions are rejected. Root README.md is public by default. Without existing governance configuration, newly generated generic host entries may be suggested as public; existing entries and explicit policies are not automatically broadened. Detailed public content belongs under docs/public/guides, reference, and examples. Default internal paths include docs/prd, docs/decision, docs/verification, .harness, docs/structure.md, and docs/agent_guide.md. Explicit arrays replace defaults for that field: review and merge new conventions when adapting old configuration, and check custom Agent instructions for internal information. Do not invent schema fields.
 
-## 命令
+## Commands
 
-统一前缀：`bun <skill>/scripts/harness.mjs`。以下命令均补充 `--root <project> --json`：
+Use `bun <skill>/scripts/harness.mjs`, adding `--root <project> --json` to each command:
 
-- `inspect`：只读发现，返回 facts、questions、suggestedConfig。
-- `init --answers .harness/answers.json --yes`：应用接入并默认执行首次验证；`--skip-verify` 明确暂不执行。
-- `plan --answers .harness/answers.json --out .harness/plan.json`：保存精确内容和前置摘要。
-- `apply --plan .harness/plan.json`：应用未变更计划；conflicts 保留原文件。
-- `check`：只读治理，公开仓库还检查 Git index；兼容名 lint。
-- `run` 或 `run --task <id>`：运行声明式任务并保存验证记录；所选范围以外标记 not-selected，兼容名 verify。
-- `doctor`：只读诊断配置、入口和当前验证记录，不运行任务，不确认宿主会话已经加载。
-- `baseline`：输出提案，不自动修改配置。
+- `inspect`: read-only discovery returning facts, questions, and suggestedConfig.
+- `init --answers .harness/answers.json --yes`: apply onboarding and run first validation by default; `--skip-verify` explicitly defers it.
+- `plan --answers .harness/answers.json --out .harness/plan.json`: save exact proposed content and precondition digests.
+- `apply --plan .harness/plan.json`: apply an unchanged plan; conflicts preserve original files.
+- `check`: read-only governance; also checks the Git index for public repositories. Compatibility alias: lint.
+- `run` or `run --task <id>`: execute configured tasks and save evidence. Unselected scope is not-selected. Compatibility alias: verify.
+- `doctor`: read-only diagnosis of configuration, entries, and current evidence. It neither runs tasks nor confirms live host loading.
+- `baseline`: propose entries without modifying configuration automatically.
 
-工作任务通过 `task start/status/resume/note/accept/finish` 管理，详细参数见[任务参考](tasks.md)。`run --work <工作任务ID>` 绑定验证；原 `run --task <runner任务ID>` 保持选择验证任务的含义。不要混用两个 ID，也不要把 task scope 当作验证或权限范围。
+Manage work tasks with `task start/status/resume/note/accept/finish`; see [tasks](tasks.md). `run --work <work-task-id>` associates validation, while `run --task <runner-task-id>` still selects a validation task. Keep those IDs distinct. Task scope describes collaboration, not validation or permissions.
 
-日常帮助只展示主要入口，`help --all` 查看所有兼容与高级接口。低层 apply 不执行首次验证，需再调用 run。验证记录位于 `.harness/verification.json`，源码/配置变化后不能沿用旧结果；不要手工写入通过状态。
+Everyday help shows the primary entry points; `help --all` includes advanced and compatibility interfaces. Low-level apply does not run first validation, so follow it with run. Evidence is saved in `.harness/verification.json`. Source/configuration changes invalidate prior results; never write passing evidence manually.
 
-## 可选 Codex 本地 hooks
+## Optional local Codex hooks
 
-`init --hooks` 合并 `.codex/hooks.json` 的 SessionStart/Stop handlers，并在 `.harness/hooks` 生成自包含运行器和归属记录。用户需要在新本地会话 `/hooks` 中审阅信任；该操作不改变宿主权限。已有第三方 handlers 保留，本工具的 handler 被修改/删除时报告冲突。命令绑定本机 Bun 与项目绝对路径，搬迁、换机器或升级后重新 init --hooks。
+`init --hooks` merges SessionStart/Stop handlers into `.codex/hooks.json` and generates a self-contained runner and ownership record in `.harness/hooks`. Users must review and trust them through `/hooks` in a new local session; setup does not change host permissions. Preserve third-party handlers. Modified or deleted managed handlers produce conflicts. Commands bind local Bun and project absolute paths; rerun init --hooks after moving, changing machines, or upgrading.
 
-SessionStart 记录本会话输入摘要并提示验证入口。Stop 只在会话内有修改且没有当前完整通过证据时请求 Agent 继续验证；不执行项目命令，自动继续一次后只提醒。无启动快照或无任务时只说明缺口。此协议适配不等于全平台强制执行，不能自行代用户信任或关闭其他 hook。
+SessionStart records a session input digest and supplies validation context. Stop requests continued validation only when the session changed files and no current full passing evidence exists. It does not run project commands itself; after one automatic continuation it only reminds. Missing start snapshots or tasks are reported as gaps. This adapter is not universal enforcement. Do not trust hooks on the user's behalf or disable other hooks.
 
-退出码 0：本次所要求的门禁满足；1：规则/任务失败；2：配置/工具/执行条件错误。not-configured 不代表测试通过。发布命令不能用普通 lint 成功代替。
+Exit 0 means the requested gates are satisfied; 1 indicates rule/task failure; 2 indicates configuration, tool, or execution-condition errors. not-configured is not a test pass. Successful ordinary lint does not replace publication checks.

@@ -30,15 +30,17 @@ export const AGENT_BLOCK_END = '<!-- harness-kit:end -->';
 
 // This block is safe to publish independently of private project notes.
 export const agentInstructions = `${AGENT_BLOCK_START}
-## 项目开发与验证
+## Project development and verification
 
-- 开始任务时，读取适用的项目指令；本地存在 docs/agent_guide.md 或 MEMORY.md 时，只读取与当前任务相关的约定和经验。内部资料缺失时继续依据公开项目文件工作，不要求下载私有资料。
-- 按任务选择可用 Skill；已安装 Harness Kit 时，按当前宿主支持的方式加载技能或调用 harness CLI，进行项目接入、开发、修复、评审或恢复。简单改动直接实施，复杂改动先明确范围与验收，保留既有框架和用户修改。
-- 使用 harness doctor 诊断接入，使用 harness check 检查项目约定，使用 harness run 运行配置中的验证任务。命令不可用时先核实安装位置和 Bun，不把未运行、未配置、超时或跳过报告为通过。
-- 复杂或跨会话任务可用 harness task start/resume/status 保存与恢复目标；用 harness task accept 记录验收，再以 harness run --work ID 验证，最后用 harness task finish 核对完成条件。
-- 独立子任务适合并行且用户或适用项目指令允许多 Agent 时再委派。给每个 Agent 明确目标、可写文件、依赖接口和验收命令；共享文件由一名负责人整合，完成后独立检查变更与证据。
-- 修复失败应先复现并区分代码问题、配置问题和环境缺失，再运行受影响验证。报告本次变更、实际执行结果和剩余阻塞；项目内容变化后重新核实相关证据。
-- 编码或系统设计完成后，按项目约定合并可复用 memory，去重并记录适用范围。开发经验、决策和验证记录保留内部；公开发布前另行检查实际产物与来源。
+- Read applicable project instructions first. If docs/agent_guide.md or MEMORY.md exists locally, read only relevant conventions and lessons. Continue from public files when private material is absent; do not require downloading it.
+- If docs/decision/coding-style/RULES.md exists, apply adopted rules within this task's scope; candidate rules are references only. Personal preferences do not override current user requirements, applicable instructions or existing tool configuration. Explain material conflicts.
+- Use applicable installed Skills. Load Harness Kit through the actual host mechanism or CLI for onboarding, development, repair, review or recovery. Implement small changes directly; clarify scope and acceptance for complex work. Preserve frameworks and user edits.
+- Use harness doctor for diagnosis, harness check for conventions and harness run for configured verification. If unavailable, verify the installation and Bun. Never report unrun, unconfigured, timed-out or skipped work as passed.
+- For complex or cross-session work, use harness task start/resume/status to preserve goals, harness run --work ID to associate verification, harness task accept for checked criteria, and harness task finish only after completion gates hold.
+- Delegate independent work only when authorized and real host tools are available. Provide goals, writable files, interface dependencies, applicable rules and verification commands. Assign one writer per shared file and independently check changes and evidence.
+- Reproduce failures and distinguish implementation, configuration and environment causes before retrying. Report changes, actual outcomes and remaining blockers; refresh relevant evidence after project inputs change.
+- Write maintained agent prompts and instructions in English; use the user's requested language for responses. Preserve original user-owned text, code and quotations. For observed agent behavior problems, assess context, tools, workflow, prompts and validation before adding a scoped rule.
+- After coding or system design, consolidate reusable project memory and applicability. Keep development lessons, decisions and verification records internal. Check actual artifacts and provenance separately before publication.
 ${AGENT_BLOCK_END}`;
 
 const blockHash = block => hash(block.replaceAll('\r\n', '\n'));
@@ -75,7 +77,7 @@ export function planAgentEntry(root, previous = { files: {} }, hostId = 'codex')
   let content, action, reason;
   if (before === null) {
     // A deliberately removed managed entry is not silently recreated.
-    content = `${host.id === 'cursor' ? '---\nalwaysApply: true\n---\n\n' : ''}# 项目 Agent 指令\n\n${agentInstructions}\n`;
+    content = `${host.id === 'cursor' ? '---\nalwaysApply: true\n---\n\n' : ''}# Project Agent Instructions\n\n${agentInstructions}\n`;
     action = previousBlock || previous.files?.[file] ? 'conflict' : 'create';
     if (action === 'conflict') reason = 'Previously managed Agent entry was removed; review before restoring it';
   } else if (block.status === 'absent') {
