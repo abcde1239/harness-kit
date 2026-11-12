@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [English](README.en.md)
 
-[Documentation](https://abcde1239.github.io/harness-kit/) · Local preview: `bun run docs:dev` · Build: `bun run docs:build`
+[Documentation](https://abcde1239.github.io/harness-kit/)
 
 Harness Kit connects coding agents to existing projects, runs the project's tests, and saves the context needed to continue work later. Install a Skill or plugin, then describe your goal in the Agent session.
 
