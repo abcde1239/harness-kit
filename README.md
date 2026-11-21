@@ -13,6 +13,7 @@ Harness Kit 帮你把编码 Agent 接入现有项目，运行项目里的测试�
 - **接入已有项目。** 为所选 Agent 配置项目指令，保留现有框架、测试布局和用户修改。
 - **接续未完成的工作。** 保存任务目标、验收条件、备注和下一步，供新会话或其他 Agent 接手。
 - **协调多 Agent 协作。** 按任务分配职责，使用角色提示词和宿主委派工具推进协作。
+- **管理生成产物。** 同一任务共用一个目录保存报告、日志和截图。到期的产物与 Hook 快照可分别预览清理。
 - **整理自己的编码习惯。** 从指定项目提炼有代码依据的风格和架构规则，按适用范围用于后续开发与复核，见[使用方法](docs/public/guides/coding-style.md)。
 
 项目接入支持常见技术栈的工作区识别，也可用 `harness.adapters.json` 声明自定义标记、命令和测试路径，见[适配器参考](skills/harness-kit/references/adapters.md)。
@@ -43,7 +44,7 @@ Agent 会显示完整安装路径，保留已有修改，并核对宿主插件�
 
 ### 安装 Skill
 
-下载 [harness-kit-skill-0.7.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-skill-0.7.0.zip)，把完整 harness-kit 目录放入宿主的技能目录。以 Codex 用户目录为例：
+下载 [harness-kit-skill-0.8.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/harness-kit-skill-0.8.0.zip)，把完整 harness-kit 目录放入宿主的技能目录。以 Codex 用户目录为例：
 
 ```text
 ~/.agents/skills/harness-kit/
@@ -69,8 +70,8 @@ Use harness-kit to implement pagination and save the task and acceptance criteri
 
 | 宿主 | 安装包 |
 |---|---|
-| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-marketplace-0.7.0.zip) |
-| DeepSeek Harness | [DSH 原生插件 ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-dsh-0.7.0.zip) |
+| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/harness-kit-marketplace-0.8.0.zip) |
+| DeepSeek Harness | [DSH 原生插件 ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/harness-kit-dsh-0.8.0.zip) |
 
 解压后选择对应宿主的命令，将路径替换为解压目录的绝对路径：
 
@@ -125,12 +126,14 @@ harness doctor    # 诊断接入状态和验证记录
 
 裸命令 `harness` 打开中文菜单；`harness help --all` 查看高级用法。项目配置、monorepo、可恢复任务和可选 hooks 见[使用指南](docs/public/guides/usage.md)。
 
+用 `harness artifacts create <label>` 分配目录，所有写入结束后用 `harness artifacts finish <id>` 标记完成。`harness artifacts clean` 预览到期产物，`harness hooks clean` 预览过期 Hook 会话快照。传入 `--yes` 才执行清理。参见[产物管理](docs/public/reference/artifacts.md)。
+
 ## 文档与开发
 
 - [文档导航](docs/public/README.md)
 - [多 Agent 协作](skills/harness-kit/references/collaboration.md)
 - [可恢复任务](skills/harness-kit/references/tasks.md)
-- [v0.7.0 版本说明](docs/public/releases/v0.7.0.md)
+- [v0.8.0 版本说明](docs/public/releases/v0.8.0.md)
 
 在源码目录验证和打包；`node scripts/verify.mjs` 运行 Node 集成测试，`bun run verify:bun` 运行原有完整测试：
 

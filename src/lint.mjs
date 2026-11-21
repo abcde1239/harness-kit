@@ -5,6 +5,8 @@ import { effectiveTests } from './config.mjs';
 import { finding, report } from './report.mjs';
 import { taskOrder } from './runner.mjs';
 import { auditIndex } from './git.mjs';
+import { checkArtifactLayout, RUNS } from './artifacts.mjs';
+import { checkHarnessStorage } from './storage.mjs';
 
 export function applyBaseline(findings, baseline) {
   return findings.map(f => !f.protected && baseline.includes(f.fingerprint) ? { ...f, severity: 'warning', baseline: true } : f);
@@ -12,9 +14,11 @@ export function applyBaseline(findings, baseline) {
 export function lint(root, config, { useBaseline = true } = {}) {
   const findings = [], entries = walk(root,{ignore:['.git','node_modules','.harness']}), files = entries.filter(e => e.type === 'file').map(e => e.path);
   const add = (rule, name, message, workspace = 'root', detail) => {
-    const severity = config.rules[rule] ?? 'error';
+    const severity = config.rules[rule] ?? (rule === 'artifacts.layout' ? 'warning' : 'error');
     if (severity !== 'off') findings.push(finding(rule,name,message,{ severity, workspace, detail }));
   };
+  checkHarnessStorage(root, config, add);
+  checkArtifactLayout(root, add);
   try { taskOrder(config.tasks); } catch (error) { add('tasks.graph', 'harness.config.json', error.message, 'root', error.message); }
   const workspaceResults = [];
   for (const w of config.workspaces) {
@@ -26,8 +30,12 @@ export function lint(root, config, { useBaseline = true } = {}) {
       const owners = config.workspaces.filter(other => other.root !== w.root && under(other.root,w.root) && under(file,other.root));
       if (owners.length) continue;
       const local = w.root === '.' ? file : file.slice(w.root.length+1);
-      if (policy.exclude.some(p => matches(local,p))) continue;
       const looksLikeTest = policy.detect.some(pattern => matches(local,pattern));
+      if (looksLikeTest && under(file, RUNS)) {
+        add('tests.artifacts',file,'Keep executable tests in their framework discovery paths',w.id);
+        continue;
+      }
+      if (policy.exclude.some(p => matches(local,p))) continue;
       if (looksLikeTest && policy.artifacts.some(p => under(local,p))) add('tests.artifacts',file,'Test code is inside an artifact directory',w.id);
       else if (looksLikeTest && policy.include.length && !policy.include.some(p => matches(local,p))) add('tests.layout',file,'Test is outside the configured framework discovery paths',w.id);
     }

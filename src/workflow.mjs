@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { atomicWrite, digest, fileHash, json, readJson, safePath, walk } from './fs.mjs';
 import { effectiveTests } from './config.mjs';
 import { lint } from './lint.mjs';
+import { RUNS } from './artifacts.mjs';
 import { verify } from './runner.mjs';
 import {runtimeEnvironment} from './runtime.mjs';
 
@@ -9,8 +10,8 @@ export const EVIDENCE = '.harness/verification.json';
 
 // Store only digests and statuses, never command stdout or source contents.
 export function inputSnapshot(root, config) {
-  const excluded = [...new Set(config.workspaces.flatMap(w=>effectiveTests(config,w).artifacts.map(p=>w.root==='.'?p:`${w.root}/${p}`)))].sort();
-  // Source folders called src/build remain source. Only declared output roots
+  const excluded = [...new Set([RUNS, ...config.workspaces.flatMap(w=>effectiveTests(config,w).artifacts.map(p=>w.root==='.'?p:`${w.root}/${p}`))])].sort();
+  // Source folders called src/build remain source. Only managed or declared output roots
   // are pruned; discovery's broad directory-name ignores cannot prove freshness.
   const ignored=['.git','node_modules','.harness'];
   const entries = walk(root,{ignore:ignored,prune:excluded});

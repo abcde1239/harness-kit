@@ -115,3 +115,26 @@ test('Windows Node runner supports guarded .cmd shims and rejects shell metachar
  const config=JSON.parse(fs.readFileSync(path.join(root,'harness.config.json'),'utf8'));config.tasks[0].argv.push('unsafe&arg');fs.writeFileSync(path.join(root,'harness.config.json'),JSON.stringify(config));
  assert.equal(call(entry,root,['run'],{expected:2}).verification.tasks[0].status,'blocked');
 });
+
+test('packaged Node CLI allocates, pins and previews artifact runs without project setup', () => {
+  const root = project('artifacts');
+  const run = call(entry, root, ['artifacts', 'create', 'checkout-e2e']);
+  assert.match(run.path, /^artifacts\/runs\/\d{8}-checkout-e2e-[a-f0-9]{8}$/);
+  assert.ok(fs.existsSync(path.join(root, run.path, 'run.json')));
+  assert.equal(call(entry, root, ['artifacts', 'finish', run.id]).status, 'finished');
+  assert.equal(call(entry, root, ['artifacts', 'keep', run.id]).status, 'kept');
+  const preview = call(entry, root, ['artifacts', 'clean']);
+  assert.equal(preview.retentionDays, 14);
+  assert.equal(preview.items[0].status, 'kept');
+});
+
+test('packaged Node CLI previews Hook session retention separately from artifact retention', () => {
+  const root = project('hook-cleanup');
+  assert.equal(call(entry, root, ['hooks', 'clean']).retentionDays, 30);
+  assert.ok(!fs.existsSync(path.join(root, '.harness')));
+  init(entry, root, ['--hooks']);
+  const runtime = path.join(root, '.harness/hooks/runtime.mjs');
+  call(runtime, root, ['hook'], { input: JSON.stringify({ session_id: 'node session', hook_event_name: 'SessionStart' }) });
+  assert.deepEqual(call(entry, root, ['hooks', 'clean', '--yes']).items.map(item => item.status), ['recent']);
+  assert.equal(call(entry, root, ['doctor']).checks.find(check => check.id === 'hooks').hooks.status, 'configured');
+});

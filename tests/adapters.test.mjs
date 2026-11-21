@@ -76,8 +76,8 @@ test('explicit configuration stays authoritative and drift uses configured works
 test('custom detection separates test identity, allowed layout and excluded files',()=>{
  const root=fixture({'suite/ok.check':'','src/misplaced.check':'','artifacts/generated.check':'','fixtures/ignored.check':'','src/main.py':''});
  const c=validateConfig(config(root,{tests:{detect:['**/*.check'],include:['suite/**'],exclude:['fixtures/**'],artifacts:['artifacts']}}),root);
- const findings=lint(root,c).findings;assert.deepEqual(findings.map(f=>[f.ruleId,f.path]).sort(),[['tests.artifacts','artifacts/generated.check'],['tests.layout','src/misplaced.check']]);
- c.tests.detect=[];assert.equal(lint(root,c).findings.length,0);
+ const findings=lint(root,c).findings.filter(f=>f.ruleId.startsWith('tests.'));assert.deepEqual(findings.map(f=>[f.ruleId,f.path]).sort(),[['tests.artifacts','artifacts/generated.check'],['tests.layout','src/misplaced.check']]);
+ c.tests.detect=[];assert.equal(lint(root,c).findings.filter(f=>f.ruleId.startsWith('tests.')).length,0);
  assert.throws(()=>validateConfig({...c,tests:{detect:['../*.check']}},root),/Unsafe relative path/);
 });
 

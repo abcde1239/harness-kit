@@ -1,8 +1,8 @@
 # 安装指南
 
-[文档导航](/) · [日常使用](usage.md)
+[文档导航](../index.md) · [日常使用](usage.md)
 
-从 [v0.7.0 Release](https://github.com/abcde1239/harness-kit/releases/tag/v0.7.0) 下载一种安装包。Skill 和插件都包含完整 CLI，**不需要运行 bun setup、配置 Harness Kit 的 PATH 或安装全局 harness 命令**。需要 Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4，二选一。Git 功能另需 Git，包内不附带运行时。
+从 [v0.8.0 Release](https://github.com/abcde1239/harness-kit/releases/tag/v0.8.0) 下载一种安装包。Skill 和插件都包含完整 CLI，**不需要运行 bun setup、配置 Harness Kit 的 PATH 或安装全局 harness 命令**。需要 Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4，二选一。Git 功能另需 Git，包内不附带运行时。
 
 ## 把链接交给 Agent
 
@@ -23,16 +23,16 @@ Release 附件包含 `AGENT-INSTALL.md` 和独立的 `install-plugin.mjs`，无�
 手动调用示例：
 
 ```text
-node install-plugin.mjs --source https://github.com/abcde1239/harness-kit/releases/tag/v0.7.0 --host codex --location default
+node install-plugin.mjs --source https://github.com/abcde1239/harness-kit/releases/tag/v0.8.0 --host codex --location default
 ```
 
-v0.7.0 安装器与包内 CLI 均支持 Node.js 或 Bun；使用 Bun 时将命令中的 node 替换为 bun。旧 v0.5.0 包仍需 Bun。
+v0.8.0 安装器与包内 CLI 均支持 Node.js 或 Bun；使用 Bun 时将命令中的 node 替换为 bun。旧 v0.5.0 包仍需 Bun。
 
 自选目录使用 `--location <绝对路径>`，预览加 `--dry-run`。Claude 使用 `--host claude`；DSH 使用 `--host dsh --profile <实际profile>`。同名 marketplace 已指向其他来源时先审阅冲突，不静默覆盖。只安装插件不会自动改当前项目的测试或可见性配置。
 
 ## 独立 Skill
 
-下载 `harness-kit-skill-0.7.0.zip`，将其中完整 harness-kit 目录放在宿主技能根的直接下一层。Codex 可使用：
+下载 `harness-kit-skill-0.8.0.zip`，将其中完整 harness-kit 目录放在宿主技能根的直接下一层。Codex 可使用：
 
 ```text
 <项目>/.agents/skills/harness-kit/SKILL.md
@@ -45,7 +45,7 @@ DSH 启用原生 Skill 文件系统 provider 时可使用 `<项目>/.dsh/skills/
 
 ## Codex 插件
 
-下载 `harness-kit-marketplace-0.7.0.zip`，解压后用其中 marketplace 目录的绝对路径：
+下载 `harness-kit-marketplace-0.8.0.zip`，解压后用其中 marketplace 目录的绝对路径：
 
 ```powershell
 codex plugin marketplace add "D:/tools/harness-kit/marketplace"
@@ -67,7 +67,7 @@ claude plugin install harness-kit@harness-kit-local
 
 ## DeepSeek Harness 原生插件
 
-下载 `harness-kit-dsh-0.7.0.zip`，将路径替换为解压后 harness-kit 包根的绝对路径：
+下载 `harness-kit-dsh-0.8.0.zip`，将路径替换为解压后 harness-kit 包根的绝对路径：
 
 ```powershell
 dsh plugin --profile web add "D:/tools/harness-kit-native/harness-kit"
@@ -100,6 +100,7 @@ node <已安装技能目录>/scripts/harness.mjs <command> --root <项目绝对�
 ## 升级与常见问题
 
 - **升级 Skill**：保留自己的定制，替换完整分发目录并开启新会话。先检查是否存在多份同名 Skill，避免误用旧版本。
+- **更新项目 Hook**：升级 Skill 或插件后，已接入 Codex Hooks 的项目可重新运行 `harness init --hooks` 更新运行器。重新运行项目验证可刷新旧验证记录。
 - **升级本地插件**：保留原目录，按宿主机制更新来源或重新安装并启用新版本；仅覆盖 ZIP 不保证缓存已更新。以实际安装位置的脚本版本和新会话发现结果为准。
 - **找不到运行时**：可使用 Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4；v0.5.0 包仍需 Bun。setup 不安装运行时，配置了 bun test 等项目命令时仍需项目工具链。PATH 中有代理时核对实际执行文件。
 - **找不到 harness**：Skill/插件正常使用不需要此全局命令；终端短命令是可选能力，见[使用指南](usage.md)。

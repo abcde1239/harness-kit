@@ -1,12 +1,11 @@
 node_modules/
 artifacts/
-.harness/tmp/
+/.harness/
 coverage/
 dist/
 build/
 docs/public/.vitepress/dist/
-.harness/answers.json
-.harness/plan.json
+docs/public/.vitepress/cache/
 .env
 .env.*
 !.env.example

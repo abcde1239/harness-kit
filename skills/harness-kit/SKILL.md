@@ -24,6 +24,7 @@ Use English for maintained agent instructions, role/task prompts, generated agen
 | Evaluate whether an agent behavior needs a constraint or capability improvement | [Agent expert](references/roles/agent-expert.md); use observed evidence and scoped evaluation |
 | Distill coding style or architecture conventions | [Coding style](references/coding-style.md); produce evidence-backed profiles and scoped rules |
 | Connect a stack outside the built-in recipes | [Technology adapters](references/adapters.md); use project-owned data recipes or explicit tasks |
+| Store, retain or clean generated outputs | [Artifact management](references/artifacts.md) |
 | Prepare public artifacts or audit publication boundaries | [Publication checks](references/publication.md), only when relevant |
 
 For small changes, establish scope, implement and verify directly. Persist plans and task records when decisions, recovery or handoffs warrant them. Do not add documents or questions solely to exercise the Skill.
@@ -38,6 +39,10 @@ For small changes, establish scope, implement and verify directly. Persist plans
 When users request session reminders or completion checks, optional Codex local `init --hooks` merges SessionStart/Stop handlers, preserves third-party handlers and edits, and writes a self-contained runtime. A new session must review trust through `/hooks`. Stop requests verification only for session changes without current complete passing evidence, executes no business commands, and continues automatically at most once. This is not a universal enforcement mechanism. Reconnect after relocation, machine changes or upgrades; consult configuration reference for limits.
 
 Daily commands: `check` checks conventions; `run` checks conventions and executes configured tasks; `doctor` diagnoses read-only. `run --task <id>` selects runner tasks and dependencies and does not prove full-project verification. Doctor compares `.harness/verification.json` with current source/configuration without running tests. Refresh missing or stale evidence with an applicable run.
+
+For generated logs, screenshots or reports, allocate one run with `artifacts create <label>` and share that path with delegates. Use `artifacts finish <id>` after writers stop and `artifacts keep <id>` before relying on durable evidence. Use `artifacts clean` for a read-only preview and apply cleanup only when authorized. See [artifact management](references/artifacts.md).
+
+Keep tests, fixtures, and test snapshots in the native test layout. Reserve `.harness/tmp/` for JSON inputs or outputs used by Harness, and `.harness/hooks/` for its installed runtime and temporary session snapshots. Preview snapshot expiry with `hooks clean`, and apply only when authorized. See the [project layout](references/project-layout.md).
 
 For recovery or explicit acceptance, use `task start` for goals and criteria, `task resume` for context, `run --work <work-id>` to associate verification, `task accept` for individually checked evidence, then `task finish`. `--task` still selects a runner task. Scope describes ownership, not a permissions sandbox. Records associate evidence; they do not prove the semantics of evidence text or automatically execute recovery actions.
 

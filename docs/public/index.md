@@ -61,10 +61,10 @@ Harness Kit 是项目与 coding agent 之间的接入层。它负责把项目约
 
 ## CLI 安装命令
 
-发布包已经包含完整 CLI，不需要在源码目录运行 `bun setup`，也不要求全局 `harness` 命令。先从 [v0.7.0 Release 下载 install-plugin.mjs](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/install-plugin.mjs)，让 Agent 询问默认位置还是自定义目录，再在文件所在目录运行：
+发布包已经包含完整 CLI，不需要在源码目录运行 `bun setup`，也不要求全局 `harness` 命令。先从 [v0.8.0 Release 下载 install-plugin.mjs](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/install-plugin.mjs)，让 Agent 询问默认位置还是自定义目录，再在文件所在目录运行：
 
 ```powershell
-node install-plugin.mjs --source https://github.com/abcde1239/harness-kit/releases/tag/v0.7.0 --host skill --location default
+node install-plugin.mjs --source https://github.com/abcde1239/harness-kit/releases/tag/v0.8.0 --host skill --location default
 ```
 
 运行环境需要 **Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4**。安装后，Skill 或插件会调用实际加载目录中的 CLI：
@@ -73,7 +73,7 @@ node install-plugin.mjs --source https://github.com/abcde1239/harness-kit/releas
 node <installed-skill-directory>/scripts/harness.mjs init --root <project-absolute-path> --private --yes --json
 ```
 
-源码开发者也可以安装依赖后使用 `harness` 短命令；这不是分发包的必要步骤。完整安装方式见[安装指南](/guides/installation)。
+源码开发者也可以安装依赖后使用 `harness` 短命令；这不是分发包的必要步骤。完整安装方式见[安装指南](./guides/installation.md)。
 
 </div>
 
@@ -96,7 +96,7 @@ Preserve its framework, native commands, and existing user instructions.
 Ask whether the plugin should use the default installation location or a custom directory before installing.
 ```
 
-小改动可以直接接入并验证；需要恢复或交接时，再阅读[持久任务与验收](/reference/tasks)。
+小改动可以直接接入并验证；需要恢复或交接时，再阅读[持久任务与验收](./reference/tasks.md)。
 
 </div>
 
@@ -123,14 +123,15 @@ Skill 或原生插件负责让宿主发现使用说明，并把用户目标路�
 
 | 你要做什么 | 从这里开始 |
 |---|---|
-| 安装 Skill 或插件 | [安装指南](/guides/installation) |
-| 接入项目并运行验证 | [使用指南](/guides/usage) |
-| 了解当前能力与边界 | [能力与适用范围](/reference/capabilities) |
-| 添加其他技术栈 | [技术适配器](/reference/adapters) |
-| 跨会话恢复和人工验收 | [持久任务](/reference/tasks) |
-| 组织多 Agent 分工 | [协作与职责](/reference/collaboration) · [职责角色](/reference/roles) |
-| 提炼编码与架构习惯 | [编码习惯提炼](/guides/coding-style) |
-| 查看版本变化 | [v0.7.0 版本说明](/releases/v0.7.0) |
+| 安装 Skill 或插件 | [安装指南](./guides/installation.md) |
+| 接入项目并运行验证 | [使用指南](./guides/usage.md) |
+| 了解当前能力与边界 | [能力与适用范围](./reference/capabilities.md) |
+| 添加其他技术栈 | [技术适配器](./reference/adapters.md) |
+| 跨会话恢复和人工验收 | [持久任务](./reference/tasks.md) |
+| 组织多 Agent 分工 | [协作与职责](./reference/collaboration.md) · [职责角色](./reference/roles.md) |
+| 提炼编码与架构习惯 | [编码习惯提炼](./guides/coding-style.md) |
+| 整理产物和 Hook 快照 | [产物管理](./reference/artifacts.md) |
+| 查看版本变化 | [v0.8.0 版本说明](./releases/v0.8.0.md) |
 
 English users can start with the [English README](https://github.com/abcde1239/harness-kit/blob/main/README.en.md). Maintained Agent prompts and role templates remain in English; user-facing guides follow the current project language.
 

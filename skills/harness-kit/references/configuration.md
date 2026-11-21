@@ -32,10 +32,12 @@ Skill discovery is separate. With dsh-skill and dsh-skill-filesystem enabled, pl
 - repository: visibility is private/public/unknown; unknown blocks repository publication checks.
 - workspaces: array of id, project-relative root, and optional tests/documents.
 - documents: defaultAudience: internal, publicRoots/internalRoots, publicPatterns/internalPatterns. Internal rules take precedence; child workspaces cannot weaken root policy. Only explicitly public paths may be published.
+- hooks: `sessionRetentionDays` for inactive managed Hook snapshots, default 30 (1–3650). This setting does not enable Hooks.
+- artifacts: `retentionDays` for completed managed runs, default 14 (1–3650). See [artifact management](./artifacts.md).
 - tests: include/exclude globs, artifacts paths, requireConfiguredTask. Preserve native framework discovery. Globs support `*`, `**`, and `?`.
 - tasks: id, workspace, argv array, cwd relative to the workspace, dependsOn, kind (test/lint/typecheck/build/custom), required, enabled, timeoutMs, and covers (workspace coverage). Tasks deduplicate by ID and cycles are rejected. Use covers for the actual scope of an existing aggregate task; avoid separately running the same underlying tests twice.
 - publicationTargets: id and manifest; needed only for publication checks.
-- rules: tests.layout, tests.configured, tests.artifacts, documents.links, tasks.graph; values error/warning/off.
+- rules: tests.layout, tests.configured, tests.artifacts, documents.links, tasks.graph, storage.state, artifacts.layout; values error/warning/off. `storage.state` defaults to error; `artifacts.layout` defaults to warning.
 - baseline: fingerprints of ordinary historical findings; publication violations cannot be exempted.
 
 Omitted fields use defaults; unknown fields and versions are rejected. Root README.md is public by default. Without existing governance configuration, newly generated generic host entries may be suggested as public; existing entries and explicit policies are not automatically broadened. Detailed public content belongs under docs/public/guides, reference, and examples. Default internal paths include docs/prd, docs/decision, docs/verification, .harness, docs/structure.md, and docs/agent_guide.md. Explicit arrays replace defaults for that field: review and merge new conventions when adapting old configuration, and check custom Agent instructions for internal information. Do not invent schema fields.

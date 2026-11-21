@@ -5,6 +5,7 @@ import {parse as parseToml} from 'smol-toml';
 import { atomicWrite, digest, fileHash, hash, json, readJson, safePath } from './fs.mjs';
 import { loadConfig } from './config.mjs';
 import { inputSnapshot, verificationEvidence } from './workflow.mjs';
+import { touchHookSession } from './hook-state.mjs';
 
 const CONFIG='.codex/hooks.json', STATE='.harness/hooks/state.json', RUNTIME='.harness/hooks/runtime.mjs';
 const quote = value => `'${value.replaceAll("'", "'\\''")}'`;
@@ -85,15 +86,15 @@ export function hookEvent(root,input) {
   const config=loadConfig(root);
   if(!config.tasks.some(t=>t.enabled))return {systemMessage:'Harness Kit: no verification tasks are configured. Configuration completion is not engineering verification.'};
   if(typeof input.session_id!=='string'||!input.session_id.trim())throw new Error('Hook requires session_id');
-  const session=`.harness/hooks/sessions/${hash(input.session_id)}.json`;
+  // Resume and compaction refresh activity while retaining the original baseline.
+  const session = touchHookSession(root, input.session_id, event === 'SessionStart' ? () => inputSnapshot(root, config).digest : undefined);
+  if (session.status === 'busy') return {systemMessage:'Harness Kit: the Hook session record is busy. Use harness doctor and run verification as required by the project.'};
   if(event==='SessionStart') {
-    // Resume/compaction must not erase the session's unverified source changes.
-    if(!fs.existsSync(safePath(root,session)))atomicWrite(root,session,json({version:1,inputDigest:inputSnapshot(root,config).digest}));
     return {hookSpecificOutput:{hookEventName:'SessionStart',additionalContext:'This project uses Harness Kit. Follow applicable AGENTS.md instructions and Skills. After changes, run harness run and report current verification evidence. Use harness doctor to inspect the current state.'}};
   }
-  if(!fs.existsSync(safePath(root,session)))return {systemMessage:'Harness Kit: this session has no initial snapshot, so its change scope cannot be determined automatically. Run harness run as required by project instructions.'};
-  const start=readJson(root,session),current=inputSnapshot(root,config);
-  if(start.inputDigest===current.digest)return {};
+  if(session.status === 'missing')return {systemMessage:'Harness Kit: this session has no initial snapshot, so its change scope cannot be determined automatically. Run harness run as required by project instructions.'};
+  const current=inputSnapshot(root,config);
+  if(session.inputDigest===current.digest)return {};
   const evidence=verificationEvidence(root,config);
   if(evidence.status==='passed')return {};
   const reason=`Project files changed in this session, but current complete verification evidence is ${evidence.status}. Run harness run and inspect actual results. Fix only issues within this task's scope; report unresolved failures or missing environment requirements. Never report unrun or failed checks as passed.`;

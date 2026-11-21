@@ -14,6 +14,14 @@ Explicit `init --hooks` also merges `.codex/hooks.json` and generates project ru
 
 Digests determine whether existing managed files can be updated safely; conflicts preserve the original files. Onboarding does not generate business source, tests, framework configuration, CI workflows, or `verify.sh`, and does not configure host models, permissions, or non-Codex hooks. Earlier gen-new `.agent/*`, guides, and `verify.sh` remain intact; their existence does not prove business tests pass. Static instruction files do not prove a live session has loaded them. Verify host-local and global rules separately.
 
+### Harness state and temporary Hooks
+
+Keep executable tests, fixtures, snapshots, and runner configuration in the framework test layout. Transient test output belongs in its normal output directory or an artifact run. The `storage.state` check recognizes test files and common fixture or snapshot paths even inside `.harness/tmp/`. Use that directory only for JSON documents passed to Harness commands.
+
+The host registers Hooks in `.codex/hooks.json`. `.harness/hooks/runtime.mjs` and `.harness/hooks/state.json` are the installed runner and ownership record. Temporary snapshots are stored in `.harness/hooks/sessions/` and age out after 30 days of recorded inactivity by default. Preview with `harness hooks clean` and apply with `harness hooks clean --yes`. Cleanup removes only ordinary, expired session records and preserves Git-indexed, busy, malformed, and legacy undated records. The command leaves Hook registrations in place. Keep project-owned Hook scripts such as experiments under `scripts/hooks/` or the project’s existing hook directory.
+
+See [artifact management](./artifacts.md) for generated files, retention, and cleanup.
+
 ## Single-project example
 
 This layout suits a private source repository. Optional entries exist as needed; empty directories and a full document set are not required for every change.
@@ -26,7 +34,7 @@ project/
 |-- AGENTS.md / CLAUDE.md / GEMINI.md  Selected host entries; managed sections preserve user text
 |-- .cursor/rules/            harness-kit.mdc when Cursor is selected
 |-- MEMORY.md                 Optional internal development lessons
-|-- .harness/
+|-- .harness/                 CLI state
 |   |-- managed.json          Apply-managed digests
 |   |-- answers.json          Optional Skill answers
 |   |-- plan.json             Reviewable plan
@@ -94,6 +102,6 @@ Choose per-package tasks or an existing root aggregate task. Use `covers` on an 
 - `harness doctor` diagnoses onboarding and evidence applicability; it does not run tests or confirm live-session loading.
 - When `scripts/verify.sh` or a package verify entry exists, define which entry calls the other to avoid recursion. A `test` script must invoke a real test runner.
 - CI uses the same configuration and checks. The CLI does not generate workflows automatically. Install a compatible runtime and task-specific tools in CI, and provide an available Harness Kit CLI.
-- Export public material to a separate new directory such as `artifacts/public-snapshot`, then check the actual manifest and files. That directory excludes private Git history. Making the original private repository public also requires history and platform review.
+- Export public material to a separate new directory such as `artifacts/snapshots/public`, then check the actual manifest and files. That directory excludes private Git history. Making the original private repository public also requires history and platform review.
 
 The tool does not upload, change visibility, or clean history automatically. Routine testing does not require a publication audit, and ordinary lint clearance does not authorize publication.

@@ -26,3 +26,21 @@ test('test code in artifact directory is checked instead of hidden by traversal 
   const root=fixture({'artifacts/misplaced.test.ts':''});
   assert.ok(lint(root,config(root)).findings.some(f=>f.ruleId==='tests.artifacts'));
 });
+
+test('state check rejects test data hidden in scratch or the Hook directory even when tests are excluded', () => {
+  const root = fixture({
+    '.harness/tmp/review.json': {},
+    '.harness/tmp/specs/login.json': {},
+    '.harness/tmp/login.fixture.json': {},
+    '.harness/tmp/login.test.json': {},
+    '.harness/tmp/custom.run-check.json': {},
+    '.harness/hooks/smoke.test.mjs': '',
+    '.harness/hooks/draft.ps1': '',
+    'tests/fixtures/login.json': {}
+  });
+  const settings = config(root, { tests: { detect: ['**/*.run-check.json'], exclude: ['.harness/**'] } });
+  assert.deepEqual(lint(root, settings).findings.filter(f => f.ruleId === 'storage.state').map(f => f.path).sort(), [
+    '.harness/hooks/draft.ps1', '.harness/hooks/smoke.test.mjs', '.harness/tmp/custom.run-check.json',
+    '.harness/tmp/login.fixture.json', '.harness/tmp/login.test.json', '.harness/tmp/specs/login.json'
+  ]);
+});

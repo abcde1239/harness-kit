@@ -2,13 +2,13 @@
 
 为新旧项目接入 Agent 指令、开发流程与统一验证。需要 **Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4**；Git 功能另需 Git。分发包内置解析库，不需要额外安装 npm 依赖；源码开发需先安装依赖。旧 v0.5.0 包仍要求 Bun。
 
-核心按配置执行，扫描适配器提供建议。Go 和 JavaScript 保留专用发现逻辑；Python、Rust、JVM、.NET、PHP、Ruby、C/C++、Dart、Elixir 和 Swift 通过项目标记识别工作区，并要求显式测试命令。其他技术栈可通过 `harness.adapters.json` 注册声明式适配器，见[适配器参考](/reference/adapters)。
+核心按配置执行，扫描适配器提供建议。Go 和 JavaScript 保留专用发现逻辑；Python、Rust、JVM、.NET、PHP、Ruby、C/C++、Dart、Elixir 和 Swift 通过项目标记识别工作区，并要求显式测试命令。其他技术栈可通过 `harness.adapters.json` 注册声明式适配器，见[适配器参考](../reference/adapters.md)。
 
 ## 安装后开始使用
 
 独立 Skill、Codex/Claude 插件和 DSH 原生插件的下载、安装、升级与排障统一见[安装指南](installation.md)。安装后用自然语言提出目标；Agent 直接调用实际技能目录内的 CLI，无需 setup 或全局 harness 命令。
 
-本页的 harness 示例面向已安装可选终端短命令的用户；Skill/插件调用使用 node <已安装技能目录>/scripts/harness.mjs，并显式提供 --root <项目绝对路径>。完整文档入口见[文档导航](/)。
+本页的 harness 示例面向已安装可选终端短命令的用户；Skill/插件调用使用 node <已安装技能目录>/scripts/harness.mjs，并显式提供 --root <项目绝对路径>。完整文档入口见[文档导航](../index.md)。
 
 要从自己维护的项目中总结编码风格与架构习惯，可直接说明项目路径和目标。画像与规则的保存、采用及复核方式见[编码习惯提炼](coding-style.md)，无需新增 CLI 命令。
 
@@ -60,6 +60,8 @@ harness init --hosts claude,gemini,cursor,opencode,dsh --private --yes
 | OpenCode | AGENTS.md，与 Codex 共用时只管理一次 |
 | DeepSeek Harness（dsh） | AGENTS.md，与 Codex/OpenCode 共用时只管理一次 |
 
+Hook 会话快照在 `.harness/hooks/sessions/`，默认按记录的最近活动保留 30 天。`harness hooks clean` 只预览，加 `--yes` 才清理到期快照。参见[项目目录约定](../reference/project-layout.md)。
+
 计划默认保存在目标项目 `.harness/plan.json`。应用时保留冲突文件，并指出需要合并的内容。终端无交互输入时裸 `harness` 显示帮助，不会等待输入或修改文件。`harness help` 仅展示日常入口；`harness help --all` 查看完整接口。原 setup/lint/verify 命令仍兼容。
 
 ## 初始化后如何判断可用
@@ -99,7 +101,7 @@ harness task finish
 
 源码/配置变化会使旧验收与验证过期；验收还通过 definitionDigest 绑定任务目标、标题、scope 和 criterion 要求，任务定义变化也使旧验收过期。完整验证记录必须覆盖全部配置的任务和工作区，缺失条目不能作为完成依据。已完成任务也可能变为 needs-attention，resume 可重新打开，保留旧证据供复核。任务位于 `.harness/tasks/<id>.json`、活动指针位于 `.harness/active-task.json`，均为内部资料。恢复只呈现上下文并切换活动任务，不自动实施、运行测试或重放外部副作用。更新有锁保护，冲突时不擅自删除锁；异常残留需先确认没有其他写者。
 
-完整说明见[任务与验收](/reference/tasks)。
+完整说明见[任务与验收](../reference/tasks.md)。
 
 ## 可选：Codex 本地会话接入
 
@@ -133,9 +135,9 @@ Skill 按需选择接入、改动、修复、评审或发布路径。小任务�
 
 Agent 使用随 Skill 提供的非交互 JSON 接口，不会打开人类终端菜单。如果当前会话尚未显示新 Skill，打开新会话再选择；也可显式指定安装目录下的 SKILL.md。
 
-多 Agent 协作需要实际宿主委派工具和授权。Skill 提供[主 Agent、实现 Agent、只读复核及交接提示词](/reference/collaboration)，规定工作任务 ID、独占写入范围、接口、依赖、验收和集成责任；没有工具或任务不适合拆分时串行完成。主 Agent 检查真实 diff 并执行集成验证，不把子任务自述作为完成证明。不同宿主使用实际提供的工具，不假造通用委派 API。开发与恢复细节见[开发流程](/reference/development)。
+多 Agent 协作需要实际宿主委派工具和授权。Skill 提供[主 Agent、实现 Agent、只读复核及交接提示词](../reference/collaboration.md)，规定工作任务 ID、独占写入范围、接口、依赖、验收和集成责任；没有工具或任务不适合拆分时串行完成。主 Agent 检查真实 diff 并执行集成验证，不把子任务自述作为完成证明。不同宿主使用实际提供的工具，不假造通用委派 API。开发与恢复细节见[开发流程](../reference/development.md)。
 
-维护的 Agent 指令、职责模板、默认提示词和 Hooks 注入指令统一使用英文；用户文档与回复仍可使用中文，用户原文和代码保持原样。需要判断某种 Agent 行为是否值得改进时，可使用 [Agent 专家](/reference/roles/agent-expert)：
+维护的 Agent 指令、职责模板、默认提示词和 Hooks 注入指令统一使用英文；用户文档与回复仍可使用中文，用户原文和代码保持原样。需要判断某种 Agent 行为是否值得改进时，可使用 [Agent 专家](../reference/roles/agent-expert.md)：
 
 ```text
 Use the harness-kit Agent expert to review this behavior: <observed behavior>.
@@ -150,14 +152,14 @@ Decide whether to constrain, enable, simplify or leave it unchanged. Propose the
 从源码生成分发包：
 
 ```powershell
-bun run package:distribution artifacts/distribution/0.7.0
+bun run package:distribution artifacts/distribution/0.8.0
 ```
 
-输出目录必须不存在；省略参数时也使用 `artifacts/distribution/0.7.0`。产物包括 `skill/harness-kit`、`marketplace/plugins/harness-kit/skills/harness-kit`、Codex 的 `marketplace/.agents/plugins/marketplace.json`、Claude 的 `marketplace/.claude-plugin/marketplace.json`，以及 `native-dsh/harness-kit`。对应 ZIP 为 `harness-kit-skill-0.7.0.zip`（顶层 harness-kit）、`harness-kit-marketplace-0.7.0.zip`（顶层 marketplace）和 `harness-kit-dsh-0.7.0.zip`（顶层 harness-kit）。
+输出目录必须不存在；省略参数时也使用 `artifacts/distribution/0.8.0`。产物包括 `skill/harness-kit`、`marketplace/plugins/harness-kit/skills/harness-kit`、Codex 的 `marketplace/.agents/plugins/marketplace.json`、Claude 的 `marketplace/.claude-plugin/marketplace.json`，以及 `native-dsh/harness-kit`。对应 ZIP 为 `harness-kit-skill-0.8.0.zip`（顶层 harness-kit）、`harness-kit-marketplace-0.8.0.zip`（顶层 marketplace）和 `harness-kit-dsh-0.8.0.zip`（顶层 harness-kit）。
 
 Codex/Claude 插件目录同时含根 `plugin.json` portable manifest 与 `.claude-plugin/plugin.json` 兼容入口；技能位于插件根的 skills/，不放在 manifest 目录内。分发包附 INSTALL.md；该命令只生成本地产物，不推送仓库或上架公共目录。原 `bun run package:skill` 保留为只生成技能目录的接口。
 
-接入后目录、文档公开边界、框架原生测试和 monorepo 组织见 [目标项目布局](/reference/project-layout)。CLI 提供所选宿主入口、配置、协作指南、目录职责说明和 gitignore；缺少根 README 时补充公开入口。详细公开文档按 docs/public/guides、reference、examples 分类；业务代码、框架配置及 CI 接线由项目按需要适配。hooks 仅适配明确选择的 Codex 本地模式，在显式接入并获宿主信任后生效；本轮不配置其他宿主的 hooks、权限或模型设置。
+接入后目录、文档公开边界、框架原生测试和 monorepo 组织见 [目标项目布局](../reference/project-layout.md)。CLI 提供所选宿主入口、配置、协作指南、目录职责说明和 gitignore；缺少根 README 时补充公开入口。详细公开文档按 docs/public/guides、reference、examples 分类；业务代码、框架配置及 CI 接线由项目按需要适配。hooks 仅适配明确选择的 Codex 本地模式，在显式接入并获宿主信任后生效；本轮不配置其他宿主的 hooks、权限或模型设置。
 
 ## 自动化与高级计划模式
 
@@ -243,7 +245,7 @@ baseline 命令只输出建议；审阅后将数组合入配置。普通已知�
 本工具自身的提交范围见 [公开与内部资料边界](../reference/publication-boundary.md)。公开仓库只接收独立导出的源码、测试、Skill 和使用文档；PRD、决策、任务表、验收过程及 memory 保留在私有源目录。
 
 ```powershell
-bun bin/harness.mjs export --root D:/project --destination artifacts/public-snapshot --manifest-out .harness/publication.json
+bun bin/harness.mjs export --root D:/project --destination artifacts/snapshots/public --manifest-out .harness/publication.json
 bun bin/harness.mjs publication-check --root D:/project --manifest .harness/publication.json --out .harness/publication-result.json
 ```
 

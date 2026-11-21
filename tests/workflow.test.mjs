@@ -38,7 +38,7 @@ test('changed source invalidates old pass and rerun recovers; generated artifact
   assert.equal(diagnose(root).status,'needs-attention');
   await verifyProject(root,c);
   assert.equal(verificationEvidence(root,c).status,'passed');
-  write(root,'.harness/notes.md','internal task notes');
+  write(root,'.harness/tmp/notes.json',{note:'internal task notes'});
   assert.equal(verificationEvidence(root,c).status,'passed');
 });
 

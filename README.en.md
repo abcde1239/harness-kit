@@ -19,6 +19,8 @@ Discover workspaces across common stacks, or use `harness.adapters.json` to decl
 
 Implement and verify small changes directly. Save plans, assignments, and handoffs when the work warrants them. Keep using Superpowers, OpenSpec, or your team's existing process.
 
+Keep one directory per work item for logs, screenshots, and reports. The CLI can preview expiry for artifact runs and Hook snapshots separately.
+
 ## Environment
 
 Requires **Node.js >= 22.12.0 or Bun >= 1.3.4** in the Agent's execution environment. Git checks also require Git. Skills and plugins include the CLI; no `bun setup` or global `harness` command is needed.
@@ -43,7 +45,7 @@ The installer and plugin package come from the selected Release. Repository link
 
 ### Install the Skill
 
-Download [harness-kit-skill-0.7.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-skill-0.7.0.zip). Put the complete `harness-kit` directory in your host's Skill directory. For a Codex user installation:
+Download [harness-kit-skill-0.8.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/harness-kit-skill-0.8.0.zip). Put the complete `harness-kit` directory in your host's Skill directory. For a Codex user installation:
 
 ```text
 ~/.agents/skills/harness-kit/
@@ -69,8 +71,8 @@ Use harness-kit to implement pagination and save the task and acceptance criteri
 
 | Host | Package |
 |---|---|
-| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-marketplace-0.7.0.zip) |
-| DeepSeek Harness | [Native DSH plugin ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.7.0/harness-kit-dsh-0.7.0.zip) |
+| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/harness-kit-marketplace-0.8.0.zip) |
+| DeepSeek Harness | [Native DSH plugin ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/harness-kit-dsh-0.8.0.zip) |
 
 Extract the package and run the commands for your host. Replace the paths with the extracted directories' absolute paths:
 
@@ -125,12 +127,14 @@ harness doctor    # Diagnose setup and verification evidence
 
 Running `harness` without arguments opens a Chinese menu. Use `harness help --all` for advanced commands. The [usage guide (Chinese)](docs/public/guides/usage.md) covers configuration, monorepos, persistent tasks, and optional hooks.
 
+Use `harness artifacts create <label>` to allocate an output directory and `harness artifacts finish <id>` when writers are done. `harness artifacts clean` previews expired runs, and `harness hooks clean` previews expired Hook snapshots. Pass `--yes` to apply either policy. See [artifact management](docs/public/reference/artifacts.md).
+
 ## Documentation and development
 
 - [Documentation index (Chinese)](docs/public/README.md)
 - [Multi-agent collaboration](skills/harness-kit/references/collaboration.md)
 - [Persistent tasks](skills/harness-kit/references/tasks.md)
-- [v0.7.0 release notes (Chinese)](docs/public/releases/v0.7.0.md)
+- [v0.8.0 release notes (Chinese)](docs/public/releases/v0.8.0.md)
 
 Validate and package from the source directory. The Node verifier runs Node integration tests; use `bun run verify:bun` for the original full suite:
 

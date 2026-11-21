@@ -1,6 +1,6 @@
 import { matches, relativePath, under } from './fs.mjs';
 
-const protectedPatterns = ['**/.git/**','**/.git','**/MEMORY.md','**/memory/**','**/memories/**','**/decision/**','**/decisions/**'];
+const protectedPatterns = ['.harness','.harness/**','artifacts/runs','artifacts/runs/**','**/.git/**','**/.git','**/MEMORY.md','**/memory/**','**/memories/**','**/decision/**','**/decisions/**'];
 export function classify(c, name) {
   name = relativePath(name);
   const internal = [], publicMatches = [];

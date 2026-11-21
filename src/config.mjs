@@ -29,16 +29,28 @@ export function defaults() {
     workspaces: [{ id: 'root', root: '.' }],
     documents: { defaultAudience: 'internal', publicRoots: ['docs/public'], internalRoots: ['docs/prd','docs/decision','docs/verification','.harness'], publicPatterns: ['README.md','AGENTS.md'], internalPatterns: ['docs/structure.md','docs/agent_guide.md','**/MEMORY.md','**/memory/**','**/memories/**','**/decision/**','**/decisions/**'] },
     tests: { detect: [...defaultTestPatterns], include: [], exclude: [], artifacts: ['artifacts','coverage'], requireConfiguredTask: false },
+    artifacts: { retentionDays: 14 },
+    hooks: { sessionRetentionDays: 30 },
     tasks: [], publicationTargets: [], rules: {}, baseline: []
   };
 }
 export function validateConfig(value, root) {
-  keys(value, ['schemaVersion','repository','workspaces','documents','tests','tasks','publicationTargets','rules','baseline'], 'config');
+  keys(value, ['schemaVersion','repository','workspaces','documents','tests','artifacts','hooks','tasks','publicationTargets','rules','baseline'], 'config');
   if (value.schemaVersion !== 1) throw new Error('Unsupported schemaVersion (expected 1)');
   const c = { ...defaults(), ...structuredClone(value) };
   documents(c.documents); tests(c.tests);
   c.documents = { ...defaults().documents, ...c.documents };
   c.tests = { ...defaults().tests, ...c.tests };
+  keys(c.artifacts, ['retentionDays'], 'artifacts');
+  c.artifacts = { ...defaults().artifacts, ...c.artifacts };
+  if (!Number.isInteger(c.artifacts.retentionDays) || c.artifacts.retentionDays < 1 || c.artifacts.retentionDays > 3650) {
+    throw new Error('artifacts.retentionDays must be an integer from 1 to 3650');
+  }
+  keys(c.hooks, ['sessionRetentionDays'], 'hooks');
+  c.hooks = { ...defaults().hooks, ...c.hooks };
+  if (!Number.isInteger(c.hooks.sessionRetentionDays) || c.hooks.sessionRetentionDays < 1 || c.hooks.sessionRetentionDays > 3650) {
+    throw new Error('hooks.sessionRetentionDays must be an integer from 1 to 3650');
+  }
   keys(c.repository, ['visibility'], 'repository');
   enumValue(c.repository.visibility, ['private','public','unknown'], 'repository.visibility');
   documents(c.documents); tests(c.tests);
@@ -72,7 +84,7 @@ export function validateConfig(value, root) {
     keys(p, ['id','manifest'], 'publicationTarget'); id(p.id); relativePath(p.manifest);
     if (targets.has(p.id)) throw new Error(`Duplicate target: ${p.id}`); targets.add(p.id);
   }
-  keys(c.rules, ['tests.layout','tests.configured','tests.artifacts','documents.links','tasks.graph'], 'rules');
+  keys(c.rules, ['tests.layout','tests.configured','tests.artifacts','documents.links','tasks.graph','storage.state','artifacts.layout'], 'rules');
   for (const [k,v] of Object.entries(c.rules)) enumValue(v, ['error','warning','off'], k);
   strings(c.baseline, 'baseline');
   return c;

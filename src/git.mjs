@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { classify } from './policy.mjs';
 import { digest, hash, relativePath } from './fs.mjs';
@@ -13,6 +15,17 @@ function git(root, args, { binary = false, optional = false } = {}) {
   return result.stdout;
 }
 export const isGit = root => git(root, ['rev-parse','--is-inside-work-tree'], { optional: true })?.trim() === 'true';
+export function trackedPaths(root, directory) {
+  // Check the current checkout, including subdirectories of an enclosing worktree.
+  // If its index cannot be inspected, surface the failure instead of treating it as empty.
+  let cursor = root;
+  while (!fs.lstatSync(path.join(cursor, '.git'), { throwIfNoEntry: false })) {
+    const parent = path.dirname(cursor);
+    if (parent === cursor) return [];
+    cursor = parent;
+  }
+  return git(root, ['ls-files','--cached','-z','--',`:(icase,literal)${directory}`]).split('\0').filter(Boolean);
+}
 export function gitScope(root, config) {
   const refs = git(root,['for-each-ref','--format=%(refname) %(objectname)']).trim().split(/\r?\n/).filter(Boolean).map(line => { const [name,oid] = line.split(' '); return { name,oid }; });
   const head = git(root,['rev-parse','--verify','HEAD'],{optional:true})?.trim() ?? null;

@@ -3,9 +3,11 @@ import path from 'node:path';
 import metadata from '../package.json' with {type:'json'};
 const {version}=metadata;
 import { inspect } from './discovery.mjs';
-import { loadConfig } from './config.mjs';
+import { CONFIG, defaults, loadConfig } from './config.mjs';
 import { makePlan, applyPlan } from './planner.mjs';
 import { lint } from './lint.mjs';
+import { cleanArtifactRuns, createArtifactRun, updateArtifactRun } from './artifacts.mjs';
+import { cleanHookSessions } from './hook-state.mjs';
 import { verifyProject } from './workflow.mjs';
 import { diagnose } from './readiness.mjs';
 import { hookEvent } from './hooks.mjs';
@@ -24,11 +26,22 @@ const HELP = `Harness Kit ${version} — Agent 项目接入与验证
   harness run        检查项目约定并运行已配置验证
   harness check      只检查约定，不执行项目命令
   harness doctor     诊断接入状态与验证证据，不执行项目命令
+  harness artifacts clean  预览到期的临时产物
 
 一次接入示例：harness init --private --test "bun test" --yes
 已有测试脚本可自动发现；空项目可明确选择 --no-tests。
 跳过首次执行：--skip-verify；完整机器输出：--json；指定项目：--root 路径。
 高级命令与兼容入口：harness help --all
+`;
+const ARTIFACT_HELP = `harness artifacts create <label>  为一次工作分配产物目录
+harness artifacts finish <id>     完成写入并开始计算保留期
+harness artifacts keep <id>       保留长期引用的产物
+harness artifacts release <id>    恢复保留期规则
+harness artifacts clean [--yes]   预览到期目录；--yes 执行清理
+共享选项：--root 路径，--json。
+`;
+const HOOKS_HELP = `harness hooks clean [--yes]      预览到期的 Hook 会话快照；--yes 执行清理
+共享选项：--root 路径，--json。
 `;
 const ADVANCED_HELP = `${HELP}
 高级用法（所有文件路径均相对目标项目，--root 除外）：
@@ -45,6 +58,11 @@ task status [id] / resume [id]   查看/恢复任务；省略 ID 使用当前任
 task note [id] --note "..." [--next "..."]
 task accept [id] --criterion c1 --evidence "..."
 task finish [id]                 依据当前验证证据与验收项完成任务
+artifacts create <label>        为一次工作分配独立的产物目录
+artifacts finish <id>           完成写入并开始计算保留期
+artifacts keep / release <id>   保留产物或恢复保留期规则
+artifacts clean [--yes]         预览到期目录；--yes 执行清理
+hooks clean [--yes]             预览到期的 Hook 会话快照；--yes 执行清理
 inspect                         Static discovery, evidence and missing questions
 configure [--answers file]       Ask missing questions and emit a plan (no apply)
 plan [--answers file]            Emit a reviewable plan and full proposed content
@@ -59,12 +77,13 @@ review-template                 Emit evidence template bound to current refs and
 hook --root project             宿主事件接口：stdin/stdout JSON，不执行业务命令
 
 Shared: --root project, --json (machine output), --out relative-file.
-init --out 指定计划文件，其他命令 --out 保存结果。No upload or push.
+init --out 指定计划文件；artifacts 和 hooks 使用 --json 返回结果。No upload or push.
 `;
 function parse(args) {
   const command = args[0]?.startsWith('--') ? 'menu' : args.shift() ?? 'menu', options = {};
-  const action=command==='task'?(args[0]&&!args[0].startsWith('--')?args.shift():'status'):undefined;
-  const taskId=command==='task'&&args[0]&&!args[0].startsWith('--')?args.shift():undefined;
+  const subcommand = ['task', 'artifacts', 'hooks'].includes(command);
+  const action = subcommand ? (args[0] && !args[0].startsWith('--') ? args.shift() : command === 'task' ? 'status' : 'clean') : undefined;
+  const operand = subcommand && args[0] && !args[0].startsWith('--') ? args.shift() : undefined;
   const switches = new Set(['json','help','version','yes','all','private','public','no-tests','skip-verify','hooks']);
   const allowed = new Set(['root','answers','out','plan','task','work','target','manifest','destination','manifest-out','evidence','test','hosts','title','accept','scope','note','next','criterion',...switches]);
   const repeatable=new Set(['accept','scope']);
@@ -80,13 +99,16 @@ function parse(args) {
   const initOptions=['answers','yes','private','public','test','no-tests','skip-verify','hooks','hosts'];
   const taskOptions={start:['title','accept','scope'],status:[],resume:[],note:['note','next'],accept:['criterion','evidence'],finish:[]};
   if(command==='task'&&!Object.hasOwn(taskOptions,action))throw new Error(`Unknown task action: ${action}`);
-  const perCommand = {menu:[],init:initOptions,setup:initOptions,check:[],run:['task','work'],doctor:[],hook:[],task:taskOptions[action]??[],inspect:[],configure:['answers'],plan:['answers'],apply:['plan'],lint:[],verify:['task','work'],baseline:[], 'publication-check':['target','manifest'],export:['destination','manifest-out'],'audit-history':['evidence'],'review-template':[],help:['all']};
+  const artifactOptions = { create: [], finish: [], keep: [], release: [], clean: ['yes'] };
+  if (command === 'artifacts' && (!Object.hasOwn(artifactOptions, action) || (action === 'clean' && operand))) throw new Error('Use harness artifacts --help for supported actions');
+  if (command === 'hooks' && (action !== 'clean' || operand)) throw new Error('Use harness hooks --help for supported actions');
+  const perCommand = {hooks:['yes'],artifacts:artifactOptions[action]??[],menu:[],init:initOptions,setup:initOptions,check:[],run:['task','work'],doctor:[],hook:[],task:taskOptions[action]??[],inspect:[],configure:['answers'],plan:['answers'],apply:['plan'],lint:[],verify:['task','work'],baseline:[], 'publication-check':['target','manifest'],export:['destination','manifest-out'],'audit-history':['evidence'],'review-template':[],help:['all']};
   if (!Object.hasOwn(perCommand,command)) throw new Error(`Unknown command: ${command}`);
-  const commandOptions=command==='hook'?['root']:['root','out','json','help','version',...(options.help?['all']:[]),...perCommand[command]];
+  const commandOptions=command==='hook'?['root']:['root','json','help','version',...(['artifacts','hooks'].includes(command)?[]:['out']),...(options.help?['all']:[]),...perCommand[command]];
   for (const key of Object.keys(options)) if (!commandOptions.includes(key)) throw new Error(`Option --${key} is not valid for ${command}`);
   if(options.private&&options.public)throw new Error('--private 与 --public 不能同时使用。');
   if(options.test&&options['no-tests'])throw new Error('--test 与 --no-tests 不能同时使用。');
-  return {command,options,action,taskId};
+  return {command,options,action,operand};
 }
 function initAnswers(root, options) {
   const answers=options.answers?readJson(root,options.answers):{};
@@ -131,6 +153,13 @@ function printResult(command,result,options) {
     : result.status??'ready';
   console.log(`${command}: ${status}${options.out?`（已保存 ${options.out}）`:''}`);
   if(result.root)console.log(`项目：${result.root}`);
+  if(command === 'artifacts' || command === 'hooks') {
+    if(result.path)console.log(`${result.id}  ${result.path}`);
+    if(result.items) {
+      console.log(`保留期：${result.retentionDays} 天`);
+      for(const item of result.items)console.log(`${item.status}  ${item.path}${item.reason ? `  ${item.reason}` : ''}`);
+    }
+  }
   if(result.plan)console.log(`计划：${result.plan}`);
   for(const name of result.changed??[])console.log(`已更新：${name}`);
   for(const name of result.conflicts??[])console.log(`保留冲突：${name}`);
@@ -174,7 +203,8 @@ export async function main(argv) {
   try {
     const parsed = parse([...argv]); options = parsed.options; let {command} = parsed;
     if(options.version){console.log(options.json?json({name:'harness-kit',version}):version);return 0;}
-    if (command === 'help' || options.help) { console.log(options.all?ADVANCED_HELP:HELP); return 0; }
+    const commandHelp = { artifacts: ARTIFACT_HELP, hooks: HOOKS_HELP };
+    if (command === 'help' || options.help) { console.log(options.all ? ADVANCED_HELP : commandHelp[command] ?? HELP); return 0; }
     if(command==='menu'&&!process.stdin.isTTY){console.log(options.json?json({status:'ready',interactive:false,message:'使用 harness init 接入项目，harness run 验证，harness doctor 诊断。'}):HELP);return 0;}
     const project=locateProject(process.cwd(),options.root),root=project.root;
     if(command==='hook') {
@@ -202,8 +232,19 @@ export async function main(argv) {
       const ui=options.yes?null:terminalUI();
       try {result=await cancellable(signal=>setup(root,{answers,yes:options.yes,ui,out:options.out??'.harness/plan.json',skipVerify:options['skip-verify'],hooks:options.hooks,signal}));}finally{ui?.close();}
     }
+    else if (command === 'artifacts' || command === 'hooks') {
+      const { action, operand } = parsed;
+      if (action === 'clean') {
+        const config = fs.lstatSync(path.join(root, CONFIG), { throwIfNoEntry: false }) ? loadConfig(root) : defaults();
+        const cleanup = { apply: options.yes };
+        result = command === 'hooks'
+          ? cleanHookSessions(root, config.hooks, cleanup)
+          : cleanArtifactRuns(root, config.artifacts, cleanup);
+      } else if (action === 'create') result = createArtifactRun(root, operand);
+      else result = updateArtifactRun(root, operand, action);
+    }
     else if(command==='task') {
-      const {action,taskId}=parsed;
+      const {action,operand:taskId}=parsed;
       if(action==='start') {
         if(!taskId)throw new Error('task start 需要任务 ID。');
         requireOption('accept');

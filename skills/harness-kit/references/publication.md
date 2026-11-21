@@ -4,7 +4,7 @@ Use this workflow only when the user explicitly requests publication preparation
 
 Use `node <skill>/scripts/harness.mjs <command> --root <project> --json`:
 
-- `export --destination artifacts/public-snapshot --manifest-out .harness/publication.json`: write to a new directory without copying `.git` or private history, and without pushing. If the destination exists, choose another clearly named directory; do not delete an earlier result to make room.
+- `export --destination artifacts/snapshots/public --manifest-out .harness/publication.json`: write to a new directory without copying `.git` or private history, and without pushing. If the destination exists, choose another clearly named directory; do not delete an earlier result to make room.
 - `publication-check --manifest .harness/publication.json`: check the actual file set, output and source SHA-256 digests, known copies of internal files, and links. Repeat after changing the output.
 - `review-template --out .harness/review.json`: generate an evidence template bound to refs and policy. The reviewer, reference, remote refs, and platform declarations must reflect actual review; never invent evidence to pass a gate.
 - `audit-history --evidence .harness/review.json`: inspect history reachable from all local refs, including deleted memory, side branches, and tags. Shallow history, missing objects, and uncovered LFS or submodule resources block clearance.

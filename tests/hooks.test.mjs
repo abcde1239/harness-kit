@@ -2,11 +2,13 @@ import {test} from 'bun:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {fixture,write} from './helpers.mjs';
+import {fixture,git,write} from './helpers.mjs';
 import {makePlan,applyPlan} from '../src/planner.mjs';
 import {loadConfig} from '../src/config.mjs';
 import {connectHooks,hookEvent,inspectHooks} from '../src/hooks.mjs';
 import {verifyProject} from '../src/workflow.mjs';
+import {cleanHookSessions} from '../src/hook-state.mjs';
+import {hash} from '../src/fs.mjs';
 
 function project(){const root=fixture({'check.mjs':'console.log("ok");'});applyPlan(root,makePlan(root,{visibility:'private',testCommands:{root:['bun','check.mjs']}}));return root;}
 const input={session_id:'session with / unsafe chars',hook_event_name:'SessionStart'};
@@ -69,4 +71,44 @@ test('explicit local hook disable is preserved and diagnosed instead of reported
   assert.equal(inspectHooks(root).status,'configured');
   write(root,'.codex/config.toml','features.hooks = false\n');
   assert.equal(inspectHooks(root).status,'disabled');
+});
+
+test('Hook cleanup preserves live ownership, legacy, busy, malformed and Git-indexed records', async () => {
+  const root = project();
+  git(root, 'init');
+  await connectHooks(root);
+  const old = new Date('2020-01-01T00:00:00Z');
+  function snapshot(id, fields) {
+    const name = `.harness/hooks/sessions/${hash(id)}.json`;
+    write(root, name, { version: 1, inputDigest: 'a'.repeat(64), ...fields });
+    const target = path.join(root, name);
+    fs.utimesSync(target, old, old);
+    return name;
+  }
+  const expired = snapshot('expired', { lastSeenAt: old.toISOString() });
+  const legacy = snapshot('legacy', {});
+  const indexed = snapshot('indexed', { lastSeenAt: old.toISOString() });
+  git(root, 'add', '-f', '--', indexed);
+  const malformed = snapshot('malformed', { lastSeenAt: old.toISOString(), other: 'user data' });
+  const busy = snapshot('busy', { lastSeenAt: old.toISOString() });
+  write(root, busy.replace(/\.json$/, '.lock'), '');
+  hookEvent(root, { ...input, session_id: 'recent' });
+  const config = loadConfig(root);
+  const preview = cleanHookSessions(root, config.hooks);
+  assert.deepEqual(Object.fromEntries(preview.items.map(item => [item.path, item.status])), {
+    [expired]: 'expired', [legacy]: 'legacy', [indexed]: 'protected', [malformed]: 'protected', [busy]: 'busy',
+    [`.harness/hooks/sessions/${hash('recent')}.json`]: 'recent'
+  });
+  assert.ok(fs.existsSync(path.join(root, expired)));
+  const result = cleanHookSessions(root, config.hooks, { apply: true });
+  assert.deepEqual(result.items.filter(item => item.status === 'removed').map(item => item.path), [expired]);
+  assert.ok(!fs.existsSync(path.join(root, expired)));
+  assert.equal(inspectHooks(root).status, 'configured');
+  assert.ok(fs.existsSync(path.join(root, '.codex/hooks.json')));
+
+  hookEvent(root, { ...input, session_id: 'legacy', source: 'resume' });
+  const migrated = JSON.parse(fs.readFileSync(path.join(root, legacy), 'utf8'));
+  assert.equal(migrated.inputDigest, 'a'.repeat(64));
+  assert.ok(Date.parse(migrated.lastSeenAt) > old.getTime());
+  assert.equal(hookEvent(root, { ...input, session_id: 'legacy', hook_event_name: 'Stop' }).decision, 'block');
 });

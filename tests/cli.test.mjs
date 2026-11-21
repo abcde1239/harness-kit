@@ -94,15 +94,15 @@ test('init discovers test scripts while an explicit no-tests result is never rea
 });
 
 test('init can explicitly skip execution, doctor stays read-only, and a later run validates',()=>{
-  const root=fixture({'check.mjs':"import fs from 'node:fs'; fs.writeFileSync('.harness/marker.txt','executed');"});
+  const root=fixture({'check.mjs':"import fs from 'node:fs'; fs.mkdirSync('coverage',{recursive:true}); fs.writeFileSync('coverage/marker.txt','executed');"});
   const skipped=run(root,'init','--private','--test','bun check.mjs','--skip-verify','--yes');
   assert.equal(skipped.code,0);
   assert.equal(skipped.data.verification,undefined);
   assert.notEqual(skipped.data.readiness.status,'ready');
-  assert.equal(fs.existsSync(path.join(root,'.harness/marker.txt')),false);
+  assert.equal(fs.existsSync(path.join(root,'coverage/marker.txt')),false);
   const diagnosed=run(root,'doctor');
   assert.equal(diagnosed.data.status,'needs-attention');
-  assert.equal(fs.existsSync(path.join(root,'.harness/marker.txt')),false);
+  assert.equal(fs.existsSync(path.join(root,'coverage/marker.txt')),false);
   assert.equal(run(root,'run').code,0);
   assert.equal(run(root,'doctor').data.status,'ready');
 });
