@@ -21,18 +21,18 @@ Harness Kit 给现有 Agent 宿主提供项目接入、可恢复工作记录和�
 
 当前能力包含真实命令验证、任务恢复和验收关联。check 仍是只读静态检查；doctor 只诊断，不执行测试。
 
-## 宿主支持分为两层
+## 宿主支持
 
-| 宿主 | 项目指令入口 | 原生插件 |
-|---|---|---|
-| Codex | AGENTS.md，可选本地 hooks | 提供，隔离 CLI 安装实测通过 |
-| Claude Code | CLAUDE.md | 提供，隔离 CLI 安装实测通过 |
-| Gemini CLI | GEMINI.md | 未提供专用原生插件 |
-| Cursor | .cursor/rules/harness-kit.mdc | 未提供专用原生插件 |
-| OpenCode | AGENTS.md | 未提供专用原生插件 |
-| DeepSeek Harness | AGENTS.md | 提供 Cordis 原生插件，接口契约测试通过，真实 profile 待验收 |
+| 宿主 | 项目指令入口 | 可选会话 Hook | 原生插件 |
+|---|---|---|---|
+| Codex | `AGENTS.md` | 本地注册 | 提供，隔离 CLI 安装实测通过 |
+| Claude Code | `CLAUDE.md` | 本地注册 | 提供，隔离 CLI 安装实测通过 |
+| Gemini CLI | `GEMINI.md` | — | 未提供专用原生插件 |
+| Cursor | `.cursor/rules/harness-kit.mdc` | — | 未提供专用原生插件 |
+| OpenCode | `AGENTS.md` | — | 未提供专用原生插件 |
+| DeepSeek Harness | `AGENTS.md` | 通过官方 Claude Code Hook 桥接器，需配置 profile | 提供 Cordis 原生插件，接口契约测试通过，真实 profile 待验收 |
 
-项目指令适配不等于宿主原生插件；独立 Skill 能否被发现取决于对应宿主设置。所有宿主共用同一项目验证与持久任务核心，不管理模型账号、权限或 Agent 执行循环。
+会话 Hook 的配置和启用步骤见[使用指南](../guides/usage.md#接入本地会话-hook-可选)。独立 Skill 的发现取决于对应宿主设置。所有宿主共用同一项目验证与持久任务核心，不管理模型账号、权限或 Agent 执行循环。
 
 ## 与现有工具配合
 

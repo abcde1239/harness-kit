@@ -10,7 +10,7 @@
 | 自动测试及合成 fixtures | tests | 公开；真实项目资料不放入 fixtures |
 | Skill 与参考资料 | skills/harness-kit | 公开；分发打包时构建自包含 CLI，消费者使用 Release 附件 |
 | 示例、包配置与 CI | examples、package.json、harness.config.json、.gitignore、.github/workflows | 公开 |
-| PRD、决策、开发任务和验收过程 | docs/prd、docs/decision、docs/tasks、docs/verification、docs/harness-*.md | 保留私有源目录 |
+| PRD、决策、开发任务和验收过程 | docs/prd、docs/decision、docs/tasks、docs/verification | 保留私有源目录 |
 | 内部协作说明 | docs/structure.md、docs/agent_guide.md | 保留私有源目录；通用目录说明通过 Skill 参考文档公开 |
 | 开发记忆 | MEMORY.md、memory、memories | 保留私有源目录 |
 | 本地状态和运行产物 | .harness、artifacts、coverage、dist、build、依赖及本地环境文件 | 不提交；另行发布需重新审阅和核对来源 |

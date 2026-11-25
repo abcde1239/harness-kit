@@ -21,7 +21,8 @@ function readSession(root, name) {
   if (!fs.lstatSync(safePath(root, name), { throwIfNoEntry: false })?.isFile()) throw new Error('Expected an ordinary Hook session file');
   const record = readJson(root, name);
   if (record?.version !== 1 || typeof record.inputDigest !== 'string' || !DIGEST.test(record.inputDigest) ||
-      Object.keys(record).some(key => !['version', 'inputDigest', 'lastSeenAt'].includes(key)) ||
+      Object.keys(record).some(key => !['version', 'inputDigest', 'lastSeenAt', 'stopRequested'].includes(key)) ||
+      (record.stopRequested !== undefined && typeof record.stopRequested !== 'boolean') ||
       (record.lastSeenAt !== undefined && (typeof record.lastSeenAt !== 'string' || !Number.isFinite(Date.parse(record.lastSeenAt))))) {
     throw new Error('Invalid Hook session record');
   }
@@ -49,10 +50,24 @@ export function touchHookSession(root, sessionId, startDigest) {
   return withSessionLock(root, id, () => {
     const exists = fs.existsSync(target);
     if (!exists && !startDigest) return { status: 'missing' };
-    const inputDigest = exists ? readSession(root, name).inputDigest : startDigest();
-    atomicWrite(root, name, json({ version: 1, inputDigest, lastSeenAt: new Date().toISOString() }));
-    return { status: 'recorded', inputDigest };
+    const record = exists ? readSession(root, name) : { version: 1, inputDigest: startDigest() };
+    atomicWrite(root, name, json({ ...record, lastSeenAt: new Date().toISOString() }));
+    return { status: 'recorded', inputDigest: record.inputDigest, stopRequested: record.stopRequested };
   });
+}
+
+export function setHookStopRequested(root, sessionId, requested) {
+  const id = hash(sessionId), name = sessionFile(id);
+  const result = withSessionLock(root, id, () => {
+    if (!fs.existsSync(safePath(root, name))) return { changed: false };
+    const record = readSession(root, name);
+    if (Boolean(record.stopRequested) === requested) return { changed: false };
+    if (requested) record.stopRequested = true;
+    else delete record.stopRequested;
+    atomicWrite(root, name, json(record));
+    return { changed: true };
+  });
+  return result.changed === true;
 }
 
 function sessionStatus(root, name, cutoff) {

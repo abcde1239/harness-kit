@@ -12,6 +12,7 @@ import { verifyProject } from './workflow.mjs';
 import { diagnose } from './readiness.mjs';
 import { hookEvent } from './hooks.mjs';
 import { normalizeHosts } from './host.mjs';
+import { configureRoles } from './roles.mjs';
 import { createTask, getTask, resumeTask, updateTask, completeTask, recordTaskVerification } from './tasks.mjs';
 import { publicationCheck, exportSnapshot } from './publication.mjs';
 import { auditHistory, reviewTemplate } from './git.mjs';
@@ -43,12 +44,16 @@ harness artifacts clean [--yes]   预览到期目录；--yes 执行清理
 const HOOKS_HELP = `harness hooks clean [--yes]      预览到期的 Hook 会话快照；--yes 执行清理
 共享选项：--root 路径，--json。
 `;
+const ROLES_HELP = `harness roles                           查看职责目录
+harness roles --host <宿主> --role <职责>  预览原生角色配置
+加 --yes 写入所选职责。--role 接受逗号分隔的 ID 或 all。`;
+
 const ADVANCED_HELP = `${HELP}
 高级用法（所有文件路径均相对目标项目，--root 除外）：
 init / setup [--private | --public] [--test command | --no-tests]
              [--hosts codex,claude,gemini,cursor,opencode,dsh]
              [--answers file] [--yes] [--skip-verify] [--hooks] [--out .harness/plan.json]
-             --hooks 可选接入 Codex SessionStart/Stop；需审阅并信任宿主配置
+             --hooks 为所选 Codex、Claude Code、DSH 接入 SessionStart/Stop；DSH 需配置桥接器
 run / verify [--task id] [--work id]
                                 --task 选择验证任务；--work 关联持久开发任务
 check / lint                    只读约定检查
@@ -70,6 +75,7 @@ apply --plan file                Apply an unchanged reviewed plan; preserve conf
 baseline                        Emit ordinary findings as baseline fingerprints
 publication-check [--target id | --manifest file]
                                 Check actual output tree and reviewed source provenance
+roles [--host id --role ids] [--yes]
 export --destination path [--manifest-out file]
                                 Export public snapshot to NEW local directory, no history
 audit-history [--evidence file]  Reachable Git history and reviewer-attested platform scope
@@ -79,13 +85,16 @@ hook --root project             宿主事件接口：stdin/stdout JSON，不执�
 Shared: --root project, --json (machine output), --out relative-file.
 init --out 指定计划文件；artifacts 和 hooks 使用 --json 返回结果。No upload or push.
 `;
+const commandAliases = new Map([['setup','init'], ['lint','check'], ['verify','run']]);
+
 function parse(args) {
-  const command = args[0]?.startsWith('--') ? 'menu' : args.shift() ?? 'menu', options = {};
+  const requested = args[0]?.startsWith('--') ? 'menu' : args.shift() ?? 'menu';
+  const command = commandAliases.get(requested) ?? requested, options = {};
   const subcommand = ['task', 'artifacts', 'hooks'].includes(command);
   const action = subcommand ? (args[0] && !args[0].startsWith('--') ? args.shift() : command === 'task' ? 'status' : 'clean') : undefined;
   const operand = subcommand && args[0] && !args[0].startsWith('--') ? args.shift() : undefined;
   const switches = new Set(['json','help','version','yes','all','private','public','no-tests','skip-verify','hooks']);
-  const allowed = new Set(['root','answers','out','plan','task','work','target','manifest','destination','manifest-out','evidence','test','hosts','title','accept','scope','note','next','criterion',...switches]);
+  const allowed = new Set(['root','answers','out','plan','task','work','target','manifest','destination','manifest-out','evidence','test','hosts','host','role','title','accept','scope','note','next','criterion',...switches]);
   const repeatable=new Set(['accept','scope']);
   while (args.length) {
     const arg = args.shift(); if (!arg.startsWith('--') || !allowed.has(arg.slice(2))) throw new Error(`Unknown argument: ${arg}`);
@@ -102,10 +111,10 @@ function parse(args) {
   const artifactOptions = { create: [], finish: [], keep: [], release: [], clean: ['yes'] };
   if (command === 'artifacts' && (!Object.hasOwn(artifactOptions, action) || (action === 'clean' && operand))) throw new Error('Use harness artifacts --help for supported actions');
   if (command === 'hooks' && (action !== 'clean' || operand)) throw new Error('Use harness hooks --help for supported actions');
-  const perCommand = {hooks:['yes'],artifacts:artifactOptions[action]??[],menu:[],init:initOptions,setup:initOptions,check:[],run:['task','work'],doctor:[],hook:[],task:taskOptions[action]??[],inspect:[],configure:['answers'],plan:['answers'],apply:['plan'],lint:[],verify:['task','work'],baseline:[], 'publication-check':['target','manifest'],export:['destination','manifest-out'],'audit-history':['evidence'],'review-template':[],help:['all']};
+  const perCommand = {roles:['host','role','yes'],hooks:['yes'],artifacts:artifactOptions[action]??[],menu:[],init:initOptions,check:[],run:['task','work'],doctor:[],hook:[],task:taskOptions[action]??[],inspect:[],configure:['answers'],plan:['answers'],apply:['plan'],baseline:[], 'publication-check':['target','manifest'],export:['destination','manifest-out'],'audit-history':['evidence'],'review-template':[],help:['all']};
   if (!Object.hasOwn(perCommand,command)) throw new Error(`Unknown command: ${command}`);
-  const commandOptions=command==='hook'?['root']:['root','json','help','version',...(['artifacts','hooks'].includes(command)?[]:['out']),...(options.help?['all']:[]),...perCommand[command]];
-  for (const key of Object.keys(options)) if (!commandOptions.includes(key)) throw new Error(`Option --${key} is not valid for ${command}`);
+  const commandOptions=command==='hook'?['root','host']:['root','json','help','version',...(['artifacts','hooks','roles'].includes(command)?[]:['out']),...(options.help?['all']:[]),...perCommand[command]];
+  for (const key of Object.keys(options)) if (!commandOptions.includes(key)) throw new Error(`Option --${key} is not valid for ${requested}`);
   if(options.private&&options.public)throw new Error('--private 与 --public 不能同时使用。');
   if(options.test&&options['no-tests'])throw new Error('--test 与 --no-tests 不能同时使用。');
   return {command,options,action,operand};
@@ -160,6 +169,11 @@ function printResult(command,result,options) {
       for(const item of result.items)console.log(`${item.status}  ${item.path}${item.reason ? `  ${item.reason}` : ''}`);
     }
   }
+  if(command==='roles') {
+    if(result.hosts)console.log(`宿主：${result.hosts.join('、')}`);
+    for(const role of result.roles)console.log(`${role.id}  ${role.name}  ${role.path??role.description}${role.status?`  ${role.status}`:''}`);
+    if(result.notice)console.log(result.notice);
+  }
   if(result.plan)console.log(`计划：${result.plan}`);
   for(const name of result.changed??[])console.log(`已更新：${name}`);
   for(const name of result.conflicts??[])console.log(`保留冲突：${name}`);
@@ -190,12 +204,19 @@ function printResult(command,result,options) {
   if(readiness) {
     console.log(`接入状态：${readiness.status}`);
     for(const check of readiness.checks??[]) {
-      if(check.status!=='passed')console.log(`  ${check.status} ${check.message}`);
+      if (command === 'doctor' && check.hooks?.bridge) {
+        const { name, configPath } = check.hooks.bridge;
+        console.log(`  ${check.hooks.status} ${check.message}`);
+        console.log(`  ${name} configPath: ${configPath}`);
+      } else if(check.status!=='passed')console.log(`  ${check.status} ${check.message}`);
       if(check.entry?.notice)console.log(`  ${check.entry.notice}`);
     }
   }
   if(result.next)console.log(`下一步：${result.next}`);
   if(result.hooks?.notice)console.log(result.hooks.notice);
+  for (const item of result.hooks?.entries ?? [result.hooks]) {
+    if (item?.bridge) console.log(`${item.bridge.name} configPath: ${item.bridge.configPath}`);
+  }
   if(['plan','configure','baseline','review-template','export','publication-check','audit-history'].includes(command))console.log(json(result));
 }
 export async function main(argv) {
@@ -203,14 +224,22 @@ export async function main(argv) {
   try {
     const parsed = parse([...argv]); options = parsed.options; let {command} = parsed;
     if(options.version){console.log(options.json?json({name:'harness-kit',version}):version);return 0;}
-    const commandHelp = { artifacts: ARTIFACT_HELP, hooks: HOOKS_HELP };
+    const commandHelp = { artifacts: ARTIFACT_HELP, hooks: HOOKS_HELP, roles: ROLES_HELP };
     if (command === 'help' || options.help) { console.log(options.all ? ADVANCED_HELP : commandHelp[command] ?? HELP); return 0; }
     if(command==='menu'&&!process.stdin.isTTY){console.log(options.json?json({status:'ready',interactive:false,message:'使用 harness init 接入项目，harness run 验证，harness doctor 诊断。'}):HELP);return 0;}
-    const project=locateProject(process.cwd(),options.root),root=project.root;
     if(command==='hook') {
-      const output=process.env.HARNESS_ACTIVE?{}:hookEvent(root,await hookInput());
-      console.log(json(output));return 0;
+      try {
+        const root = locateProject(process.cwd(), options.root).root;
+        const output=process.env.HARNESS_ACTIVE?{}:hookEvent(root,await hookInput(),options.host);
+        console.log(json(output));return 0;
+      } catch (error) {
+        if (options.host !== 'claude' && options.host !== 'dsh') throw error;
+        // Claude's protocol reserves exit 2 for a blocking decision.
+        console.error(json({ status: 'error', exitCode: 1, message: error.message }));
+        return 1;
+      }
     }
+    const project=locateProject(process.cwd(),options.root),root=project.root;
     if(!options.json)console.log(`项目：${root}（${project.source}）`);
     if(command==='menu') {
       const ui=terminalUI();
@@ -222,7 +251,7 @@ export async function main(argv) {
       ]);}finally{ui.close();}
       if(command==='exit')return 0;
     }
-    command=({setup:'init',lint:'check',verify:'run'})[command]??command;
+
     if (process.env.HARNESS_ACTIVE && ['run','check','init'].includes(command)) throw new Error('Recursive harness invocation refused');
     const requireOption = key => { if (!options[key]) throw new Error(`--${key} is required`); return options[key]; };
     let result;
@@ -232,6 +261,7 @@ export async function main(argv) {
       const ui=options.yes?null:terminalUI();
       try {result=await cancellable(signal=>setup(root,{answers,yes:options.yes,ui,out:options.out??'.harness/plan.json',skipVerify:options['skip-verify'],hooks:options.hooks,signal}));}finally{ui?.close();}
     }
+    else if (command === 'roles') result = configureRoles(root, { host: options.host, role: options.role, apply: options.yes });
     else if (command === 'artifacts' || command === 'hooks') {
       const { action, operand } = parsed;
       if (action === 'clean') {

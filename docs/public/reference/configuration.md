@@ -31,13 +31,13 @@ Skill discovery is separate. With dsh-skill and dsh-skill-filesystem enabled, pl
 
 - repository: visibility is private/public/unknown; unknown blocks repository publication checks.
 - workspaces: array of id, project-relative root, and optional tests/documents.
-- documents: defaultAudience: internal, publicRoots/internalRoots, publicPatterns/internalPatterns. Internal rules take precedence; child workspaces cannot weaken root policy. Only explicitly public paths may be published.
+- documents: defaultAudience: internal, publicRoots/internalRoots, publicPatterns/internalPatterns. Internal rules take precedence; child workspaces cannot weaken root publication policy. Only explicitly public paths may be published. Use optional `artifactAllowlist` for exact paths of maintained documentation files flagged by `documents.artifacts`. Root entries are project-relative; workspace entries are workspace-relative. These entries affect layout checks only.
 - hooks: `sessionRetentionDays` for inactive managed Hook snapshots, default 30 (1–3650). This setting does not enable Hooks.
 - artifacts: `retentionDays` for completed managed runs, default 14 (1–3650). See [artifact management](./artifacts.md).
 - tests: include/exclude globs, artifacts paths, requireConfiguredTask. Preserve native framework discovery. Globs support `*`, `**`, and `?`.
 - tasks: id, workspace, argv array, cwd relative to the workspace, dependsOn, kind (test/lint/typecheck/build/custom), required, enabled, timeoutMs, and covers (workspace coverage). Tasks deduplicate by ID and cycles are rejected. Use covers for the actual scope of an existing aggregate task; avoid separately running the same underlying tests twice.
 - publicationTargets: id and manifest; needed only for publication checks.
-- rules: tests.layout, tests.configured, tests.artifacts, documents.links, tasks.graph, storage.state, artifacts.layout; values error/warning/off. `storage.state` defaults to error; `artifacts.layout` defaults to warning.
+- rules: tests.layout, tests.configured, tests.artifacts, documents.links, documents.artifacts, tasks.graph, storage.state, artifacts.layout; values error/warning/off. `storage.state` and `documents.artifacts` default to error; `artifacts.layout` defaults to warning.
 - baseline: fingerprints of ordinary historical findings; publication violations cannot be exempted.
 
 Omitted fields use defaults; unknown fields and versions are rejected. Root README.md is public by default. Without existing governance configuration, newly generated generic host entries may be suggested as public; existing entries and explicit policies are not automatically broadened. Detailed public content belongs under docs/public/guides, reference, and examples. Default internal paths include docs/prd, docs/decision, docs/verification, .harness, docs/structure.md, and docs/agent_guide.md. Explicit arrays replace defaults for that field: review and merge new conventions when adapting old configuration, and check custom Agent instructions for internal information. Do not invent schema fields.
@@ -59,10 +59,30 @@ Manage work tasks with `task start/status/resume/note/accept/finish`; see [tasks
 
 Everyday help shows the primary entry points; `help --all` includes advanced and compatibility interfaces. Low-level apply does not run first validation, so follow it with run. Evidence is saved in `.harness/verification.json`. Source/configuration changes invalidate prior results; never write passing evidence manually.
 
-## Optional local Codex hooks
+## Optional local Hooks
 
-`init --hooks` merges SessionStart/Stop handlers into `.codex/hooks.json` and generates a self-contained runner and ownership record in `.harness/hooks`. Users must review and trust them through `/hooks` in a new local session; setup does not change host permissions. Preserve third-party handlers. Modified or deleted managed handlers produce conflicts. Commands bind the chosen runtime and project absolute paths; rerun init --hooks after moving, changing machines, or upgrading.
+Run `harness init --hosts codex,claude,dsh --hooks --yes` in an existing configured project. Use one host or a comma-separated list. Without `--hosts`, setup uses the project's selected hosts, with Codex as the default for new projects. Provide any missing onboarding answers for a new project. Hook setup supports Codex, Claude Code, and DeepSeek Harness.
 
-SessionStart records a session input digest and supplies validation context. Stop requests continued validation only when the session changed files and no current full passing evidence exists. It does not run project commands itself; after one automatic continuation it only reminds. Missing start snapshots or tasks are reported as gaps. This adapter is not universal enforcement. Do not trust hooks on the user's behalf or disable other hooks.
+| Host | Registration file | Activate in the host |
+|---|---|---|
+| Codex | `.codex/hooks.json` | In a new trusted local session, review and approve the handlers with `/hooks`. |
+| Claude Code | `.claude/settings.local.json` | Reopen the trusted project and check the handlers with `/hooks`. |
+| DeepSeek Harness | `.harness/hooks/dsh/hooks.json` | Mount the official Claude Code Hook bridge in the selected profile, use the absolute `configPath` printed by setup, and restart the profile. |
+
+For DSH, make the bridge available to the selected profile and merge this entry into that profile’s `cordis.patch.yml`. If the profile already mounts the bridge for this project, update that entry’s `configPath`. Use the generated path for your project. The bridge reads it at startup and executes commands through the profile's shell executor. The generated command expects PowerShell on Windows and a POSIX shell on macOS and Linux.
+
+```yaml
+- insert:
+    - id: harness-kit-project-hooks
+      name: "@deepseek-ai/dsh-hooks-claude-code"
+      config:
+        configPath: D:/project/.harness/hooks/dsh/hooks.json
+```
+
+[DSH Hook bridge reference](https://github.com/deepseek-ai/deepseek-harness/blob/fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159/packages/experimental/hooks-claude-code/README.md)
+
+Setup preserves third-party handlers and settings, and reports conflicts when a managed handler or runner has been edited. It respects a local Codex `features.hooks = false` or Claude Code `disableAllHooks: true`. Keep registration files with absolute machine paths local. Re-run setup after moving the project, changing the runtime or machine, or upgrading, then reload or review the Hooks as required by the host. `doctor` checks the files on disk. DSH reports `profile-required` because project setup leaves the profile to its owner.
+
+`SessionStart` records the first input digest for a session and provides project verification context. `Stop` requests a continuation when the digest has changed and complete passing evidence is missing or stale. It runs no project commands. Codex and Claude use the host's `stop_hook_active` signal to avoid another continuation in the same stop cycle. The DSH bridge always sends false, so its runner persists a per-session request until it observes fresh passing evidence. The DSH runner only acts inside its configured project. Use the same Node or Bun runtime for setup and verification because evidence includes the runtime version. Missing tasks or a missing start snapshot produce a status message without forcing a continuation. DSH logs those messages. Hooks support the verification workflow and leave permissions to the host.
 
 Exit 0 means the requested gates are satisfied; 1 indicates rule/task failure; 2 indicates configuration, tool, or execution-condition errors. not-configured is not a test pass. Successful ordinary lint does not replace publication checks.

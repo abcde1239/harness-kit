@@ -5,6 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
+import {parse as parseToml} from 'smol-toml';
+import {parse as parseYaml} from 'yaml';
 import {packageDistribution} from '../scripts/package-distribution.mjs';
 import {install} from '../scripts/install.mjs';
 import {runProcess} from '../src/subprocess.mjs';
@@ -137,4 +139,129 @@ test('packaged Node CLI previews Hook session retention separately from artifact
   call(runtime, root, ['hook'], { input: JSON.stringify({ session_id: 'node session', hook_event_name: 'SessionStart' }) });
   assert.deepEqual(call(entry, root, ['hooks', 'clean', '--yes']).items.map(item => item.status), ['recent']);
   assert.equal(call(entry, root, ['doctor']).checks.find(check => check.id === 'hooks').hooks.status, 'configured');
+});
+
+
+test('portable roles use native formats and only configure the selected host and specialists',()=>{
+ const root=fixture('native roles');
+ const cli=path.join(base,'standalone role cli.mjs');
+ fs.copyFileSync(entry,cli);
+ const catalog=call(cli,root,['roles']);
+ assert.equal(catalog.roles.length,9);
+ assert.equal(catalog.roles.find(role=>role.id==='qa').name,'tester');
+ const nativeDirectories={codex:'.codex',claude:'.claude',gemini:'.gemini',cursor:'.cursor',opencode:'.opencode'};
+ for(const [host,directory] of Object.entries(nativeDirectories)){
+  const args=['roles','--host',host,'--role','frontend,code-reviewer,agent-expert'];
+  const preview=call(cli,root,args);
+  assert.equal(preview.status,'preview');
+  assert.equal(fs.existsSync(path.join(root,directory)),false);
+  assert.equal(call(cli,root,[...args,'--yes']).changed.length,3);
+  for(const role of preview.roles){
+   const content=fs.readFileSync(path.join(root,role.path),'utf8');
+   const metadata=host==='codex'?parseToml(content):parseYaml(content.split('---\n')[1]);
+   assert.equal(role.name,role.id);
+   assert.equal(path.basename(role.path,path.extname(role.path)),role.name);
+   if(host==='opencode') assert.equal(metadata.mode,'subagent');
+   else assert.equal(metadata.name,role.name);
+   assert.equal(metadata.model,undefined);
+   assert.equal(metadata.model_reasoning_effort,undefined);
+   const prompt=host==='codex'?metadata.developer_instructions:content.split('---\n')[2];
+   const focus={frontend:'Act as frontend expert.', 'code-reviewer':'Independently inspect implementation', 'agent-expert':'Locate the cause'};
+   assert.ok(prompt.includes(focus[role.id]));
+   if(role.id==='code-reviewer'){
+    if(host==='cursor') assert.equal(metadata.readonly,true);
+    if(host==='claude') assert.equal(metadata.tools,'Read, Glob, Grep');
+    if(host==='opencode') assert.deepEqual(metadata.permissions.map(p=>p.effect),['deny','deny']);
+   }
+  }
+  assert.deepEqual(call(cli,root,[...args,'--yes']).changed,[]);
+ }
+ const dsh=call(cli,root,['roles','--host','dsh','--role','qa','--yes']);
+ assert.equal(dsh.status,'manual');
+ assert.equal(dsh.roles[0].name,'tester');
+ assert.equal(fs.existsSync(path.join(root,'.dsh')),false);
+ assert.equal(fs.existsSync(path.join(root,'.harness')),false);
+});
+
+test('role configuration preserves custom edits and refuses other writers before applying',()=>{
+ const root=fixture('role ownership',{'.codex/agents/frontend.toml':'# User-owned role\n'});
+ const source=path.join(repository,'bin/harness.mjs');
+ const result=call(source,root,['roles','--host','codex','--role','frontend,qa','--yes'],{expected:1});
+ assert.deepEqual(result.conflicts,['.codex/agents/frontend.toml']);
+ assert.equal(fs.readFileSync(path.join(root,result.conflicts[0]),'utf8'),'# User-owned role\n');
+ assert.equal(fs.existsSync(path.join(root,'.codex/agents/tester.toml')),false);
+ const args=['roles','--host','codex','--role','qa','--yes'];
+ const [changed]=call(source,root,args).changed;
+ const target=path.join(root,changed);
+ fs.appendFileSync(target,'# User change\n');
+ assert.deepEqual(call(source,root,args,{expected:1}).conflicts,[changed]);
+ assert.match(fs.readFileSync(target,'utf8'),/User change/);
+ const directory=path.join(root,'.gemini/agents/tester.md');
+ fs.mkdirSync(directory,{recursive:true});
+ const conflict=call(source,root,['roles','--host','gemini','--role','qa','--yes'],{expected:1});
+ assert.deepEqual(conflict.conflicts,['.gemini/agents/tester.md']);
+});
+
+
+test('portable init connects selected hooks and runs Claude and DSH event protocols',()=>{
+ const root=project('multi-host hooks');
+ const claudeFile=path.join(root,'.claude/settings.local.json');
+ const thirdParty={hooks:[{type:'command',command:'existing-hook'}]};
+ fixture('multi-host hooks/.claude',{'settings.local.json':{permissions:{deny:['Write']},hooks:{Stop:[thirdParty]}}});
+ const ready=init(entry,root,['--hosts','codex,claude,dsh','--hooks']);
+ assert.equal(ready.hooks.status,'profile-required');
+ assert.deepEqual(ready.hooks.entries.map(item=>[item.host,item.status]),[['codex','configured'],['claude','configured'],['dsh','profile-required']]);
+ const bridge=ready.hooks.entries[2].bridge;
+ assert.equal(bridge.configPath,path.join(root,'.harness/hooks/dsh/hooks.json'));
+ const doctor = call(entry,root,['doctor']);
+ assert.equal(doctor.hostRuntime,'not-confirmed');
+ assert.equal(doctor.checks.find(item=>item.id==='hooks:dsh').hooks.status,'profile-required');
+ const humanDoctor = spawnSync(process.execPath,[entry,'doctor','--root',root],{cwd:root,env:nodeOnly,encoding:'utf8',windowsHide:true,timeout:15000});
+ assert.ifError(humanDoctor.error);
+ assert.equal(humanDoctor.status,0,humanDoctor.stderr);
+ assert.ok(humanDoctor.stdout.includes(`${bridge.name} configPath: ${bridge.configPath}`));
+ const local=JSON.parse(fs.readFileSync(claudeFile,'utf8'));
+ assert.deepEqual(local.permissions,{deny:['Write']});
+ assert.deepEqual(local.hooks.Stop[0],thirdParty);
+ assert.match(local.hooks.Stop[1].hooks[0].command,/--host.*claude/);
+ const dshConfig=JSON.parse(fs.readFileSync(bridge.configPath,'utf8'));
+ assert.match(dshConfig.hooks.Stop[0].hooks[0].command,/--host.*dsh/);
+ const baseEvent={session_id:'shared-id',cwd:root};
+ const event=(host,name,extra={})=>call(path.join(root,'.harness/hooks',host,'runtime.mjs'),root,['hook','--host',host],{input:JSON.stringify({...baseEvent,hook_event_name:name,...extra})});
+ const launch = (handler, eventName) => {
+  const shell = process.platform === 'win32'
+   ? [path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'), '-NoProfile', '-NonInteractive', '-Command']
+   : ['/bin/sh', '-c'];
+  const child = spawnSync(shell[0], [...shell.slice(1), handler.command], {
+   cwd: root, env: nodeOnly, input: JSON.stringify({...baseEvent, hook_event_name:eventName, source:'startup'}),
+   encoding:'utf8', windowsHide:true, timeout:15000,
+  });
+  assert.ifError(child.error);
+  assert.equal(child.status, 0, child.stderr);
+  return JSON.parse(child.stdout);
+ };
+ const claudeStart = local.hooks.SessionStart[0].hooks[0];
+ if (process.platform === 'win32') assert.equal(claudeStart.shell, 'powershell');
+ assert.ok(launch(claudeStart, 'SessionStart').hookSpecificOutput.additionalContext);
+ assert.deepEqual(event('dsh','Stop'),{systemMessage:'Harness Kit: this session has no initial snapshot, so its change scope cannot be determined automatically. Run harness run as required by project instructions.'});
+ assert.ok(launch(dshConfig.hooks.SessionStart[0].hooks[0], 'SessionStart').hookSpecificOutput.additionalContext);
+ fs.writeFileSync(path.join(root,'changed.mjs'),'export const updated = true;');
+ assert.equal(event('claude','Stop').decision,'block');
+ assert.equal(event('claude','Stop',{stop_hook_active:true}).decision,undefined);
+ assert.equal(event('dsh','Stop',{cwd:base}).decision,undefined);
+ assert.equal(event('dsh','Stop',{stop_hook_active:false}).decision,'block');
+ assert.deepEqual(event('dsh','Stop',{stop_hook_active:false}),{});
+ call(entry,root,['run']);
+ assert.deepEqual(event('dsh','Stop'),{});
+ fs.appendFileSync(path.join(root,'changed.mjs'),'\nexport const changedAgain = true;');
+ assert.equal(event('dsh','Stop').decision,'block');
+ call(path.join(root,'.harness/hooks/claude/runtime.mjs'),root,['hook','--host','claude'],{input:'invalid JSON',expected:1});
+ assert.equal(call(entry,root,['check']).status,'passed');
+ assert.deepEqual(init(entry,root,['--hosts','claude','--hooks']).hooks.changed,[]);
+ const changed=JSON.parse(fs.readFileSync(claudeFile,'utf8'));
+ changed.hooks.Stop.pop();
+ fs.writeFileSync(claudeFile,JSON.stringify(changed));
+ const conflict=call(entry,root,['init','--private','--yes','--hosts','claude','--hooks'],{expected:1});
+ assert.deepEqual(conflict.hooks.conflicts,['.claude/settings.local.json']);
+ assert.deepEqual(JSON.parse(fs.readFileSync(claudeFile,'utf8')).hooks.Stop,[thirdParty]);
 });

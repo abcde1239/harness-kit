@@ -5,9 +5,9 @@
   "documents": {
     "defaultAudience": "internal",
     "publicRoots": ["docs/public"],
-    "internalRoots": ["docs/prd", "docs/decision", "docs/verification", "docs/tasks", ".harness", "docs/public/.vitepress/cache", "docs/public/.vitepress/dist"],
+    "internalRoots": ["docs/prd", "docs/decision", "docs/verification", "docs/tasks", "artifacts/archive", ".harness", "docs/public/.vitepress/cache", "docs/public/.vitepress/dist"],
     "publicPatterns": ["README.md", "README.en.md", "INSTALL.md", "package.json", "bun.lock", "src/**", "bin/**", "scripts/**", "tests/**", "examples/**", "skills/harness-kit/**", ".github/workflows/**", ".gitignore", "harness.config.json"],
-    "internalPatterns": ["**/MEMORY.md", "**/memory/**", "**/memories/**", "**/decision/**", "docs/harness-*.md", "docs/structure.md", "docs/agent_guide.md"]
+    "internalPatterns": ["**/MEMORY.md", "**/memory/**", "**/memories/**", "**/decision/**", "docs/structure.md", "docs/agent_guide.md"]
   },
   "tests": { "include": ["tests/**/*.test.mjs"], "exclude": ["artifacts/**"], "artifacts": ["artifacts", "coverage"], "requireConfiguredTask": true },
   "artifacts": { "retentionDays": 14 },

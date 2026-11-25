@@ -7,6 +7,7 @@
 | `.harness/` | Harness 的接入、计划、任务、验证摘要和发布审阅状态 |
 | `artifacts/runs/<id>/` | 一次工作的临时产物，`run.json` 由 CLI 维护 |
 | `artifacts/releases/`、`artifacts/distribution/`、`artifacts/skill/`、`artifacts/snapshots/` | 按版本或用途组织的发布包、Skill 和导出快照 |
+| `artifacts/archive/` | 留作参考的历史产物 |
 | `docs/verification/` | 长期维护的验收方法和结论 |
 | 项目原有源码、测试或框架产物目录 | 可复用脚本、可执行测试、测试夹具，以及框架自己管理的覆盖率等文件 |
 
@@ -19,6 +20,16 @@ harness artifacts clean --yes
 ```
 
 第一条命令返回 `id` 和相对于项目根的 `path`。把该路径交给执行者和支持指定输出位置的测试工具。所有写入者结束后运行 `finish`。如果外部文档或工单会长期引用这个目录，先用 `keep` 保留，待引用不再需要时用 `release` 恢复保留期规则。
+
+## 设计稿与评审素材
+
+生成前先执行 `harness artifacts create <label>`。把可编辑稿、临时 HTML 原型、对比导出图和评审截图写入返回目录下的 `design/`，交给参与评审的人复用。已经采纳的设计规范与决策保存在项目约定的文档目录。长期维护的图示、站点素材使用文档原有的资源目录。
+
+`harness check` 和 `harness run` 会报告根目录和工作区 `docs/` 下的常见原生设计文件，以及通过名称或目录能辨认的临时评审素材。例如 `docs/design/checkout.html`、`docs/assets/checkout-mockup.png` 和 `docs/首页设计稿.png`。`documents.artifacts` 默认报错。确需保留的文档素材可以把文件的精确路径加入 `documents.artifactAllowlist`。该例外只影响目录检查，发布边界仍由项目的公开策略决定。
+
+遇到已有的误放稿件，先核对用途和引用，迁入本次运行目录后再更新引用。`artifacts clean` 只清理登记的已结束运行目录；`docs/` 里的文件由维护者处理。
+
+## 保留期与清理
 
 默认保留 **14 天**。在 `harness.config.json` 里用 `"artifacts": { "retentionDays": 14 }` 调整。保留期从完成时间和最近文件或目录修改时间中较晚的一项算起。`clean` 默认预览，`--yes` 才删除。清理范围是 `artifacts/runs/` 中已登记、已结束并到期的目录。进行中的运行、手动保留的运行、`.harness/tasks/` 已记录引用的运行、Git 索引中的文件，以及包含链接、特殊文件或 Git 元数据的目录会保留。`check`、`run`、安装和发布不会触发清理。
 

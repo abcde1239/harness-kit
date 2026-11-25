@@ -6,7 +6,7 @@ import { CONFIG, loadConfig } from './config.mjs';
 import { managedPaths } from './templates.mjs';
 import { diagnose } from './readiness.mjs';
 import { verifyProject } from './workflow.mjs';
-import { connectHooks } from './hooks.mjs';
+import { connectHooks, hookHosts } from './hooks.mjs';
 import { HOSTS, normalizeHosts, selectedHosts } from './host.mjs';
 
 export function terminalUI() {
@@ -128,7 +128,8 @@ export async function setup(root,{answers={},yes=false,ui,out='.harness/plan.jso
   }
   const plan=makePlan(root,answers);
   if(plan.unanswered.length)throw new Error(`还有未回答的问题：${plan.unanswered.map(q=>q.message).join('；')}。请运行 harness init 交互配置，或补全 --private/--public、--test/--no-tests、--answers。`);
-  if(hooks&&!(plan.hosts??selectedHosts(root,answers.hosts)).includes('codex'))throw new Error('--hooks 目前仅支持 Codex；请在 --hosts 中加入 codex，或省略 --hooks。未应用变更。');
+  const requestedHooks = hooks ? (answers.hosts ? normalizeHosts(answers.hosts) : plan.hosts).filter(host => hookHosts.includes(host)) : [];
+  if(hooks&&!requestedHooks.length)throw new Error('--hooks 支持 codex、claude 和 dsh；请用 --hosts 选择。未应用变更。');
   if([...managedPaths,'.harness/managed.json'].includes(relativePath(out)))throw new Error('计划输出不能覆盖项目受管理文件或生成状态。');
   atomicWrite(root,out,json(plan));
   ui?.write(`完整计划已保存：${safePath(root,out)}`);
@@ -149,12 +150,22 @@ export async function setup(root,{answers={},yes=false,ui,out='.harness/plan.jso
     ui?.write('已应用安全变更。冲突文件原样保留，请对照计划合并后运行 harness run。');
     return {...result,plan:out,root,readiness:diagnose(root),next:'合并冲突后运行 harness run。'};
   }
-  if(hooks) {
-    result.hooks=await connectHooks(root);
+  if(requestedHooks.length) {
+    const entries = [];
+    for (const host of requestedHooks) {
+      try { entries.push(await connectHooks(root, host)); }
+      catch (error) { entries.push({ host, status: 'error', exitCode: 2, changed: [], conflicts: [], notice: error.message }); }
+    }
+    result.hooks = entries.length === 1 ? entries[0] : {
+      status: entries.some(item => item.exitCode) ? 'partial' : entries.some(item => item.status === 'profile-required') ? 'profile-required' : 'configured',
+      exitCode: Math.max(...entries.map(item => item.exitCode)),
+      changed: entries.flatMap(item => item.changed), conflicts: entries.flatMap(item => item.conflicts),
+      notice: entries.map(item => `${item.host}: ${item.notice}`).join('\n'), entries,
+    };
     result.changed.push(...result.hooks.changed);
     ui?.write(result.hooks.notice);
     if(result.hooks.exitCode) {
-      return {...result,status:result.hooks.status==='conflicts'?'conflicts':'needs-attention',exitCode:result.hooks.exitCode,conflicts:result.hooks.conflicts,plan:out,root,
+      return {...result,status:result.hooks.conflicts.length?'conflicts':'needs-attention',exitCode:result.hooks.exitCode,conflicts:result.hooks.conflicts,plan:out,root,
         readiness:diagnose(root),next:result.hooks.notice};
     }
   }

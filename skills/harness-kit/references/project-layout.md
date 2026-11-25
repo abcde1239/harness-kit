@@ -10,15 +10,36 @@ Use `--hosts` to select `codex`, `claude`, `gemini`, `cursor`, `opencode`, or `d
 
 Apply maintains `.harness/managed.json`; the wizard saves `.harness/plan.json`. Skill answers may be saved in `.harness/answers.json`. Run stores input digests and validation scope in `.harness/verification.json`; doctor checks their continued applicability without writing. Recoverable tasks live in `.harness/tasks/<id>.json`, with `.harness/active-task.json` as the active pointer. Tasks do not run automatically. Treat plans and task records as internal development material.
 
-Explicit `init --hooks` also merges `.codex/hooks.json` and generates project runners, ownership records, and session summaries under `.harness/hooks`. This adapter is for trusted local Codex sessions, includes machine paths, and belongs in local configuration. Default initialization does not write hooks.
+Explicit `init --hooks` adds registrations for the supported hosts selected during onboarding. The [configuration reference](configuration.md#optional-local-hooks) covers host activation and local paths.
 
-Digests determine whether existing managed files can be updated safely; conflicts preserve the original files. Onboarding does not generate business source, tests, framework configuration, CI workflows, or `verify.sh`, and does not configure host models, permissions, or non-Codex hooks. Earlier gen-new `.agent/*`, guides, and `verify.sh` remain intact; their existence does not prove business tests pass. Static instruction files do not prove a live session has loaded them. Verify host-local and global rules separately.
+Digests determine whether existing managed files can be updated safely; conflicts preserve the original files. Onboarding does not generate business source, tests, framework configuration, CI workflows, or `verify.sh`, and does not configure host models or permissions. Earlier gen-new `.agent/*`, guides, and `verify.sh` remain intact; their existence does not prove business tests pass. Static instruction files do not prove a live session has loaded them. Verify host-local and global rules separately.
 
-### Harness state and temporary Hooks
+## What belongs in host instructions
+
+Treat `AGENTS.md` and the equivalent native host files as entry points for agent behavior. Put durable rules that apply across tasks at the repository root, and use the host’s scoped instructions for rules that apply only to a package or directory. Write each rule as a concrete action or constraint. For example, “Run the API compatibility check when changing a public endpoint” belongs in the relevant agent instructions. “Add CSV export with these columns” belongs in the feature specification.
+
+| Content | Source |
+|---|---|
+| Feature behavior, user stories, and feature acceptance criteria | Existing issue or feature spec, or `docs/prd/` |
+| Architecture decisions and their rationale | The existing decision log or `docs/decision/` |
+| Repeatable verification methods and test links | Existing test and verification docs, or `docs/verification/` |
+| Task progress, handoffs, and verification evidence | Existing task tracker or Harness work records and managed artifacts |
+| Reusable development lessons | Existing project memory such as `MEMORY.md` |
+
+Use a short pointer when an agent needs to know when to consult a source. Read it on demand. Avoid copying requirements into multiple host entries or automatically including them through imports. Keep private material out of public entries. Write project-owned rules outside the Harness Kit markers. To reorganize existing user-authored content, review the proposed move and preserve the original source until the destination has been checked.
+
+## Harness state and temporary Hooks
 
 Keep executable tests, fixtures, snapshots, and runner configuration in the framework test layout. Transient test output belongs in its normal output directory or an artifact run. The `storage.state` check recognizes test files and common fixture or snapshot paths even inside `.harness/tmp/`. Use that directory only for JSON documents passed to Harness commands.
 
-The host registers Hooks in `.codex/hooks.json`. `.harness/hooks/runtime.mjs` and `.harness/hooks/state.json` are the installed runner and ownership record. Temporary snapshots are stored in `.harness/hooks/sessions/` and age out after 30 days of recorded inactivity by default. Preview with `harness hooks clean` and apply with `harness hooks clean --yes`. Cleanup removes only ordinary, expired session records and preserves Git-indexed, busy, malformed, and legacy undated records. The command leaves Hook registrations in place. Keep project-owned Hook scripts such as experiments under `scripts/hooks/` or the project’s existing hook directory.
+| Path | Contents |
+|---|---|
+| `.harness/hooks/runtime.mjs`, `.harness/hooks/state.json` | Codex runner and ownership record |
+| `.harness/hooks/claude/` | Claude Code runner and ownership record |
+| `.harness/hooks/dsh/` | DSH runner, ownership record, and the bridge's `hooks.json` |
+| `.harness/hooks/sessions/` | Input digests and activity timestamps for all three hosts |
+
+Session records expire after 30 days of recorded inactivity by default. Preview with `harness hooks clean` and apply with `harness hooks clean --yes`. Cleanup only removes expired session records and preserves Git-indexed, busy, malformed, and legacy undated files. Keep project-owned Hook scripts, including experiments, in `scripts/hooks/` or the project's existing Hook directory. The registrations in `.codex/hooks.json` and `.claude/settings.local.json` contain machine-specific paths. Review your local Git exclusions before sharing the project.
 
 See [artifact management](./artifacts.md) for generated files, retention, and cleanup.
 

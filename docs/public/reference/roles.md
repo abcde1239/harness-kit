@@ -18,15 +18,31 @@ The lead chooses roles from the user's goal, existing project, and actual worklo
 
 Read this page and the [collaboration conventions](collaboration.md), then only the selected role files. Do not load every profile or invent a context-manager, universal delegation API, or background Agent. Reusable instructions and delegation prompts are English. Preserve quoted user input and code; use the user's requested language for user-facing communication.
 
+## Configure native roles
+
+Use the host running the current conversation, or the host the user requests. Pass that host to the bundled CLI rather than inferring it from repository files. Run `harness roles` to list role IDs or `harness roles --host <id> --role <ids>` to preview the project files. Pass the verified project path using `--root`. Add `--yes` to apply an authorized change. Use `--role all` when the whole catalog is requested. Configure only the relevant roles. If the host cannot be identified, ask before writing native configuration. Check actual role discovery in a new host session when needed.
+
+| Host ID | Location or delegation path |
+|---|---|
+| `codex` | `.codex/agents/<name>.toml` |
+| `claude` | `.claude/agents/<name>.md` |
+| `gemini` | `.gemini/agents/<name>.md` |
+| `cursor` | `.cursor/agents/<name>.md` |
+| `opencode` | `.opencode/agents/<name>.md` |
+| `dsh` | Load the Skill role prompt and pass it in the delegation task. Use the active preset and supply `name` when the tool supports it. |
+
+The generated files use the existing role prompts and the host's default model selection. If native registration is unavailable, use the same role as an assignment or apply the role in the main session. Native roles use short names such as `frontend`, `tester` (role ID `qa`), and `code-reviewer`. When the host supports separate instance names, use the role name or a task-specific name such as `checkout-frontend`. Keep the returned runtime ID when the host requires it for addressing. See [subagent naming](collaboration.md#name-each-subagent-by-its-responsibility).
+
 ## Compose an assignment
 
 Combine this brief with the chosen role's prompt. Replace placeholders and send it through the host's actual delegation tool. A role supplies a professional perspective; this brief determines ownership, authority, and acceptance.
 
 ```text
-Role: <responsibility>. Mode: <implementation / review / verification>.
+Role name: <responsibility-based name>. Role: <responsibility>. Mode: <implementation / review / verification>.
 Goal: <one observable outcome>.
 Project: <verified absolute root>.
-Requirements and inputs: <user request, relevant files, confirmed decisions>.
+Requirements and inputs: <user request, original wording or precise source reference, confirmed decisions>.
+Deliverable language: <when specified or required by the project>.
 Applicable style rules: <adopted rule IDs, scope, and location; explicitly none if absent>.
 Work/criterion IDs: <existing IDs; explicitly unused when not using durable tasks>.
 Exclusive writes: <specific files/directories; none for read-only review>.
@@ -42,6 +58,8 @@ Do not independently delegate, commit, deploy, publish, or declare the entire wo
 Return assigned criteria, actual deliveries/files, interface changes, commands and results, uncovered behavior, and handoff information.
 Distinguish implemented, executed, passed, and unverified. Do not report assumptions as facts.
 ```
+
+When translating a requirement for a handoff, label the translation and keep exact terms that affect behavior. Check obligations, exceptions, quantities, and acceptance against the original. Resolve any meaning that would change the implementation with the source owner or the user. Keep interface names, paths, and required UI strings as specified.
 
 A PM proposal is not user approval; a QA report is not whole-task completion; a role name grants no tool permissions. The lead owns the active-task pointer, manual acceptance, and finish.
 

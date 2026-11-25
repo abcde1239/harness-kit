@@ -13,9 +13,3 @@ export function isMain(url) {
   try{return fs.realpathSync(fileURLToPath(url))===fs.realpathSync(path.resolve(process.argv[1]));}catch{return false;}
 }
 export function runtimeEnvironment(){return {...(isBun?{bun:process.versions.bun}:{node:process.versions.node}),platform:process.platform,arch:process.arch};}
-export function executable(command,env=process.env) {
-  const directories=path.isAbsolute(command)||command.includes('/')||command.includes('\\')?['']:(env.PATH??'').split(path.delimiter).filter(Boolean);
-  const extensions=process.platform==='win32'&&!path.extname(command)?['.exe','.com','.cmd','.bat','']:[''];
-  for(const directory of directories)for(const extension of extensions){const candidate=path.resolve(directory,command+extension);try{if(fs.statSync(candidate).isFile()){fs.accessSync(candidate,process.platform==='win32'?fs.constants.F_OK:fs.constants.X_OK);return candidate;}}catch{}}
-  return null;
-}

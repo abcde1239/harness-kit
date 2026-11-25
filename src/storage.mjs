@@ -6,7 +6,9 @@ import { HOOK_SESSIONS, isHookSessionFile } from './hook-state.mjs';
 
 const STATE_FILES = new Set([
   'managed.json', 'answers.json', 'plan.json', 'verification.json', 'active-task.json',
-  'tasks.lock', 'artifacts.lock', 'publication.json', 'review.json', 'hooks/state.json', 'hooks/runtime.mjs'
+  'tasks.lock', 'artifacts.lock', 'publication.json', 'review.json', 'hooks/state.json', 'hooks/runtime.mjs',
+  'hooks/claude/state.json', 'hooks/claude/runtime.mjs',
+  'hooks/dsh/state.json', 'hooks/dsh/runtime.mjs', 'hooks/dsh/hooks.json'
 ]);
 const TEST_DIRECTORIES = /(?:^|\/)(?:tests?|specs?|fixtures?|__tests__|__fixtures__|__snapshots__)(?:\/|$)/i;
 const TEST_DATA = /(?:^|\/)(?:tests?|specs?|fixtures?|snapshots?)\.json$|\.(?:fixture|snapshot)\.json$/i;

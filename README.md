@@ -124,7 +124,7 @@ harness check     # 只检查项目约定
 harness doctor    # 诊断接入状态和验证记录
 ```
 
-裸命令 `harness` 打开中文菜单；`harness help --all` 查看高级用法。项目配置、monorepo、可恢复任务和可选 hooks 见[使用指南](docs/public/guides/usage.md)。
+裸命令 `harness` 打开中文菜单；`harness help --all` 查看高级用法。项目配置、monorepo、可恢复任务和 Codex、Claude Code、DeepSeek Harness 的可选会话 Hook 见[使用指南](docs/public/guides/usage.md)。
 
 用 `harness artifacts create <label>` 分配目录，所有写入结束后用 `harness artifacts finish <id>` 标记完成。`harness artifacts clean` 预览到期产物，`harness hooks clean` 预览过期 Hook 会话快照。传入 `--yes` 才执行清理。参见[产物管理](docs/public/reference/artifacts.md)。
 

@@ -8,6 +8,35 @@ import { auditIndex } from './git.mjs';
 import { checkArtifactLayout, RUNS } from './artifacts.mjs';
 import { checkHarnessStorage } from './storage.mjs';
 
+const designFiles = /\.(?:fig|sketch|xd|pen|psd|bmpr)$/i;
+const reviewFormats = /\.(?:avif|gif|jpe?g|png|svg|webp|pdf|html?|mp4|webm|zip|pptx?)$/i;
+const draftName = /(?:^|[^a-z0-9])(?:mockups?|wireframes?|prototypes?|screenshots?|screen[-_ ]?captures?|design[-_ ](?:drafts?|exports?))(?:$|[^a-z])/i;
+const draftNameChinese = /设计[草初终]?稿|原型稿|线框稿|截图|效果图/;
+const draftDirectory = /(?:^|\/)(?:designs?|设计)(?:\/)/i;
+const siteOutput = /(?:^|\/)\.vitepress\/(?:cache|dist)(?:\/)/;
+
+function checkDocumentArtifacts(files, config, add) {
+  const roots = new Map([['docs', 'root']]);
+  const allowed = new Set(config.documents.artifactAllowlist);
+  for (const workspace of config.workspaces) {
+    const prefix = workspace.root === '.' ? '' : workspace.root + '/';
+    roots.set(prefix + 'docs', workspace.id);
+    for (const file of workspace.documents?.artifactAllowlist ?? []) allowed.add(prefix + file);
+  }
+  const documentRoots = [...roots.keys()].sort((a, b) => b.length - a.length);
+  for (const file of files) {
+    const documentRoot = documentRoots.find(root => file.startsWith(root + '/'));
+    if (!documentRoot || allowed.has(file) || siteOutput.test(file)) continue;
+    const local = file.slice(documentRoot.length + 1);
+    const isDraft = draftName.test(local) || draftNameChinese.test(local);
+    if (designFiles.test(local) ||
+        (reviewFormats.test(local) && (isDraft || draftDirectory.test(local))) ||
+        (/\.mdx?$/i.test(local) && isDraft)) {
+      add('documents.artifacts', file, 'Use a managed artifact run for design drafts, prototypes, and captures. For a maintained documentation file, allowlist its exact path in documents.artifactAllowlist.', roots.get(documentRoot));
+    }
+  }
+}
+
 export function applyBaseline(findings, baseline) {
   return findings.map(f => !f.protected && baseline.includes(f.fingerprint) ? { ...f, severity: 'warning', baseline: true } : f);
 }
@@ -19,6 +48,7 @@ export function lint(root, config, { useBaseline = true } = {}) {
   };
   checkHarnessStorage(root, config, add);
   checkArtifactLayout(root, add);
+  checkDocumentArtifacts(files, config, add);
   try { taskOrder(config.tasks); } catch (error) { add('tasks.graph', 'harness.config.json', error.message, 'root', error.message); }
   const workspaceResults = [];
   for (const w of config.workspaces) {
