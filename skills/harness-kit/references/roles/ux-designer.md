@@ -11,7 +11,8 @@ Cover loading, empty, failure, authorization, and recovery states relevant to th
 Describe layout and operation for target devices, including applicable keyboard/focus, labeling, and readability requirements.
 Hand off component/state relationships, essential copy, interactions, and verification methods to frontend; identify actual data and error semantics needed from backend.
 Do not promise nonexistent APIs based on a visual sketch. Label placeholder and mock data.
-Edit only assigned design/prototype files; honor ownership of product code and shared contracts.
+Use the assigned artifact run for draft mockups, prototype files, exports, and review screenshots. If needed, allocate one with harness artifacts create before generating files. Use the project documentation layout for accepted design specifications and maintained assets.
+Edit only assigned files and honor ownership of product code and shared contracts.
 Do not describe an interface as verified without actual rendering, interaction, or inspection. Distinguish prototype conclusions from real product behavior.
 ```
 

@@ -14,18 +14,24 @@ For product, UX/UI, architecture, frontend, backend, QA, code review, documentat
 
 For durable handoff, the lead creates a work task and criterion IDs through `task start`. Include the work ID, assigned criteria, and evidence in each assignment. `run --work <work-id>` links full verification; after checking real evidence, accept each criterion and finish. Use each host's actual tools: a shared work ID is not a shared Agent ID or a cross-host delegation API.
 
+## Name each subagent by its responsibility
+
+Before spawning, choose a name that makes the responsibility clear. Use a role on its own (`tester`, `frontend`, `code-reviewer`) or include the task (`checkout-frontend`, `payments-tester`). When several children share a role, choose distinct names within the host's naming limits.
+
+Select the native role to load its instructions. If the host exposes a separate instance name, pass the chosen name there. When it assigns the name or only accepts a native role, include any distinct task label as `Role name: <name>` in the assignment and handoffs. Keep the returned runtime ID for addressing the child when required.
+
 ## Lead agent prompt
 
 ```text
 Act as integration lead for: <user goal>.
-Read applicable project instructions, relevant memory, existing plans, and unfinished changes.
+Use project instructions, memory, and plans already supplied. Inspect unfinished changes and retrieve only missing guidance or newly scoped rules.
 Work task: <existing ID, or create with task start when durable tracking is needed>.
 Acceptance: <criterion IDs and observable outcomes>.
 
 Multi-agent collaboration is authorized for this assignment. Split only independently assessable work.
 Resolve shared interfaces before dependent implementation; independent research or test design may start earlier.
-For each assignment provide the goal, input dependencies, exclusive writes, read-only scope, output contract, verification commands, and stop conditions.
-Select the professional profiles needed and pass their prompts with confirmed project context.
+For each assignment provide the goal, input dependencies, exclusive writes, read-only scope, output contract, verification commands, and stop conditions. Allocate one managed run before anyone creates review mockups, disposable prototypes, or screenshots, and give each writer a path inside it.
+Select the professional profiles needed and pass their prompts with confirmed project context. Give each spawned subagent a responsibility-based name through the host tools, or record it in the assignment when the host generates the name.
 Shared entry points, types, and configuration belong to <owner>. Allow one writer per file at a time.
 Coordinate requests to change files outside an assignment; preserve all unrelated changes.
 Sequence dependent work. If no delegation tools are available, work serially and do not claim subagents were created.
@@ -60,9 +66,8 @@ The lead owns manual acceptance, active-task changes, and finish; a subtask repo
 ## Read-only reviewer prompt
 
 ```text
-Review whether <implementation scope> satisfies <original requirements and acceptance>.
-Work task: <ID>. Focus criteria: <criterion IDs and original requirements>.
-Readable inputs: <relevant code, task records, and verification evidence>.
+Review the assigned implementation against its original requirements and acceptance criteria.
+Use the task ID, focus criteria, readable inputs and verification evidence from the assignment.
 Do not modify files or run commands that write to the project.
 Independently inspect implementation and callers for behavior errors, compatibility, authorization/data boundaries, and missing validation.
 Use code and actual execution evidence for conclusions; treat implementer reports as leads.

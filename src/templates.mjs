@@ -17,7 +17,7 @@ export const structure = `# 文档目录与资料边界
 | 路径 | 用途 | 公开边界 |
 |---|---|---|
 | 根 README.md | 项目介绍、安装、快速开始与公开文档入口 | 默认公开 |
-| AGENTS.md / CLAUDE.md / GEMINI.md / .cursor/rules/harness-kit.mdc | 按所选宿主生成的精简协作入口 | 通用生成区块适合公开；现有自定义正文按实际策略分类 |
+| AGENTS.md / CLAUDE.md / GEMINI.md / .cursor/rules/harness-kit.mdc | 长期有效的 Agent 操作规则及按需查阅入口 | 通用生成区块适合公开；现有自定义正文按实际策略分类 |
 | docs/public/guides | 面向使用者的操作指南 | 公开 |
 | docs/public/reference | 接口、配置和命令参考 | 公开 |
 | docs/public/examples | 使用示例与配套说明 | 公开 |
@@ -29,9 +29,9 @@ export const structure = `# 文档目录与资料边界
 | MEMORY.md、memory | 开发经验和过程记录 | 内部 |
 | .harness | 接入、任务、验证和发布审阅状态 | 内部 |
 | .harness/hooks | 受管 Hook 运行器、归属记录和会话快照 | 本地状态 |
-| artifacts/runs | CLI 分配的日志、报告和截图目录 | 临时产物 |
+| artifacts/runs | CLI 分配的评审设计稿、原型、日志、报告和截图目录 | 临时产物 |
 
-测试源码、夹具和快照放在框架原生目录；docs/verification 仅说明如何验收，不存放可执行测试。scripts 负责调用，框架产物沿用框架目录。Agent 产物用 harness artifacts create 分配，每项工作复用一个目录。
+测试源码、夹具和快照放在框架原生目录；docs/verification 仅说明如何验收，不存放可执行测试。scripts 负责调用，框架产物沿用框架目录。生成评审设计稿、原型或截图前用 harness artifacts create 分配目录，每项工作复用一个。确认采用的设计说明和长期维护的素材放在项目文档目录。
 
 内部资料可以提交私有 Git。公开仓库应使用私有伴随仓库或不跟踪的本地资料；gitignore 不会清理已跟踪文件和历史。公开前检查实际产物，私有仓库直接转公开还需审阅全部相关历史与托管资料。
 `;
@@ -41,14 +41,15 @@ export const guide = `# Project collaboration and verification
 harness.config.json records project conventions. Native host entries are AGENTS.md for Codex/OpenCode/DeepSeek Harness, CLAUDE.md for Claude Code, GEMINI.md for Gemini CLI, and .cursor/rules/harness-kit.mdc for Cursor. Written configuration does not prove the current host loaded it; confirm in a new session. Read relevant requirements and decisions before editing. See docs/structure.md for document responsibilities.
 
 - The root README.md is public by default; detailed public documentation belongs in docs/public/guides, reference and examples.
-- Use docs/prd for requirements, docs/decision for significant decisions, and docs/verification for acceptance guidance.
+- Keep native host entries concise and scoped to durable agent rules. Put project-owned rules outside the Harness Kit markers.
+- Keep feature requirements and acceptance criteria in the existing specs (docs/prd by default), significant decisions in docs/decision, and repeatable verification methods in docs/verification. Use existing task records or Harness work tasks for progress and handoffs. Refer to those sources on demand.
 - Memory, decisions and development records may be committed to private Git; keep them internal by default.
 - Keep executable tests in framework-native locations. Acceptance documents link tests and commands rather than duplicating assertions.
 - Use scripts for orchestration and framework output directories for reports. Avoid documents that add no information to a small change.
 - Use harness doctor to diagnose onboarding, harness check to check conventions, and harness run to execute configured tasks. Missing tests do not mean tests passed.
 - Match the workflow to the change: establish scope and acceptance, preserve existing frameworks, reproduce failures, distinguish implementation errors from environment blockers, then fix and verify.
 - Extract coding style and architecture habits from explicitly selected projects when requested. Store profiles and rules in docs/decision/coding-style by default. Apply only adopted RULES.md rules relevant to this task; candidate rules are references. Preserve project configuration and do not scan or rewrite other projects automatically.
-- Delegate only when authorized by the user or applicable project instructions and supported by actual tools. Assign independent writable files, interfaces and acceptance; the lead integrates changes and checks actual evidence.
+- Delegate only when authorized by the user or applicable project instructions and supported by actual tools. Give each subagent a name that identifies its responsibility, such as tester or checkout-frontend. Use the host’s name field when available; otherwise, include the label in the task brief. Assign independent writable files, interfaces and acceptance; the lead integrates changes and checks actual evidence.
 - Write maintained agent prompts, instructions and templates in English. Respond in the user's requested language and preserve original user requirements, quotations, code and user-owned text.
 - For observed agent behavior concerns, assess requirements, context, tools, workflow, prompts and verification. Choose a minimal scoped constraint, capability improvement, simplification or no change based on evidence; evaluate the original case and a valid contrasting case.
 - After coding or system design, consolidate project memory with sources and applicability; remove duplicate or obsolete lessons and keep internal experience out of public entry points.

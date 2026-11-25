@@ -28,8 +28,11 @@ test('DSH CLI selection, alias and runtime notice remain distinct from actual ho
   assert.equal(human.exitCode,0);assert.match(Buffer.from(human.stdout).toString(),/DSH developer preview/);
   assert.equal(fs.existsSync(path.join(root,'.dsh')),false);
   const noCodex=fixture();
-  assert.equal(run(noCodex,'init','--private','--no-tests','--hosts','dsh','--hooks','--yes').code,2);
-  assert.equal(fs.existsSync(path.join(noCodex,'AGENTS.md')),false);
+  const withHooks=run(noCodex,'init','--private','--no-tests','--hosts','dsh','--hooks','--yes');
+  assert.equal(withHooks.code,0,JSON.stringify(withHooks.data));
+  assert.equal(withHooks.data.hooks.status,'profile-required');
+  assert.equal(withHooks.data.hooks.bridge.name,'@deepseek-ai/dsh-hooks-claude-code');
+  assert.equal(fs.existsSync(path.join(noCodex,'.codex/hooks.json')),false);
 });
 test('real CLI inspect -> answered plan -> apply -> verify unknown project',()=>{
   const root=fixture({'check.mjs':"console.log('custom framework passed')",'answers.json':{visibility:'private',testCommands:{root:['bun','check.mjs']}}});
@@ -197,7 +200,7 @@ test('init selects Agent hosts without creating every vendor configuration and p
   }
   assert.equal(run(root,'run','--hosts','claude').code,2);
   const unsupportedHook=fixture();
-  assert.equal(run(unsupportedHook,'init','--hosts','claude','--private','--no-tests','--hooks','--yes').code,2);
+  assert.equal(run(unsupportedHook,'init','--hosts','gemini','--private','--no-tests','--hooks','--yes').code,2);
   assert.equal(fs.existsSync(path.join(unsupportedHook,'harness.config.json')),false);
 });
 

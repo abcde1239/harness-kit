@@ -19,7 +19,7 @@ function finished(root, label) {
 }
 
 test('cleanup applies only to expired, completed and unreferenced managed runs', () => {
-  const root = fixture({ 'artifacts/releases/v1/archive.zip': 'deliverable', 'artifacts/runs/imported/report.log': 'legacy output' });
+  const root = fixture({ 'artifacts/releases/v1/archive.zip': 'deliverable', 'artifacts/archive/old/report.log': 'historical output', 'artifacts/runs/imported/report.log': 'legacy output' });
   const expired = finished(root, 'expired');
   const updated = finished(root, 'resumed-writer');
   write(root, `${updated.path}/report.txt`, 'fresh output');
@@ -37,7 +37,7 @@ test('cleanup applies only to expired, completed and unreferenced managed runs',
   assert.ok(fs.existsSync(path.join(root, expired.path)));
   assert.deepEqual(cleanArtifactRuns(root, settings, { apply: true }).items.filter(item => item.status === 'removed').map(item => item.id), [expired.id]);
   assert.ok(!fs.existsSync(path.join(root, expired.path)));
-  for (const location of [updated.path, kept.path, referenced.path, active.path, 'artifacts/runs/imported', 'artifacts/releases/v1/archive.zip', '.harness/tasks/checkout.json']) assert.ok(fs.existsSync(path.join(root, location)));
+  for (const location of [updated.path, kept.path, referenced.path, active.path, 'artifacts/runs/imported', 'artifacts/releases/v1/archive.zip', 'artifacts/archive/old/report.log', '.harness/tasks/checkout.json']) assert.ok(fs.existsSync(path.join(root, location)));
   assert.equal(updateArtifactRun(root, kept.id, 'release').record.keep, false);
 });
 
@@ -63,12 +63,14 @@ test('cleanup protects indexed paths, Git metadata and links, including inside a
 test('reserved state and managed test placement are checked independently from artifact exclusions', () => {
   const root = fixture({
     '.harness/managed.json': {}, '.harness/hooks/runtime.mjs': '', '.harness/tmp/config-plan.json': {},
-    '.harness/src/retry.ts': '', 'artifacts/adhoc.log': '', 'artifacts/releases/v1/copied.test.mjs': ''
+    '.harness/src/retry.ts': '', 'artifacts/adhoc.log': '', 'artifacts/releases/v1/copied.test.mjs': '', 'artifacts/archive/old/output.log': ''
   });
   const run = createArtifactRun(root, 'checkout');
   write(root, `${run.path}/misplaced.test.mjs`, '');
   const settings = config(root, { tests: { artifacts: [], exclude: ['artifacts/**'] }, documents: { internalRoots: [], publicRoots: ['.'] } });
-  assert.deepEqual(lint(root, settings).findings.map(({ ruleId, severity, path }) => [ruleId, severity, path]), [
+  const findings = lint(root, settings).findings;
+  assert.match(findings.find(item => item.ruleId === 'artifacts.layout').message, /Found 1 uncategorized entries \(adhoc\.log\)/);
+  assert.deepEqual(findings.map(({ ruleId, severity, path }) => [ruleId, severity, path]), [
     ['storage.state', 'error', '.harness/src/retry.ts'], ['artifacts.layout', 'warning', 'artifacts'], ['tests.artifacts', 'error', `${run.path}/misplaced.test.mjs`]
   ]);
   assert.equal(classify(settings, `${run.path}/misplaced.test.mjs`).audience, 'internal');

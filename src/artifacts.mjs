@@ -7,7 +7,7 @@ import { trackedPaths } from './git.mjs';
 export const RUNS = 'artifacts/runs';
 const LOCK = '.harness/artifacts.lock';
 const DAY = 86_400_000;
-const CATEGORIES = ['runs', 'releases', 'distribution', 'skill', 'snapshots'];
+const CATEGORIES = ['runs', 'releases', 'distribution', 'skill', 'snapshots', 'archive'];
 const LABEL = /^[a-z0-9][a-z0-9-]{0,47}$/;
 const RUN_ID = /^\d{8}-[a-z0-9][a-z0-9-]{0,47}-[0-9a-f]{8}$/;
 

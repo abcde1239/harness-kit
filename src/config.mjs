@@ -12,9 +12,9 @@ const id = v => { if (typeof v !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/.
 function array(v, label) { if (!Array.isArray(v)) throw new Error(`${label} must be an array`); }
 function paths(v, label, glob = false) { strings(v, label); for (let i=0;i<v.length;i++) v[i]=relativePath(v[i], { glob }); }
 function documents(v) {
-  keys(v, ['defaultAudience','publicRoots','internalRoots','publicPatterns','internalPatterns'], 'documents');
+  keys(v, ['defaultAudience','publicRoots','internalRoots','publicPatterns','internalPatterns','artifactAllowlist'], 'documents');
   if (v.defaultAudience !== undefined && v.defaultAudience !== 'internal') throw new Error('documents.defaultAudience must be internal');
-  for (const k of ['publicRoots','internalRoots','publicPatterns','internalPatterns']) if (v[k] !== undefined) paths(v[k], `documents.${k}`, k.endsWith('Patterns'));
+  for (const k of ['publicRoots','internalRoots','publicPatterns','internalPatterns','artifactAllowlist']) if (v[k] !== undefined) paths(v[k], `documents.${k}`, k.endsWith('Patterns'));
 }
 function tests(v) {
   keys(v, ['detect','include','exclude','artifacts','requireConfiguredTask'], 'tests');
@@ -84,7 +84,7 @@ export function validateConfig(value, root) {
     keys(p, ['id','manifest'], 'publicationTarget'); id(p.id); relativePath(p.manifest);
     if (targets.has(p.id)) throw new Error(`Duplicate target: ${p.id}`); targets.add(p.id);
   }
-  keys(c.rules, ['tests.layout','tests.configured','tests.artifacts','documents.links','tasks.graph','storage.state','artifacts.layout'], 'rules');
+  keys(c.rules, ['tests.layout','tests.configured','tests.artifacts','documents.links','documents.artifacts','tasks.graph','storage.state','artifacts.layout'], 'rules');
   for (const [k,v] of Object.entries(c.rules)) enumValue(v, ['error','warning','off'], k);
   strings(c.baseline, 'baseline');
   return c;

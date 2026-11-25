@@ -80,6 +80,16 @@ DeepSeek Harness 目前为 developer preview，可能发生破坏兼容的变更
 
 遇到未配置、缺工具、失败、冲突或过期记录时，根据诊断补齐条件并运行适用验证；不要修改证据文件或放宽必需任务来消除提示。
 
+## 可选：配置宿主原生职责
+
+可以让当前 Agent 为项目配置需要的职责。Harness Kit 复用已有的英文职责提示词，当前 Agent 负责选择宿主和角色。命令行可先用 `harness roles` 查看职责 ID，再预览所选角色，例如：
+
+```sh
+harness roles --host codex --role frontend,qa,code-reviewer
+```
+
+预览列出将写入的文件，加 `--yes` 后应用。已被手动修改的同名角色文件会保留并报告冲突。生成的角色沿用宿主的模型设置。原生角色使用 `frontend`、`tester` 等名称。派生时也可用 `checkout-frontend` 这类带任务的实例名。宿主自行分配实例名时，在任务单中标注职责名称。参见[职责角色及各宿主配置路径](../reference/roles.md#configure-native-roles)。
+
 ## 可选：保存并恢复一次工作任务
 
 小改动直接运行验证即可。需要跨会话或多 Agent 交接时保存目标与验收：
@@ -103,21 +113,37 @@ harness task finish
 
 完整说明见[任务与验收](../reference/tasks.md)。
 
-## 可选：Codex 本地会话接入
+## 接入本地会话 Hook（可选）
 
-希望会话启动时取得项目提示、结束时检查验证证据，可运行：
+需要在会话开始时加载验证提示、结束时检查验证证据，可以在已接入的项目中运行：
 
 ```powershell
-harness init --hooks
+harness init --hosts codex,claude,dsh --hooks --yes
 ```
 
-已有脚本和可见性可复用；非交互接入时补充 `--yes` 及仍缺失的答案。该模式写入 `.codex/hooks.json`、`.harness/hooks/runtime.mjs` 和归属记录。项目运行器自包含，保留现有第三方字段与 handlers；本工具的 handler 被用户修改或删除时报告冲突，不强行恢复。
+`--hosts` 可以只选一个宿主。省略时沿用项目已有选择，新项目默认 Codex。新项目以非交互方式运行时，还需提供仓库可见性等尚未确定的答案。
 
-在新 Codex 本地会话中打开 `/hooks` 审阅并信任。配置使用所选 Node/Bun 运行时和项目绝对路径，移动项目、更换机器或升级后重新运行 `init --hooks`；不修改宿主权限。`.harness` 仍为内部资料，hook 配置中的本机路径也不应直接作为公开模板发布。
+| 宿主 | 配置位置 | 接入后操作 |
+|---|---|---|
+| Codex | `.codex/hooks.json` | 新开受信任的本地会话，在 `/hooks` 中审阅并批准。 |
+| Claude Code | `.claude/settings.local.json` | 重新打开受信任的项目，在 `/hooks` 中确认加载。 |
+| DeepSeek Harness | `.harness/hooks/dsh/hooks.json` | 将官方 Claude Code Hook 桥接器加入所用 profile，填入命令输出的绝对路径，再重启 profile。 |
 
-项目若已在 `.codex/config.toml` 明确设置 `features.hooks=false`，接入会报告 disabled 并保留禁用选择；不会擅自启用。`doctor` 会检查本工具已有 hooks 的文件和本地禁用状态，仍无法证明宿主已信任或实际加载。
+确认所用 profile 能加载官方桥接器，再把下面的条目合并到该 profile 的 `cordis.patch.yml`。已有该项目的桥接器条目时，更新其 `configPath`。
 
-SessionStart 提供项目验证提示并记录本会话输入摘要；Stop 在本会话文件发生变化、且当前没有完整通过证据时请求 Agent 继续运行 `harness run`。hook 自身不执行业务命令。已经自动继续过一次时只提醒，避免无限循环；没有启动快照或没有任务时也只提示，不将未知状态当通过。它不是权限沙箱，不能保证拦截绕过入口的行为，也不代表其他宿主或云端环境已适配。
+```yaml
+- insert:
+    - id: harness-kit-project-hooks
+      name: "@deepseek-ai/dsh-hooks-claude-code"
+      config:
+        configPath: D:/project/.harness/hooks/dsh/hooks.json
+```
+
+DSH 生成的命令在 Windows 上使用 PowerShell，在 macOS 和 Linux 上使用 POSIX shell。所用 profile 的 shell 执行器需要匹配。项目接入返回 `profile-required` 时，表示配置已生成，仍需在 profile 中加载桥接器。
+
+`SessionStart` 记录本会话起点并提供验证提示。`Stop` 发现本会话改了项目文件、且缺少当前完整的通过证据时，请求 Agent 继续执行 `harness run`。Hook 本身只检查证据。接入和执行 `harness run` 时使用同一版本的 Node 或 Bun，验证记录包含运行时版本。Codex 和 Claude Code 使用宿主信号避免同一次结束循环反复触发。DSH 将一次请求记入会话状态，看到新的完整通过证据后才允许再次请求。没有启动快照或验证任务时，Hook 只报告状态，DSH 将状态记入日志。
+
+CLI 保留已有设置和第三方 Hook，受管配置被修改时报告冲突。`doctor` 检查磁盘上的配置和本地禁用设置。实际加载在宿主的新会话中确认。移动项目、更换运行时或升级后重新执行接入。参见[配置参考](../reference/configuration.md#optional-local-hooks)和[目录约定](../reference/project-layout.md#harness-state-and-temporary-hooks)。
 
 ## 使用 Skill
 
@@ -137,7 +163,7 @@ Agent 使用随 Skill 提供的非交互 JSON 接口，不会打开人类终端�
 
 多 Agent 协作需要实际宿主委派工具和授权。Skill 提供[主 Agent、实现 Agent、只读复核及交接提示词](../reference/collaboration.md)，规定工作任务 ID、独占写入范围、接口、依赖、验收和集成责任；没有工具或任务不适合拆分时串行完成。主 Agent 检查真实 diff 并执行集成验证，不把子任务自述作为完成证明。不同宿主使用实际提供的工具，不假造通用委派 API。开发与恢复细节见[开发流程](../reference/development.md)。
 
-维护的 Agent 指令、职责模板、默认提示词和 Hooks 注入指令统一使用英文；用户文档与回复仍可使用中文，用户原文和代码保持原样。需要判断某种 Agent 行为是否值得改进时，可使用 [Agent 专家](../reference/roles/agent-expert.md)：
+Harness 维护的 Agent 指令、职责模板和 Hook 提示统一使用英文。交付物和回复按用户指定的语言编写。跨语言交接时保留需求原文或精确出处，核对禁止项、例外和验收条件。需要排查语言是否影响 Agent 行为时，可使用 [Agent 专家](../reference/roles/agent-expert.md)：
 
 ```text
 Use the harness-kit Agent expert to review this behavior: <observed behavior>.
@@ -159,7 +185,7 @@ bun run package:distribution artifacts/distribution/0.8.0
 
 Codex/Claude 插件目录同时含根 `plugin.json` portable manifest 与 `.claude-plugin/plugin.json` 兼容入口；技能位于插件根的 skills/，不放在 manifest 目录内。分发包附 INSTALL.md；该命令只生成本地产物，不推送仓库或上架公共目录。原 `bun run package:skill` 保留为只生成技能目录的接口。
 
-接入后目录、文档公开边界、框架原生测试和 monorepo 组织见 [目标项目布局](../reference/project-layout.md)。CLI 提供所选宿主入口、配置、协作指南、目录职责说明和 gitignore；缺少根 README 时补充公开入口。详细公开文档按 docs/public/guides、reference、examples 分类；业务代码、框架配置及 CI 接线由项目按需要适配。hooks 仅适配明确选择的 Codex 本地模式，在显式接入并获宿主信任后生效；本轮不配置其他宿主的 hooks、权限或模型设置。
+接入后目录、文档公开边界、框架原生测试和 monorepo 组织见 [目标项目布局](../reference/project-layout.md)。CLI 提供所选宿主入口、配置、协作指南、目录职责说明和 gitignore；缺少根 README 时补充公开入口。详细公开文档按 docs/public/guides、reference、examples 分类；业务代码、框架配置及 CI 接线由项目按需要适配。可选 Hook 接入支持 Codex、Claude Code 和 DeepSeek Harness，权限和模型设置由各宿主管理。
 
 ## 自动化与高级计划模式
 
@@ -246,7 +272,7 @@ baseline 命令只输出建议；审阅后将数组合入配置。普通已知�
 
 ```powershell
 bun bin/harness.mjs export --root D:/project --destination artifacts/snapshots/public --manifest-out .harness/publication.json
-bun bin/harness.mjs publication-check --root D:/project --manifest .harness/publication.json --out .harness/publication-result.json
+bun bin/harness.mjs publication-check --root D:/project --manifest .harness/publication.json --json
 ```
 
 目标必须不存在。只导出显式允许的文件，不复制 `.git` 或私有历史，不推送。memory/decision 默认禁止；已知内部文件的完全相同复制件也会被阻断。导出结果进入已有公开仓库前，仍须单独审计该仓库历史。

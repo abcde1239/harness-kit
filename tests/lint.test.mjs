@@ -44,3 +44,40 @@ test('state check rejects test data hidden in scratch or the Hook directory even
     '.harness/tmp/login.fixture.json', '.harness/tmp/login.test.json', '.harness/tmp/specs/login.json'
   ]);
 });
+
+test('document layout reports review design files and keeps maintained content and exact exemptions', () => {
+  const root = fixture({
+    'docs/checkout.fig': '',
+    'docs/design/checkout.html': '',
+    'docs/首页设计稿.png': '',
+    'docs/design-draft.md': '',
+    'docs/design/checkout-spec.md': '',
+    'docs/public/public/logo.svg': '',
+    'docs/public/public/screenshots/guide.png': '',
+    'docs/public/public/screenshots/next.png': '',
+    'docs/public/.vitepress/dist/assets/demo-screenshot.png': '',
+    'packages/web/docs/mockups/wireframe.svg': '',
+    'packages/web/docs/assets/guide-screenshot.png': '',
+    'artifacts/archive/design/checkout.fig': '',
+  });
+  const options = {
+    documents: { artifactAllowlist: ['docs/public/public/screenshots/guide.png'] },
+    workspaces: [
+      { id: 'root', root: '.' },
+      { id: 'web', root: 'packages/web', documents: { artifactAllowlist: ['docs/assets/guide-screenshot.png'] } },
+    ],
+    tests: { exclude: ['**/docs/**'] },
+  };
+  const result = lint(root, config(root, options));
+  assert.equal(result.exitCode, 1);
+  assert.deepEqual(result.findings.filter(f => f.ruleId === 'documents.artifacts').map(f => [f.path, f.workspace]).sort(), [
+    ['docs/checkout.fig', 'root'],
+    ['docs/design-draft.md', 'root'],
+    ['docs/design/checkout.html', 'root'],
+    ['docs/public/public/screenshots/next.png', 'root'],
+    ['docs/首页设计稿.png', 'root'],
+    ['packages/web/docs/mockups/wireframe.svg', 'web'],
+  ]);
+  assert.equal(lint(root, config(root, { ...options, rules: { 'documents.artifacts': 'warning' } })).exitCode, 0);
+  assert.throws(() => config(root, { documents: { artifactAllowlist: ['docs/**'] } }), /Unsafe relative path/);
+});

@@ -15,11 +15,17 @@ Decide whether to keep the behavior, clarify scope/context, improve a tool or wo
 Compare a boundary that prevents the failure with support that helps produce the intended result. Prefer the smallest intervention at the relevant level; preserve user autonomy, existing authorization, and the project's stack.
 For a prompt change, specify the trigger, concrete action, exception/stop condition where relevant, and evidence expected. Keep reusable instructions in English without translating away original user requirements or code.
 Do not turn a single workaround into a global rule, duplicate existing instructions, invent unavailable tools, demand fixed role counts, or add approvals the user has already supplied.
-Propose a replay or behavioral check using the original case plus a contrasting valid case. Explain the observable success condition, regression risks, and what remains unverified. Claim improvement only when actual evidence supports it.
+Propose a replay or behavioral check using the original case plus a contrasting valid case. Explain the observable success condition, regression risks, and what remains unverified. Use the language comparison below when language is a plausible cause. Claim improvement only when actual evidence supports it.
 Work read-only unless the brief explicitly assigns instruction, tool, or evaluation files and permitted test outputs. Do not alter global prompts, model/permission settings, other owners' files, or published releases on your own.
 Return: decision and scope; evidence and cause/confidence; smallest proposed change with owner/file; alternatives and tradeoffs; checks actually executed and proposed; limits and handoff.
 Your recommendation is not user approval or whole-task acceptance. The integration lead coordinates implementation, checks actual results, and owns task accept/finish.
 ```
+
+## Compare prompt languages when a failure suggests it
+
+Inspect the actual instructions and tool trace for lost requirements, shifted terminology, and an incorrect output language. Check the translation against the original, especially negation, exceptions, units, quoted strings, and acceptance criteria. Inspect host context loading and tool behavior independently.
+
+Compare meaning-equivalent instructions in separate runs. Vary the language of the instruction under test and keep the host, model and settings, project snapshot, source material, tools, and acceptance checks fixed. Include the observed failure and a valid contrasting case. Compare acceptance results, changes outside scope, and the failed behavior in the tool trace. Repeat runs when they disagree. Record which setup was tested and keep any language-specific adjustment scoped to the behavior supported by that evidence.
 
 ## Review focus
 

@@ -6,7 +6,7 @@ import { safePath } from './fs.mjs';
 import { lint } from './lint.mjs';
 import { verificationEvidence } from './workflow.mjs';
 import { HOSTS, inspectHostEntries } from './host.mjs';
-import { inspectHooks } from './hooks.mjs';
+import { hookHosts, inspectHooks } from './hooks.mjs';
 import { classify } from './policy.mjs';
 import {isBun} from './runtime.mjs';
 
@@ -36,8 +36,10 @@ export function diagnose(root, {verification,governance}={}) {
       add(id,usable?'passed':entry.overridden||entry.status==='conflict'?'blocked':'missing',usable?`${HOSTS[entry.host].label}：${entry.file} 接入区块有效；新会话加载尚未实测${publicationReview?'；公开分发前复核此入口的资料分类':''}`:entry.overridden?'AGENTS.override.md 会覆盖同层 AGENTS.md；请合并接入指令后再确认':`${HOSTS[entry.host].label}：${entry.file} 缺少有效接入区块，请运行 harness init 复核`,{entry,publication,publicationReview});
     }
   }catch(error){add('agent-entry','blocked',`指令入口不可用：${error.message}`);}
-  const hooks=inspectHooks(root);
-  if(hooks.status!=='not-configured')add('hooks',hooks.status==='configured'?'passed':'warning',hooks.message,{hooks});
+  for (const host of hookHosts) {
+    const hooks = inspectHooks(root, host);
+    if (hooks.status !== 'not-configured') add(host === 'codex' ? 'hooks' : `hooks:${host}`, ['configured', 'profile-required'].includes(hooks.status) ? 'passed' : 'warning', hooks.message, { hooks });
+  }
   try { const scan=inspect(root),drift=scan.drift;
     const count=(drift?.workspaces.length??0)+(drift?.tasks.length??0);
     add('discovery',count?'warning':'passed',count?'发现尚未接入的工作区或任务，请复核配置':'未发现新增工作区或任务',{drift});

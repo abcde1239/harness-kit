@@ -125,7 +125,7 @@ harness check     # Check project conventions only
 harness doctor    # Diagnose setup and verification evidence
 ```
 
-Running `harness` without arguments opens a Chinese menu. Use `harness help --all` for advanced commands. The [usage guide (Chinese)](docs/public/guides/usage.md) covers configuration, monorepos, persistent tasks, and optional hooks.
+Running `harness` without arguments opens a Chinese menu. Use `harness help --all` for advanced commands. The [usage guide (Chinese)](docs/public/guides/usage.md) covers configuration, monorepos, persistent tasks, and optional session Hooks for Codex, Claude Code, and DeepSeek Harness.
 
 Use `harness artifacts create <label>` to allocate an output directory and `harness artifacts finish <id>` when writers are done. `harness artifacts clean` previews expired runs, and `harness hooks clean` previews expired Hook snapshots. Pass `--yes` to apply either policy. See [artifact management](docs/public/reference/artifacts.md).
 
