@@ -1,146 +1,32 @@
 # Harness Kit
 
-[简体中文](README.md) · [English](README.en.md)
+[简体中文](README.md) · [Documentation (Chinese)](https://abcde1239.github.io/harness-kit/) · [Releases](https://github.com/abcde1239/harness-kit/releases)
 
-[Documentation](https://abcde1239.github.io/harness-kit/)
+Harness Kit connects coding agents to existing projects, runs the project's own tests and checks, and can save goals, progress, and acceptance records so a later session can pick up the work.
 
-Harness Kit connects coding agents to existing projects, runs the project's tests, and saves the context needed to continue work later. Install a Skill or plugin, then describe your goal in the Agent session.
+It can generate project instructions for Codex, Claude Code, Gemini CLI, Cursor, OpenCode, and DeepSeek Harness. Plugins are available for Codex and Claude Code, with experimental native plugin support for DeepSeek Harness. See the [installation guide](docs/public/guides/installation.md) and [host capabilities](docs/public/reference/capabilities.md) in Chinese for host-specific details.
 
-[Quick start](#let-your-agent-install-a-released-version) · [Installation guide (Chinese)](docs/public/guides/installation.md) · [Usage guide (Chinese)](docs/public/guides/usage.md) · [Downloads](https://github.com/abcde1239/harness-kit/releases)
+Requires **Node.js ≥ 22.12.0 or Bun ≥ 1.3.4**. Git features also require Git. Skills and plugins bundle the CLI. Running `bun setup` is unnecessary, and the terminal shortcut is optional.
 
-## What it helps with
+## Let your agent install a released version
 
-- **Onboard existing projects.** Add instructions for your chosen Agent while preserving frameworks, test layouts, and user edits.
-- **Resume unfinished work.** Save goals, acceptance criteria, notes, and next steps for another session or Agent.
-- **Coordinate multiple Agents.** Assign responsibilities and use role prompts with the host's delegation tools.
-- **Document your coding conventions.** Derive scoped style and architecture rules from selected projects, with code evidence and counterexamples. See the [coding-style workflow](skills/harness-kit/references/coding-style.md).
-
-Discover workspaces across common stacks, or use `harness.adapters.json` to declare custom markers, commands, and test paths. See [technology adapters](skills/harness-kit/references/adapters.md).
-
-Implement and verify small changes directly. Save plans, assignments, and handoffs when the work warrants them. Keep using Superpowers, OpenSpec, or your team's existing process.
-
-Keep one directory per work item for logs, screenshots, and reports. The CLI can preview expiry for artifact runs and Hook snapshots separately.
-
-## Environment
-
-Requires **Node.js >= 22.12.0 or Bun >= 1.3.4** in the Agent's execution environment. Git checks also require Git. Skills and plugins include the CLI; no `bun setup` or global `harness` command is needed.
-
-## Let your Agent install a released version
-
-Give your Agent the repository link. It reads the [installation entry point](INSTALL.md), asks for a default or custom location, then downloads, validates, and configures a released plugin. You do not need to extract archives manually or run `bun setup`.
-
-Copy this request. To pin a version, replace the repository link with the corresponding Release link:
+Send this request to your agent. A repository link selects the latest stable release. Use a Release link to pin a version.
 
 ```text
 Read https://github.com/abcde1239/harness-kit/blob/main/INSTALL.md.
-Install the Harness Kit plugin from https://github.com/abcde1239/harness-kit.
-First ask whether I want the default installation location or a custom directory, then install and configure it for the current host.
+Install Harness Kit from https://github.com/abcde1239/harness-kit for the current host.
+First ask whether I want the default installation location or a custom directory.
 ```
 
-The Agent shows the full installation path, preserves existing edits, and checks the host's plugin status. A custom location stores persistent plugin source files; caches remain host-managed. A restart or new session may be required.
+## Quick start
 
-The installer and plugin package come from the selected Release. Repository links install the latest stable version; use a Release link to pin a version.
-
-## Manual installation
-
-### Install the Skill
-
-Download [harness-kit-skill-0.8.0.zip](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/harness-kit-skill-0.8.0.zip). Put the complete `harness-kit` directory in your host's Skill directory. For a Codex user installation:
+After installing, start a new session in the target project and ask:
 
 ```text
-~/.agents/skills/harness-kit/
-├── SKILL.md
-├── scripts/
-├── references/
-└── agents/
+Use harness-kit to onboard this project, preserve its existing conventions, and run its existing tests.
 ```
 
-Start a new session and confirm the Skill is available, then ask:
-
-```text
-Use harness-kit to onboard this project, preserve its framework, and run its existing tests.
-```
-
-Continue with a development task:
-
-```text
-Use harness-kit to implement pagination and save the task and acceptance criteria for the next session.
-```
-
-### Install a plugin
-
-| Host | Package |
-|---|---|
-| Codex / Claude Code | [Marketplace ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/harness-kit-marketplace-0.8.0.zip) |
-| DeepSeek Harness | [Native DSH plugin ZIP](https://github.com/abcde1239/harness-kit/releases/download/v0.8.0/harness-kit-dsh-0.8.0.zip) |
-
-Extract the package and run the commands for your host. Replace the paths with the extracted directories' absolute paths:
-
-```sh
-# Codex: use the extracted marketplace directory
-codex plugin marketplace add "<absolute-marketplace-path>"
-codex plugin add harness-kit@harness-kit-local
-
-# Claude Code: use the same marketplace package
-claude plugin marketplace add "<absolute-marketplace-path>"
-claude plugin install harness-kit@harness-kit-local
-
-# DeepSeek Harness: use the extracted harness-kit package root
-dsh plugin --profile <actual-profile> add "<absolute-harness-kit-package-path>"
-```
-
-Keep the extracted directories. DSH support is experimental; use your actual profile and the Desktop-bundled CLI for Desktop. Restart the host or start a new session as required, then confirm that the Skill is available. The [installation guide (Chinese)](docs/public/guides/installation.md) covers compatibility and troubleshooting. GitHub's **Source code** archives are for source development; use the installation assets above.
-
-## How it works
-
-1. **Connect the project.** Discover workspaces, existing instructions, and test commands. Add host entry points while preserving existing content.
-2. **Carry out the task.** Implement the requested change using the project's conventions. Save goals, acceptance criteria, and handoff information when needed across sessions or Agents.
-3. **Verify the result.** Run checks and assess acceptance criteria. A tracked work task can finish only with current complete verification and individually confirmed acceptance.
-
-Multi-agent collaboration includes [role prompts and assignment briefs](skills/harness-kit/references/roles.md) for product management, UX/UI, architecture, frontend, backend, QA, code review, documentation, and Agent behavior improvement. Delegation uses the host's actual tools and requires authorization. See [capabilities and limits (Chinese)](docs/public/reference/capabilities.md).
-
-Maintained Agent instructions and prompt templates are in English. User-facing replies can follow your preferred language; original user text and code are preserved.
-
-## Supported Agents
-
-| Agent | Project instruction entry | Native plugin |
-|---|---|---|
-| Codex | AGENTS.md | Supported |
-| Claude Code | CLAUDE.md | Supported |
-| Gemini CLI | GEMINI.md | Not available |
-| Cursor | .cursor/rules/harness-kit.mdc | Not available |
-| OpenCode | AGENTS.md | Not available |
-| DeepSeek Harness | AGENTS.md | Experimental |
-
-Gemini CLI, Cursor, and OpenCode can use `init --hosts` to generate project instructions. See the [usage guide (Chinese)](docs/public/guides/usage.md). The DSH plugin targets a developer-preview interface; installation in a real DSH profile has not been verified. Check the compatibility range in the installation guide before trying it.
-
-## Terminal usage
-
-For optional terminal shortcuts, install source dependencies with `npm install` or `bun install`, then run `node scripts/install.mjs`. Substitute bun for node when using Bun. From your project:
-
-```sh
-harness init      # Connect the project and run initial verification
-harness run       # Check conventions and run configured tasks
-harness check     # Check project conventions only
-harness doctor    # Diagnose setup and verification evidence
-```
-
-Running `harness` without arguments opens a Chinese menu. Use `harness help --all` for advanced commands. The [usage guide (Chinese)](docs/public/guides/usage.md) covers configuration, monorepos, persistent tasks, and optional session Hooks for Codex, Claude Code, and DeepSeek Harness.
-
-Use `harness artifacts create <label>` to allocate an output directory and `harness artifacts finish <id>` when writers are done. `harness artifacts clean` previews expired runs, and `harness hooks clean` previews expired Hook snapshots. Pass `--yes` to apply either policy. See [artifact management](docs/public/reference/artifacts.md).
-
-## Documentation and development
-
-- [Documentation index (Chinese)](docs/public/README.md)
-- [Multi-agent collaboration](skills/harness-kit/references/collaboration.md)
-- [Persistent tasks](skills/harness-kit/references/tasks.md)
-- [v0.8.0 release notes (Chinese)](docs/public/releases/v0.8.0.md)
-
-Validate and package from the source directory. The Node verifier runs Node integration tests; use `bun run verify:bun` for the original full suite:
-
-```sh
-npm install
-node scripts/verify.mjs
-node bin/harness.mjs check --json
-node scripts/package-distribution.mjs <new-output-directory>
-```
+- The [usage guide (Chinese)](docs/public/guides/usage.md) covers onboarding, verification, diagnosis, and handoffs.
+- [Specialist roles](docs/public/reference/roles.md) covers role prompts and native role configuration by host.
+- [Project layout and artifacts](docs/public/reference/project-layout.md) explains where to put project instructions, `.harness/` state, and generated files.
+- [Coding style distillation (Chinese)](docs/public/guides/coding-style.md) explains how to derive coding and architecture conventions from projects you maintain.

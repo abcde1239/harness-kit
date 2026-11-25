@@ -22,3 +22,19 @@
 公开快照应能独立运行 `node scripts/verify.mjs`、`bun run verify:bun` 和 `node bin/harness.mjs lint --json`，不需要内部 PRD、任务表或 memory。CI 使用 Bun，配置 Windows 和 Linux 两种环境；实际通过情况以 GitHub Actions 的运行结果为准。
 
 若同步到已有公开仓库，还需审计目标仓库的历史及托管附属内容。直接把私有仓库改成公开会暴露可达历史，删除当前文件不能代替历史审阅。工具不会自动改变仓库可见性或强推历史。
+
+## 导出与审计
+
+在私有源项目根目录运行：
+
+```sh
+harness export --destination artifacts/snapshots/public --manifest-out .harness/publication.json
+harness publication-check --manifest .harness/publication.json --json
+```
+
+若需要审查已有仓库可达的历史，先生成审阅模板。填写实际审阅人、审阅依据、远端 refs 清单和托管平台资料的审阅项，再运行历史审计：
+
+```sh
+harness review-template --out .harness/review.json
+harness audit-history --evidence .harness/review.json --json
+```

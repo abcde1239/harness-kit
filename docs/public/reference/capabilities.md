@@ -32,7 +32,7 @@ Harness Kit 给现有 Agent 宿主提供项目接入、可恢复工作记录和�
 | OpenCode | `AGENTS.md` | — | 未提供专用原生插件 |
 | DeepSeek Harness | `AGENTS.md` | 通过官方 Claude Code Hook 桥接器，需配置 profile | 提供 Cordis 原生插件，接口契约测试通过，真实 profile 待验收 |
 
-会话 Hook 的配置和启用步骤见[使用指南](../guides/usage.md#接入本地会话-hook-可选)。独立 Skill 的发现取决于对应宿主设置。所有宿主共用同一项目验证与持久任务核心，不管理模型账号、权限或 Agent 执行循环。
+会话 Hook 的配置和启用步骤见[配置参考](configuration.md#optional-local-hooks)。独立 Skill 的发现取决于对应宿主设置。所有宿主共用同一项目验证与持久任务核心，不管理模型账号、权限或 Agent 执行循环。
 
 ## 与现有工具配合
 

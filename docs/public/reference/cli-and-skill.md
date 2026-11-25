@@ -24,3 +24,15 @@ Node.js ≥ 22.12.0 与 Bun ≥ 1.3.4 均可运行 Harness Kit；目标项目的
 - `check` 是只读静态检查，`doctor` 是只读诊断；二者不会替代 `run`。
 - `run --task` 只选择任务，不自动代表完整项目已经验证。
 - CLI 不提供模型路由、后台调度、权限隔离或通用跨宿主委派 API。
+
+## 从源码验证和打包
+
+在 Harness Kit 源码目录安装依赖后执行：
+
+```sh
+node scripts/verify.mjs
+bun run verify:bun
+node scripts/package-distribution.mjs <新的输出目录>
+```
+
+第一条运行 Node 集成测试，第二条运行 Bun 完整测试。打包器生成独立 Skill、Codex / Claude Code 插件和 DeepSeek Harness 原生插件，输出目录需为新目录。

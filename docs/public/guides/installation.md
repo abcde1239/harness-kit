@@ -103,7 +103,18 @@ node <已安装技能目录>/scripts/harness.mjs <command> --root <项目绝对�
 - **更新项目 Hook**：升级 Skill 或插件后，已接入 Hook 的项目可用 `harness init --hooks` 更新运行器。可通过 `--hosts` 选定要更新的宿主。Codex 和 Claude Code 在新会话中检查加载，DSH 重启使用桥接器的 profile。重新运行项目验证可刷新旧验证记录。
 - **升级本地插件**：保留原目录，按宿主机制更新来源或重新安装并启用新版本；仅覆盖 ZIP 不保证缓存已更新。以实际安装位置的脚本版本和新会话发现结果为准。
 - **找不到运行时**：可使用 Node.js ≥ 22.12.0 或 Bun ≥ 1.3.4；v0.5.0 包仍需 Bun。setup 不安装运行时，配置了 bun test 等项目命令时仍需项目工具链。PATH 中有代理时核对实际执行文件。
-- **找不到 harness**：Skill/插件正常使用不需要此全局命令；终端短命令是可选能力，见[使用指南](usage.md)。
+- **找不到 harness**：Skill/插件正常使用不需要此全局命令；需要直接在终端运行时，见[可选终端短命令](#可选终端短命令)。
 - **下载 Source code 后不能独立安装 Skill**：使用命名为 harness-kit-skill、harness-kit-marketplace 或 harness-kit-dsh 的 Release 附件。
 
 Release 附带 SHA256SUMS，可用 `Get-FileHash <ZIP> -Algorithm SHA256` 或 `sha256sum <ZIP>` 校验。GitHub Release 下载与宿主公共插件目录上架是不同渠道；本项目不因发布 Release 自动上架 OpenAI、Anthropic 或 npm。
+
+## 可选终端短命令
+
+如果需要在终端直接运行 `harness`，在源码目录执行：
+
+```sh
+npm install
+node scripts/install.mjs
+```
+
+Bun 用户可换成 `bun install` 和 `bun scripts/install.mjs`。用 `--dry-run` 预览安装位置，或用 `--bin-dir`、`--skill-dir` 自选目录。安装器也会安装 Codex Skill，并保留已被用户修改的文件。若报告显示命令目录不在 PATH，按提示添加后重开终端。已单独安装同名 Skill 时，先确认宿主实际加载的来源。
