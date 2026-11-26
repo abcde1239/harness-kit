@@ -33,7 +33,7 @@ harness init --private --test "bun test ./tests" --yes
 
 ## 维护公开文档
 
-文档位置检查可通过当前源码运行。已发布的 v0.8.0 不支持 `documents.layout`。从源码使用时，按本页开头的方式调用 `bin/harness.mjs`。
+文档位置规则需要 Harness Kit v0.8.1 或更新版本。
 
 1. 新增、编辑或移动页面前，确认读者和用途，按[目标项目布局](../reference/project-layout.md#public-documentation)选择位置，并查看项目已有的文档规则。
 2. 首次设置时，在 `harness.config.json` 中按目录和文件类型配置[位置规则](../reference/configuration.md#document-location-rules)。后续新增符合规则的页面时，沿用现有配置。以配置参考中的示例为例，`docs/public/setup.md` 会触发 `documents.layout`。报告会列出该文件、`public-pages` 规则和允许的位置。将安装说明移到 `docs/public/guides/setup.md`，更新引用和导航，再运行 `harness check`。`harness run` 也会检查位置，并执行配置的项目任务。
@@ -47,7 +47,27 @@ harness init --private --test "bun test ./tests" --yes
 
 ## 保存任务与交接
 
-需要跨会话继续时，用 `harness task start` 保存目标和验收条件，用 `harness task note` 记下进展和下一步，新会话可通过 `harness task resume` 接手。用 `run --work <工作任务 ID>` 关联验证，再逐项记录验收依据后完成任务。完整示例见[任务与验收](../reference/tasks.md)。
+Claude Code、Codex 和 Gemini CLI 在同一项目目录工作时，可以用任务 ID 接续。以下示例使用 v0.8.1 新增的 `--brief`。
+
+1. 开始工作时记录目标和验收项。
+
+   ```sh
+   harness task start order-search --title "实现订单查询" --accept "可按订单号查询并显示结果" --brief
+   ```
+
+2. 在阶段完成或遇到阻塞时，写一条短笔记。记录关键文件或提交、已执行的检查和阻塞，把接手后的第一步放进 `--next`。
+
+   ```sh
+   harness task note order-search --note "查询接口已实现，入口为 src/orders，接口单测通过" --next "接入查询页面并验证完整流程" --brief
+   ```
+
+3. 把 `order-search` 交给接手的 Agent。让它打开同一项目目录，运行恢复命令，对照工作树和验收状态继续。会话意外中断时也可以这样恢复，以已保存的笔记和磁盘上的改动为准。
+
+   ```sh
+   harness task resume order-search --brief
+   ```
+
+日常使用 `--brief`，需要历史笔记或详细验收证据时再用 `harness task status order-search --json`。换检出目录或机器时，用 `harness task handoff order-search` 生成交接文本，并单独交付代码改动。详见[精简输出](../reference/tasks.md#brief-output)和[跨宿主接续](../reference/tasks.md#switch-agent-hosts)。
 
 - 分配前端、后端、测试或审查等职责时，查阅[角色](../reference/roles.md)和[协作流程](../reference/collaboration.md)。
 - 生成截图、日志、报告或评审稿前，先用 `harness artifacts create` 分配任务目录。目录约定和到期清理见[产物管理](../reference/artifacts.md)及[项目布局](../reference/project-layout.md)。

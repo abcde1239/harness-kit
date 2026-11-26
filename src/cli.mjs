@@ -13,7 +13,7 @@ import { diagnose } from './readiness.mjs';
 import { hookEvent } from './hooks.mjs';
 import { normalizeHosts } from './host.mjs';
 import { configureRoles } from './roles.mjs';
-import { createTask, getTask, resumeTask, updateTask, completeTask, recordTaskVerification } from './tasks.mjs';
+import { createTask, getTask, getTaskHandoff, resumeTask, updateTask, completeTask, recordTaskVerification } from './tasks.mjs';
 import { publicationCheck, exportSnapshot } from './publication.mjs';
 import { auditHistory, reviewTemplate } from './git.mjs';
 import { atomicWrite, json, readJson } from './fs.mjs';
@@ -60,9 +60,11 @@ check / lint                    只读约定检查
 task start <id> [--title "..."] --accept "..." [--accept "..."] [--scope "..."]
                                 创建可恢复任务与验收项，scope 可重复
 task status [id] / resume [id]   查看/恢复任务；省略 ID 使用当前任务，不执行项目命令
+task handoff [id]                生成可复制的跨宿主交接文本；只读
 task note [id] --note "..." [--next "..."]
 task accept [id] --criterion c1 --evidence "..."
 task finish [id]                 依据当前验证证据与验收项完成任务
+                                start/status/resume/note/accept/finish 可加 --brief 精简输出
 artifacts create <label>        为一次工作分配独立的产物目录
 artifacts finish <id>           完成写入并开始计算保留期
 artifacts keep / release <id>   保留产物或恢复保留期规则
@@ -93,7 +95,7 @@ function parse(args) {
   const subcommand = ['task', 'artifacts', 'hooks'].includes(command);
   const action = subcommand ? (args[0] && !args[0].startsWith('--') ? args.shift() : command === 'task' ? 'status' : 'clean') : undefined;
   const operand = subcommand && args[0] && !args[0].startsWith('--') ? args.shift() : undefined;
-  const switches = new Set(['json','help','version','yes','all','private','public','no-tests','skip-verify','hooks']);
+  const switches = new Set(['json','brief','help','version','yes','all','private','public','no-tests','skip-verify','hooks']);
   const allowed = new Set(['root','answers','out','plan','task','work','target','manifest','destination','manifest-out','evidence','test','hosts','host','role','title','accept','scope','note','next','criterion',...switches]);
   const repeatable=new Set(['accept','scope']);
   while (args.length) {
@@ -106,15 +108,17 @@ function parse(args) {
     }
   }
   const initOptions=['answers','yes','private','public','test','no-tests','skip-verify','hooks','hosts'];
-  const taskOptions={start:['title','accept','scope'],status:[],resume:[],note:['note','next'],accept:['criterion','evidence'],finish:[]};
+  const taskOptions={start:['title','accept','scope','brief'],status:['brief'],resume:['brief'],handoff:[],note:['note','next','brief'],accept:['criterion','evidence','brief'],finish:['brief']};
   if(command==='task'&&!Object.hasOwn(taskOptions,action))throw new Error(`Unknown task action: ${action}`);
   const artifactOptions = { create: [], finish: [], keep: [], release: [], clean: ['yes'] };
   if (command === 'artifacts' && (!Object.hasOwn(artifactOptions, action) || (action === 'clean' && operand))) throw new Error('Use harness artifacts --help for supported actions');
   if (command === 'hooks' && (action !== 'clean' || operand)) throw new Error('Use harness hooks --help for supported actions');
   const perCommand = {roles:['host','role','yes'],hooks:['yes'],artifacts:artifactOptions[action]??[],menu:[],init:initOptions,check:[],run:['task','work'],doctor:[],hook:[],task:taskOptions[action]??[],inspect:[],configure:['answers'],plan:['answers'],apply:['plan'],baseline:[], 'publication-check':['target','manifest'],export:['destination','manifest-out'],'audit-history':['evidence'],'review-template':[],help:['all']};
   if (!Object.hasOwn(perCommand,command)) throw new Error(`Unknown command: ${command}`);
-  const commandOptions=command==='hook'?['root','host']:['root','json','help','version',...(['artifacts','hooks','roles'].includes(command)?[]:['out']),...(options.help?['all']:[]),...perCommand[command]];
+  const supportsOut = !['artifacts','hooks','roles'].includes(command) && !(command === 'task' && action === 'handoff');
+  const commandOptions=command==='hook'?['root','host']:['root','json','help','version',...(supportsOut?['out']:[]),...(options.help?['all']:[]),...perCommand[command]];
   for (const key of Object.keys(options)) if (!commandOptions.includes(key)) throw new Error(`Option --${key} is not valid for ${requested}`);
+  if(options.brief&&options.json)throw new Error('--brief 与 --json 不能同时使用。');
   if(options.private&&options.public)throw new Error('--private 与 --public 不能同时使用。');
   if(options.test&&options['no-tests'])throw new Error('--test 与 --no-tests 不能同时使用。');
   return {command,options,action,operand};
@@ -153,8 +157,33 @@ async function ask(root,answers) {
   const ui=terminalUI();
   try {return await collectAnswers(root,answers,ui);} finally {ui.close();}
 }
+function printTaskBrief(action, result, options) {
+  const { task, status, criteria, verification, next } = result;
+  const criterion = criteria.find(item => item.id === options.criterion);
+  const saved = options.out ? `（已保存 ${options.out}）` : '';
+  const acceptance = criterion ? ` ${criterion.id}=${criterion.status}` : '';
+  console.log(`task ${action} ${task.id}: ${status}${acceptance}${saved}`);
+  const recovery = action === 'resume' || action === 'status';
+  if (!recovery && status !== 'blocked') return;
+  if (recovery) console.log(`${task.title}\n范围：${task.scope.join('、')}`);
+  console.log(`任务验证：${verification.status}`);
+  for (const item of criteria) {
+    if (recovery || item.status !== 'accepted') console.log(`${item.id} [${item.status}] ${item.text}`);
+  }
+  if (recovery) {
+    const latest = task.notes.at(-1)?.text;
+    const characters = typeof latest === 'string' ? Array.from(latest) : [];
+    const shortened = characters.length > 800;
+    if (characters.length && latest !== next) console.log(`记录：${characters.slice(0, 800).join('')}${shortened ? '…' : ''}`);
+    if (task.notes.length > 1 || shortened) console.log(`完整记录：harness task status ${task.id} --json`);
+  }
+  const nextAction = recovery ? next : verification.status !== 'passed' ? verification.message : '核对未通过的验收项并记录当前证据';
+  console.log(`下一步：${nextAction}`);
+}
+
 function printResult(command,result,options) {
   if(options.json){console.log(json(result));return;}
+  if (command === 'task' && result.handoff) { console.log(result.handoff); return; }
   const status=command==='init'&&result.status==='applied'
     ? result.verification?.exitCode ? '配置已应用；首次验证失败'
       : result.readiness?.status==='ready'?'配置已应用；本地验证就绪'
@@ -240,7 +269,7 @@ export async function main(argv) {
       }
     }
     const project=locateProject(process.cwd(),options.root),root=project.root;
-    if(!options.json)console.log(`项目：${root}（${project.source}）`);
+    if(!options.json && !options.brief && !(command === 'task' && parsed.action === 'handoff'))console.log(`项目：${root}（${project.source}）`);
     if(command==='menu') {
       const ui=terminalUI();
       try {command=await choose(ui,'想做什么？',[
@@ -269,7 +298,7 @@ export async function main(argv) {
         const cleanup = { apply: options.yes };
         result = command === 'hooks'
           ? cleanHookSessions(root, config.hooks, cleanup)
-          : cleanArtifactRuns(root, config.artifacts, cleanup);
+          : cleanArtifactRuns(root, config.artifacts, { ...cleanup, workspaces: config.workspaces });
       } else if (action === 'create') result = createArtifactRun(root, operand);
       else result = updateArtifactRun(root, operand, action);
     }
@@ -281,6 +310,7 @@ export async function main(argv) {
         result=createTask(root,{id:taskId,title:options.title,criteria:options.accept,scope:options.scope});
       }
       else if(action==='status')result=getTask(root,taskId);
+      else if(action==='handoff')result=getTaskHandoff(root,taskId);
       else if(action==='resume')result=resumeTask(root,taskId);
       else if(action==='note') {
         if(!options.note&&!options.next)throw new Error('task note 需要 --note 或 --next。');
@@ -322,7 +352,8 @@ export async function main(argv) {
       else if (command === 'audit-history') result = auditHistory(root,config,{evidence:options.evidence ? readJson(root,options.evidence) : undefined,onProgress: options.json ? undefined : p => { if (p.current === 1 || p.current % 20 === 0 || p.current === p.total) process.stderr.write(`history ${p.current}/${p.total}\n`); }});
     }
     if (options.out&&command!=='init') atomicWrite(root,options.out,json(result));
-    printResult(command,result,options);
+    if (options.brief) printTaskBrief(parsed.action,result,options);
+    else printResult(command,result,options);
     return result.exitCode ?? 0;
   } catch (error) {
     console.error(json({status:'error',exitCode:2,message:error.message})); return 2;

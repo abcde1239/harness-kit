@@ -30,7 +30,7 @@ Acceptance: <criterion IDs and observable outcomes>.
 
 Multi-agent collaboration is authorized for this assignment. Split only independently assessable work.
 Resolve shared interfaces before dependent implementation; independent research or test design may start earlier.
-For each assignment provide the goal, input dependencies, exclusive writes, read-only scope, output contract, verification commands, and stop conditions. Allocate one managed run before anyone creates review mockups, disposable prototypes, or screenshots, and give each writer a path inside it.
+For each assignment provide the goal, input dependencies, exclusive writes, read-only scope, output contract, verification commands, and stop conditions. Allocate one managed run before anyone creates review mockups, disposable prototypes, or screenshots, and give each writer a path inside it. Assign an owner to move selected durable files, update references, and verify the result before finishing or cleaning the shared run.
 Select the professional profiles needed and pass their prompts with confirmed project context. Give each spawned subagent a responsibility-based name through the host tools, or record it in the assignment when the host generates the name.
 Shared entry points, types, and configuration belong to <owner>. Allow one writer per file at a time.
 Coordinate requests to change files outside an assignment; preserve all unrelated changes.
@@ -81,7 +81,7 @@ If tests require caches, reports, or fixtures, the lead must explicitly authoriz
 
 ```text
 Continue task: <goal>, preserving existing work and previously verified progress.
-Work task: <ID>. Read task status/resume first; do not automatically execute recovery steps.
+Work task: <ID>. In the same checkout, use task resume <ID> --brief. Use task status <ID> --brief for a read-only review.
 Read: <latest user requirements, task records, applicable instructions, relevant memory>.
 Current changes: <files and behavior>.
 Confirmed interfaces: <contracts>. Unresolved decisions: <questions>.
@@ -91,7 +91,7 @@ Blockers and attempts: <cause, previous attempts, and stop reason>.
 Next action: <smallest useful step>.
 Exclusive writes: <scope>. Other files are read-only; coordinate with <lead>.
 
-Check the actual diff and harness doctor before resuming. Reverify stale evidence and reassess acceptance.
+Check the actual diff before resuming. Run harness doctor if setup is unclear. Reverify stale evidence and reassess acceptance.
 Do not infer that an external side effect has not happened from old state, and never manufacture completion or passing evidence.
 ```
 

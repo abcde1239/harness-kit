@@ -5,7 +5,7 @@ import { effectiveTests } from './config.mjs';
 import { finding, report } from './report.mjs';
 import { taskOrder } from './runner.mjs';
 import { auditIndex } from './git.mjs';
-import { checkArtifactLayout, RUNS } from './artifacts.mjs';
+import { artifactDocumentReferences, checkArtifactLayout, RUNS } from './artifacts.mjs';
 import { checkHarnessStorage } from './storage.mjs';
 
 const designFiles = /\.(?:fig|sketch|xd|pen|psd|bmpr)$/i;
@@ -37,11 +37,13 @@ function checkDocumentArtifacts(files, config, add) {
   }
 }
 
-function checkDocumentLayout(files, config, add) {
+function checkLayout(files, config, section, label, add) {
+  const ruleId = `${section}.layout`;
+  if (config.rules[ruleId] === 'off') return;
   const scopes = [
-    { id: 'root', root: '.', rules: config.documents.layout },
+    { id: 'root', root: '.', rules: config[section]?.layout },
     ...config.workspaces.map(workspace => ({
-      id: workspace.id, root: workspace.root, rules: workspace.documents?.layout,
+      id: workspace.id, root: workspace.root, rules: workspace[section]?.layout,
     })),
   ];
   for (const scope of scopes) {
@@ -52,8 +54,8 @@ function checkDocumentLayout(files, config, add) {
         if (!rule.match.some(pattern => matches(local, pattern)) ||
             rule.exclude?.some(pattern => matches(local, pattern)) ||
             rule.allow.some(pattern => matches(local, pattern))) continue;
-        add('documents.layout', file,
-          `Document layout rule ${rule.id} expects: ${rule.allow.join(', ')}`,
+        add(ruleId, file,
+          `${label} layout rule ${rule.id} expects: ${rule.allow.join(', ')}`,
           scope.id, { id: rule.id, root: scope.root, allow: rule.allow });
       }
     }
@@ -66,13 +68,28 @@ export function applyBaseline(findings, baseline) {
 export function lint(root, config, { useBaseline = true } = {}) {
   const findings = [], entries = walk(root,{ignore:['.git','node_modules','.harness']}), files = entries.filter(e => e.type === 'file').map(e => e.path);
   const add = (rule, name, message, workspace = 'root', detail) => {
-    const severity = config.rules[rule] ?? (rule === 'artifacts.layout' ? 'warning' : 'error');
+    const severity = config.rules[rule] ?? (['artifacts.layout', 'documents.artifactReferences'].includes(rule) ? 'warning' : 'error');
     if (severity !== 'off') findings.push(finding(rule,name,message,{ severity, workspace, detail }));
   };
   checkHarnessStorage(root, config, add);
   checkArtifactLayout(root, add);
   checkDocumentArtifacts(files, config, add);
-  if (config.rules['documents.layout'] !== 'off') checkDocumentLayout(files, config, add);
+  if (config.rules['documents.artifactReferences'] !== 'off') {
+    try {
+      for (const [id, documents] of artifactDocumentReferences(root, config.workspaces)) {
+        const location = RUNS + '/' + id;
+        for (const file of documents) {
+          add('documents.artifactReferences', file,
+            'References a temporary run. For a durable reference, move maintained assets to their project location or archive the selected evidence, then update the reference: ' + location,
+            'root', location);
+        }
+      }
+    } catch (error) {
+      add('documents.artifactReferences', '.', 'Cannot inspect document references: ' + error.message);
+    }
+  }
+  checkLayout(files, config, 'documents', 'Document', add);
+  checkLayout(files, config, 'files', 'File', add);
   try { taskOrder(config.tasks); } catch (error) { add('tasks.graph', 'harness.config.json', error.message, 'root', error.message); }
   const workspaceResults = [];
   for (const w of config.workspaces) {

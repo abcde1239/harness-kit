@@ -16,7 +16,7 @@ Digests determine whether existing managed files can be updated safely; conflict
 
 ## Shared Agent guide
 
-The current source CLI creates `.agent/guide.md` for shared collaboration and verification guidance. Published v0.8.0 uses `docs/agent_guide.md`. Each selected host keeps its native instruction entry and reads the shared guide when the task needs more context. Host-specific role files and Hook registrations retain their native paths.
+Starting in v0.8.1, the CLI creates `.agent/guide.md` for shared collaboration and verification guidance. Earlier versions use `docs/agent_guide.md`. Each selected host keeps its native instruction entry and reads the shared guide when the task needs more context. Host-specific role files and Hook registrations retain their native paths.
 
 When onboarding an existing project, the CLI can move an unchanged Harness-managed guide into `.agent/` and leave a short pointer at `docs/agent_guide.md`. A user-owned or edited legacy guide stays in place as the fallback. Review the onboarding plan before applying it. The shared guide is internal project material.
 
@@ -91,6 +91,10 @@ The supplied gitignore excludes dependencies, common root build directories, out
 
 Internal material may be tracked in private Git. In an already public repository, move it to a private companion repository or outside the checkout. For local-only storage, keep it untracked and inspect existing history. Directory names, gitignore, and passing ordinary lint cannot clean history.
 
+## Place environment and delivery files
+
+Keep environment schemas with the consuming application. Put deployment inputs below `deploy/` when the tools accept explicit paths. Keep native discovery files at the locations their tools require. Set `files.layout` to check project-owned location decisions. See [environment configuration](environment.md) and [deployment and operations](deployment.md) when changing those files.
+
 ## Keep tests in framework-native locations
 
 | Existing project | Code location | Harness integration |
@@ -123,6 +127,16 @@ repo/
 The apps/services/packages names are examples; do not move existing directories. Each `workspace.root` points to a real directory, and a task's cwd is relative to its workspace. Workspace test rules may override root test rules; root internal-document protection still applies.
 
 Choose per-package tasks or an existing root aggregate task. Use `covers` on an aggregate to declare which workspaces it validates. `covers` does not disable child tasks with different IDs. Do not configure both an aggregate and children that repeat the same tests. The dependency graph runs each task ID only once per invocation.
+
+## Maintained scripts
+
+Reserve `scripts/` for repeatable project tooling with a known caller or a documented supported invocation. Classify files by role and runtime. Verification wrappers call real project tools, operational scripts manage the project, and packaging scripts produce deliverables. Keep helpers with their owning tooling. Place tests and fixtures in their native test layout. Store generated reports and screenshots in a managed run or the framework's output directory. Use a managed run for one-off probes rather than adding them to the project's maintained script surface.
+
+Before adding a script, check existing package commands, CI, task configuration, and imports for a suitable entry point. Record the new caller and runtime if a script is needed. Keep project-owned Hook executables in the existing Hook directory and Harness-managed Hook state under `.harness/`.
+
+For JavaScript and TypeScript projects, prefer TypeScript (`.ts` or `.mts`) for project tooling when the configured runtime supports it. Prefer JavaScript (`.js` or `.mjs` under the project’s module conventions) for lightweight launchers and distributed scripts that must run with Node.js and Bun. Bun can run TypeScript directly. Verify the declared runtime and keep the project’s existing type checks when using TypeScript. Other stacks use their native tooling.
+
+Use `files.layout` to restrict `scripts/` after inventorying current entry points and the helpers they import. Prefer exact paths for a small stable directory. For a larger directory, use narrow patterns that reflect its existing purpose and runtime, with exact paths for exceptions such as a vendored CLI. A suffix alone allows one-off files written in the same language. Preview existing violations with `warning`, then enforce the reviewed layout as `error`. Verify actual callers after a move. Apply this policy only to the script directories the project owns.
 
 ## Unified validation and publication
 

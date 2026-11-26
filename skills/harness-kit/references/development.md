@@ -18,7 +18,7 @@ Choose proportionate work:
 
 When professional responsibilities are requested or useful, select [role prompts](roles.md), carrying existing requirements, interfaces, and file ownership. Do not add a full fixed workflow merely to use roles. For an observed Agent behavior problem or an explicit request to improve Agent output, use the [Agent expert](roles/agent-expert.md) to assess evidence and proportionate changes. This is an optional diagnostic role, not a mandatory stage for every task.
 
-Use `node <skill>/scripts/harness.mjs` with `--root <project> --json`. Start with meaningful local validation via `run --task <runnerID>`; after integration run the project's required full `run`. If a work task exists, associate results with `run --work <work-task-id>`. `--task` still selects a runner task. Report partial scope and never call unselected workspaces verified.
+Use `node <skill>/scripts/harness.mjs` with `--root <project>`. For `run --work`, the text output already shows the checks and task association. Use `--json` when structured verification details are needed. Start with meaningful local validation via `run --task <runnerID>`; after integration run the project's required full `run`. If a work task exists, associate results with `run --work <work-task-id>`. `--task` still selects a runner task. Report partial scope and never call unselected workspaces verified.
 
 ## Failed validation
 
@@ -40,11 +40,13 @@ For recovery, define acceptance before recording progress:
 
 ```sh
 harness task start auth-fix --title "Fix authentication boundaries" --accept "The specified boundary behavior can be reproduced and passes" --scope src/auth
-harness task note --note "Located the cause" --next "Fix and run authentication regression tests"
-harness task resume auth-fix
+harness task note auth-fix --brief --note "Located the cause" --next "Fix and run authentication regression tests"
+harness task resume auth-fix --brief
 ```
 
-On resume, reread current user requirements, task status/resume, relevant diff, and `doctor`. Check what changed since validation and replace stale evidence. Resume presents context and switches the active task; it does not run tests or other actions. A completion note cannot prove an external effect was executed only once if no durable completion record exists. Check actual state before retrying commits, deployment, or other external actions.
+Before switching hosts, save completed work, changed files or commit, actual checks, blockers, and the first next step. In the same checkout, give the receiving Agent the task ID. For another checkout, share the `task handoff` output and bring the code changes separately. See [persistent tasks](tasks.md) for interrupted sessions.
+
+On resume, check current user requirements, the resume summary, and the relevant diff. Read the full task report or run `doctor` if the summary leaves evidence or setup questions. Check what changed since validation and replace stale evidence. Resume presents context and switches the active task; it does not run tests or other actions. A completion note cannot prove an external effect was executed only once if no durable completion record exists. Check actual state before retrying commits, deployment, or other external actions.
 
 ## Review and completion
 

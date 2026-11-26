@@ -30,17 +30,18 @@ Skill discovery is separate. With dsh-skill and dsh-skill-filesystem enabled, pl
 ## schemaVersion 1
 
 - repository: visibility is private/public/unknown; unknown blocks repository publication checks.
-- workspaces: array of id, project-relative root, and optional tests/documents.
+- workspaces: array of id, project-relative root, and optional `tests`, `documents`, and `files` policies.
 - documents: defaultAudience: internal, publicRoots/internalRoots, publicPatterns/internalPatterns. Internal rules take precedence; child workspaces cannot weaken root publication policy. Only explicitly public paths may be published. Use optional `artifactAllowlist` for exact paths of maintained documentation files flagged by `documents.artifacts`. Optional `layout` rules control document locations. Paths in `artifactAllowlist` and `layout` are project-relative at the root and workspace-relative under a workspace.
 - hooks: `sessionRetentionDays` for inactive managed Hook snapshots, default 30 (1–3650). This setting does not enable Hooks.
 - artifacts: `retentionDays` for completed managed runs, default 14 (1–3650). See [artifact management](./artifacts.md).
+- files: optional `layout` rules for project-owned file paths.
 - tests: include/exclude globs, artifacts paths, requireConfiguredTask. Preserve native framework discovery. Globs support `*`, `**`, and `?`.
 - tasks: id, workspace, argv array, cwd relative to the workspace, dependsOn, kind (test/lint/typecheck/build/custom), required, enabled, timeoutMs, and covers (workspace coverage). Tasks deduplicate by ID and cycles are rejected. Use covers for the actual scope of an existing aggregate task; avoid separately running the same underlying tests twice.
 - publicationTargets: id and manifest; needed only for publication checks.
-- rules: tests.layout, tests.configured, tests.artifacts, documents.links, documents.artifacts, documents.layout, tasks.graph, storage.state, artifacts.layout; values error/warning/off. `storage.state`, `documents.artifacts`, and `documents.layout` default to error; `artifacts.layout` defaults to warning.
+- rules: tests.layout, tests.configured, tests.artifacts, documents.links, documents.artifacts, documents.layout, files.layout, tasks.graph, storage.state, artifacts.layout; values error/warning/off. `storage.state`, `documents.artifacts`, `documents.layout`, and `files.layout` default to error; `artifacts.layout` defaults to warning.
 - baseline: fingerprints of ordinary historical findings; publication violations cannot be exempted.
 
-Omitted fields use defaults; unknown fields and versions are rejected. Root README.md is public by default. Without existing governance configuration, newly generated generic host entries may be suggested as public; existing entries and explicit policies are not automatically broadened. Detailed public content belongs under docs/public/guides, reference, and examples. Default internal paths include docs/prd, docs/decision, docs/verification, .harness, docs/structure.md, and docs/agent_guide.md. The current source CLI also protects the [shared Agent guide](project-layout.md#shared-agent-guide) at `.agent/guide.md`. Explicit arrays replace defaults for that field: review and merge new conventions when adapting old configuration, and check custom Agent instructions for internal information. Do not invent schema fields.
+Omitted fields use defaults; unknown fields and versions are rejected. Root README.md is public by default. Without existing governance configuration, newly generated generic host entries may be suggested as public; existing entries and explicit policies are not automatically broadened. Detailed public content belongs under docs/public/guides, reference, and examples. Default internal paths include docs/prd, docs/decision, docs/verification, .harness, docs/structure.md, and docs/agent_guide.md. The CLI also protects the [shared Agent guide](project-layout.md#shared-agent-guide) at `.agent/guide.md`. Explicit arrays replace defaults for that field: review and merge new conventions when adapting old configuration, and check custom Agent instructions for internal information. Do not invent schema fields.
 
 ## Document location rules
 
@@ -74,6 +75,53 @@ For example, keep public pages in named sections and decision records in `docs/d
 ```
 
 `harness check` and `harness run` report `documents.layout` findings with the file path, rule ID, and allowed patterns. Set `rules["documents.layout"]` to `warning` when introducing the rules in an existing project, or `off` to disable them. Configurations without `documents.layout` retain their existing checks. Root rules use project-relative paths and apply across the project. Rules under `workspaces[].documents.layout` use workspace-relative paths and apply in addition to matching root rules. Publication eligibility is still determined by the public and internal path policies.
+
+## File location rules
+
+Use `files.layout` to check deployment files, environment templates, or other project-owned inputs. It uses the same `id`, `match`, `allow`, and `exclude` patterns as [document location rules](#document-location-rules). Root rules use project-relative paths. Rules in `workspaces[].files.layout` use workspace-relative paths and apply alongside root rules.
+
+Merge the following fields into an existing configuration after confirming the project layout. This example checks root Compose files and Compose files under `deploy/`, and keeps environment examples with their consumers. Change the patterns to match the files and entry points the project owns.
+
+```json
+{
+  "files": {
+    "layout": [
+      {
+        "id": "compose-placement",
+        "match": [
+          "compose*.yaml",
+          "compose*.yml",
+          "docker-compose*.yaml",
+          "docker-compose*.yml",
+          "deploy/**/compose*.yaml",
+          "deploy/**/compose*.yml",
+          "deploy/**/docker-compose*.yaml",
+          "deploy/**/docker-compose*.yml"
+        ],
+        "allow": [
+          "deploy/local/**",
+          "deploy/production/**"
+        ]
+      },
+      {
+        "id": "environment-examples",
+        "match": [
+          "**/.env.example"
+        ],
+        "allow": [
+          "apps/*/.env.example",
+          "deploy/local/.env.example"
+        ]
+      }
+    ]
+  },
+  "rules": {
+    "files.layout": "warning"
+  }
+}
+```
+
+`harness check` and `harness run` report misplaced files as `files.layout` findings. Omit `rules["files.layout"]` to use the default severity of `error`, use `warning` during migration, or use `off` to disable the check. A path rule checks location only. Test the actual tool invocation after a move and manage secret values using the deployment environment.
 
 ## Commands
 

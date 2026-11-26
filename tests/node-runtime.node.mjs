@@ -37,29 +37,55 @@ test('source and all three portable formats run under Node without Bun on PATH',
   const relocated=path.join(base,'relocated '+relative.replaceAll('/','_'));fs.cpSync(path.join(distribution.destination,relative),relocated,{recursive:true});
   assert.equal(call(path.join(relocated,'scripts/harness.mjs'),root,['doctor']).status,'ready');
   assert.ok(fs.existsSync(path.join(relocated,'licenses/yaml.txt')));
+  const skill = fs.readFileSync(path.join(relocated, 'SKILL.md'), 'utf8');
+  for (const name of ['environment', 'deployment', 'architecture', 'roles']) {
+   const reference = `references/${name}.md`;
+   assert.ok(skill.includes(`(${reference})`), reference);
+   assert.ok(fs.existsSync(path.join(relocated, reference)), reference);
+  }
  }
  assert.ok(fs.readFileSync(path.join(root,'AGENTS.md'),'utf8').startsWith('# 用户约定\n保留现有中文内容。\n'));
+ const hostInstructions = fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf8');
+ assert.match(hostInstructions, /Select references by task scope/);
+ assert.doesNotMatch(hostInstructions, /For Compose moves|Keep variable definitions, parsing/);
  const record=JSON.parse(fs.readFileSync(path.join(root,'.harness/verification.json'),'utf8'));
  assert.equal(record.environment.node,process.versions.node);assert.equal(record.environment.bun,undefined);
 });
 
-test('bundled CLI checks public document placement in check and run', () => {
+test('bundled CLI checks document and deployment file placement in check and run', () => {
  const root = project('public document layout');
  init(entry, root);
  const configPath = path.join(root, 'harness.config.json');
  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
  config.documents.layout = [{ id: 'public-pages', match: ['docs/public/**/*.md'], allow: ['docs/public/guides/**'] }];
+ config.files = { layout: [{ id: 'compose-placement', match: ['**/compose.yaml'], allow: ['deploy/**'], exclude: ['apps/api/fixtures/**'] }] };
+ config.workspaces.push({ id: 'api', root: 'apps/api', files: { layout: [{ id: 'environment-example', match: ['**/.env.example'], allow: ['.env.example'] }] } });
+ fixture('public document layout', { 'compose.yaml': 'services: {}', 'deploy/local/compose.yaml': 'services: {}', 'apps/api/fixtures/compose.yaml': 'services: {}', 'apps/api/config/.env.example': 'PORT=8080', '.github/workflows/deploy.yml': 'name: Deploy' });
  fs.writeFileSync(configPath, JSON.stringify(config));
  const publicRoot = path.join(root, 'docs/public');
  const loose = path.join(publicRoot, 'setup.md');
  fs.writeFileSync(loose, '# Setup');
  const check = call(entry, root, ['check'], { expected: 1 });
  assert.equal(check.findings.find(f => f.ruleId === 'documents.layout').path, 'docs/public/setup.md');
+ assert.deepEqual(check.findings.filter(f => f.ruleId === 'files.layout').map(f => [f.path, f.workspace, f.detail.id]), [
+  ['compose.yaml', 'root', 'compose-placement'],
+  ['apps/api/config/.env.example', 'api', 'environment-example'],
+ ]);
  const run = call(entry, root, ['run'], { expected: 1 });
  assert.deepEqual(run.governance.findings, check.findings);
  assert.equal(run.verification.tasks[0].status, 'passed');
  assert.equal(run.evidence.status, 'failed');
  fs.renameSync(loose, path.join(publicRoot, 'guides/setup.md'));
+ config.rules['files.layout'] = 'warning';
+ fs.writeFileSync(configPath, JSON.stringify(config));
+ assert.ok(call(entry, root, ['check']).findings.filter(f => f.ruleId === 'files.layout').every(f => f.severity === 'warning'));
+ config.rules['files.layout'] = 'off';
+ fs.writeFileSync(configPath, JSON.stringify(config));
+ assert.equal(call(entry, root, ['check']).findings.some(f => f.ruleId === 'files.layout'), false);
+ delete config.rules['files.layout'];
+ fs.writeFileSync(configPath, JSON.stringify(config));
+ fs.renameSync(path.join(root, 'compose.yaml'), path.join(root, 'deploy/compose.yaml'));
+ fs.renameSync(path.join(root, 'apps/api/config/.env.example'), path.join(root, 'apps/api/.env.example'));
  assert.equal(call(entry, root, ['run']).evidence.status, 'passed');
 });
 
@@ -148,6 +174,12 @@ test('packaged Node CLI allocates, pins and previews artifact runs without proje
   const preview = call(entry, root, ['artifacts', 'clean']);
   assert.equal(preview.retentionDays, 14);
   assert.equal(preview.items[0].status, 'kept');
+  assert.equal(call(entry, root, ['artifacts', 'release', run.id]).status, 'released');
+  fs.writeFileSync(path.join(root, 'README.md'), '[Review](/' + run.path + ')');
+  const referenced = call(entry, root, ['artifacts', 'clean', '--yes']).items[0];
+  assert.equal(referenced.status, 'referenced');
+  assert.equal(referenced.reason, 'Document reference: README.md');
+  assert.ok(fs.existsSync(path.join(root, run.path, 'run.json')));
 });
 
 test('packaged Node CLI previews Hook session retention separately from artifact retention', () => {
@@ -191,7 +223,10 @@ test('portable roles use native formats and only configure the selected host and
    if(role.id==='code-reviewer'){
     if(host==='cursor') assert.equal(metadata.readonly,true);
     if(host==='claude') assert.equal(metadata.tools,'Read, Glob, Grep');
+    if(host==='gemini') assert.deepEqual(metadata.tools,['read_file','list_directory','glob','grep_search']);
     if(host==='opencode') assert.deepEqual(metadata.permissions.map(p=>p.effect),['deny','deny']);
+   } else if(host==='gemini') {
+    assert.equal(metadata.tools,undefined);
    }
   }
   assert.deepEqual(call(cli,root,[...args,'--yes']).changed,[]);

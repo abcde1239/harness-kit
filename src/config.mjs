@@ -11,27 +11,31 @@ const enumValue = (v, choices, label) => { if (!choices.includes(v)) throw new E
 const id = v => { if (typeof v !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/.test(v)) throw new Error(`Invalid id: ${v}`); };
 function array(v, label) { if (!Array.isArray(v)) throw new Error(`${label} must be an array`); }
 function paths(v, label, glob = false) { strings(v, label); for (let i=0;i<v.length;i++) v[i]=relativePath(v[i], { glob }); }
-function documentLayout(rules) {
-  array(rules, 'documents.layout');
+function layoutRules(rules, policy, label) {
+  array(rules, policy);
   const ids = new Set();
   for (const rule of rules) {
-    keys(rule, ['id', 'match', 'allow', 'exclude'], 'document layout rule');
+    keys(rule, ['id', 'match', 'allow', 'exclude'], `${label} layout rule`);
     id(rule.id);
-    if (ids.has(rule.id)) throw new Error(`Duplicate document layout rule: ${rule.id}`);
+    if (ids.has(rule.id)) throw new Error(`Duplicate ${label} layout rule: ${rule.id}`);
     ids.add(rule.id);
     for (const key of ['match', 'allow']) {
-      const label = `documents.layout.${rule.id}.${key}`;
+      const label = `${policy}.${rule.id}.${key}`;
       paths(rule[key], label, true);
       if (!rule[key].length) throw new Error(`${label} must contain at least one path pattern`);
     }
-    if (rule.exclude !== undefined) paths(rule.exclude, `documents.layout.${rule.id}.exclude`, true);
+    if (rule.exclude !== undefined) paths(rule.exclude, `${policy}.${rule.id}.exclude`, true);
   }
 }
 function documents(v) {
   keys(v, ['defaultAudience','publicRoots','internalRoots','publicPatterns','internalPatterns','artifactAllowlist','layout'], 'documents');
   if (v.defaultAudience !== undefined && v.defaultAudience !== 'internal') throw new Error('documents.defaultAudience must be internal');
   for (const k of ['publicRoots','internalRoots','publicPatterns','internalPatterns','artifactAllowlist']) if (v[k] !== undefined) paths(v[k], `documents.${k}`, k.endsWith('Patterns'));
-  if (v.layout !== undefined) documentLayout(v.layout);
+  if (v.layout !== undefined) layoutRules(v.layout, 'documents.layout', 'document');
+}
+function files(v) {
+  keys(v, ['layout'], 'files');
+  if (v.layout !== undefined) layoutRules(v.layout, 'files.layout', 'file');
 }
 function tests(v) {
   keys(v, ['detect','include','exclude','artifacts','requireConfiguredTask'], 'tests');
@@ -52,10 +56,11 @@ export function defaults() {
   };
 }
 export function validateConfig(value, root) {
-  keys(value, ['schemaVersion','repository','workspaces','documents','tests','artifacts','hooks','tasks','publicationTargets','rules','baseline'], 'config');
+  keys(value, ['schemaVersion','repository','workspaces','documents','files','tests','artifacts','hooks','tasks','publicationTargets','rules','baseline'], 'config');
   if (value.schemaVersion !== 1) throw new Error('Unsupported schemaVersion (expected 1)');
   const c = { ...defaults(), ...structuredClone(value) };
   documents(c.documents); tests(c.tests);
+  if (c.files !== undefined) files(c.files);
   c.documents = { ...defaults().documents, ...c.documents };
   c.tests = { ...defaults().tests, ...c.tests };
   keys(c.artifacts, ['retentionDays'], 'artifacts');
@@ -75,11 +80,12 @@ export function validateConfig(value, root) {
   if (!c.workspaces.length) throw new Error('At least one workspace is required');
   const ids = new Set(), roots = new Set();
   for (const w of c.workspaces) {
-    keys(w, ['id','root','documents','tests'], 'workspace'); id(w.id); w.root=relativePath(w.root);
+    keys(w, ['id','root','documents','files','tests'], 'workspace'); id(w.id); w.root=relativePath(w.root);
     if (ids.has(w.id) || roots.has(w.root.toLowerCase())) throw new Error(`Duplicate workspace: ${w.id}`);
     ids.add(w.id); roots.add(w.root.toLowerCase());
     if (root && !fs.statSync(safePath(root, w.root, { allowMissing: false })).isDirectory()) throw new Error(`Workspace is not a directory: ${w.root}`);
     if (w.documents) documents(w.documents);
+    if (w.files !== undefined) files(w.files);
     if (w.tests) tests(w.tests);
   }
   array(c.tasks, 'tasks'); const taskIds = new Set();
@@ -101,7 +107,7 @@ export function validateConfig(value, root) {
     keys(p, ['id','manifest'], 'publicationTarget'); id(p.id); relativePath(p.manifest);
     if (targets.has(p.id)) throw new Error(`Duplicate target: ${p.id}`); targets.add(p.id);
   }
-  keys(c.rules, ['tests.layout','tests.configured','tests.artifacts','documents.links','documents.artifacts','documents.layout','tasks.graph','storage.state','artifacts.layout'], 'rules');
+  keys(c.rules, ['tests.layout','tests.configured','tests.artifacts','documents.links','documents.artifactReferences','documents.artifacts','documents.layout','files.layout','tasks.graph','storage.state','artifacts.layout'], 'rules');
   for (const [k,v] of Object.entries(c.rules)) enumValue(v, ['error','warning','off'], k);
   strings(c.baseline, 'baseline');
   return c;

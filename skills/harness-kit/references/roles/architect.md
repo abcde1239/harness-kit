@@ -1,6 +1,6 @@
 # Architecture expert
 
-Use for cross-module changes, shared contracts, or material architecture decisions. Ordinary local changes do not require an architecture phase.
+Use for cross-module changes, shared contracts, or material architecture decisions. For design work, consult [architecture guidance](../architecture.md) when needed.
 
 Combine with the [assignment brief](../roles.md#compose-an-assignment):
 

@@ -18,7 +18,7 @@ Digests determine whether existing managed files can be updated safely; conflict
 
 ## Shared Agent guide
 
-The current source CLI creates `.agent/guide.md` for shared collaboration and verification guidance. Published v0.8.0 uses `docs/agent_guide.md`. Each selected host keeps its native instruction entry and reads the shared guide when the task needs more context. Host-specific role files and Hook registrations retain their native paths.
+Starting in v0.8.1, the CLI creates `.agent/guide.md` for shared collaboration and verification guidance. Earlier versions use `docs/agent_guide.md`. Each selected host keeps its native instruction entry and reads the shared guide when the task needs more context. Host-specific role files and Hook registrations retain their native paths.
 
 When onboarding an existing project, the CLI can move an unchanged Harness-managed guide into `.agent/` and leave a short pointer at `docs/agent_guide.md`. A user-owned or edited legacy guide stays in place as the fallback. Review the onboarding plan before applying it. The shared guide is internal project material.
 
@@ -109,6 +109,10 @@ The supplied gitignore excludes dependencies, common root build directories, out
 
 Internal material may be tracked in private Git. In an already public repository, move it to a private companion repository or outside the checkout. For local-only storage, keep it untracked and inspect existing history. Directory names, gitignore, and passing ordinary lint cannot clean history.
 
+## Environment and deployment files
+
+Keep variable validation and `.env.example` with the application or deployment unit that consumes them. Place movable delivery inputs under `deploy/` or beside the component. Preserve tool-specific discovery paths. See [deployment layout and checks](deployment-layout.md) for examples and migration steps.
+
 ## Keep tests in framework-native locations
 
 | Existing project | Code location | Harness integration |
@@ -141,6 +145,30 @@ repo/
 The apps/services/packages names are examples; do not move existing directories. Each `workspace.root` points to a real directory, and a task's cwd is relative to its workspace. Workspace test rules may override root test rules; root internal-document protection still applies.
 
 Choose per-package tasks or an existing root aggregate task. Use `covers` on an aggregate to declare which workspaces it validates. `covers` does not disable child tasks with different IDs. Do not configure both an aggregate and children that repeat the same tests. The dependency graph runs each task ID only once per invocation.
+
+## Maintained scripts
+
+`scripts/` can hold reusable verification, development, operations, and packaging commands. Keep their helpers with the code that calls them. Tests and fixtures use the project’s native test layout. Generated reports and temporary probes can use a managed run. See [artifact management](artifacts.md) for that lifecycle.
+
+For JS and TS projects, use TypeScript for maintained scripts when the configured runner supports it. Bun can run `.ts` directly. Use JavaScript for small launchers and portable entry points that run on both Node.js and Bun. `.mjs` is a JavaScript ES module. Other stacks can keep their existing script languages.
+
+Use [file location rules](configuration.md#file-location-rules) to restrict this directory. Review the paths used by package scripts, CI, task configuration, and tooling imports before choosing patterns. For a small project, allow exact paths such as `scripts/verify.mjs` and `scripts/package.mjs` instead of accepting every `*.mjs` file. Other projects can choose paths and extensions that match their own tooling.
+
+```json
+{
+  "files": {
+    "layout": [
+      {
+        "id": "maintained-scripts",
+        "match": ["scripts/**"],
+        "allow": ["scripts/verify.mjs", "scripts/package.mjs"]
+      }
+    ]
+  }
+}
+```
+
+Merge this example into the project configuration and replace the allowed paths with the actual scripts and helpers. `check` and `run` report files outside the allowed set with the `files.layout` rule. Use `warning` during migration if the existing directory needs review.
 
 ## Unified validation and publication
 

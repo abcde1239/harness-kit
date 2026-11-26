@@ -12,8 +12,10 @@ Harness Kit 将宿主接入和项目执行分开：
 分发 ZIP 已经包含完整 CLI。Agent 应从实际加载的 `SKILL.md` 定位脚本，并传入目标项目绝对路径：
 
 ```text
-node <installed-skill-directory>/scripts/harness.mjs <command> --root <project-absolute-path> --json
+node <installed-skill-directory>/scripts/harness.mjs <command> --root <project-absolute-path>
 ```
+
+需要结构化结果时加 `--json`。使用支持 `--brief` 的 CLI 处理持久任务时，可以先读取精简输出。
 
 Node.js ≥ 22.12.0 与 Bun ≥ 1.3.4 均可运行 Harness Kit；目标项目的 `bun test`、`cargo test` 或其他任务命令仍使用项目自己声明的工具链。
 
@@ -45,6 +47,7 @@ Node.js ≥ 22.12.0 与 Bun ≥ 1.3.4 均可运行 Harness Kit；目标项目的
 | `task start <id>` | 创建可恢复的工作任务，使用 `--accept` 声明验收项。 |
 | `task status [id]` | 查看任务状态、验收进度和关联的验证记录。 |
 | `task resume [id]` | 恢复任务上下文并选中该任务，以便继续工作。 |
+| `task handoff [id]` | 输出可复制的跨宿主交接文本，不切换当前任务。自 v0.8.1 起可用。 |
 | `task note [id]` | 保存工作笔记或下一步。 |
 | `task accept [id]` | 为指定验收项记录已核对的证据。 |
 | `task finish [id]` | 核对验收项和当前验证记录，通过后标记任务完成。 |
@@ -54,13 +57,13 @@ Node.js ≥ 22.12.0 与 Bun ≥ 1.3.4 均可运行 Harness Kit；目标项目的
 | `artifacts release <id>` | 恢复该产物的保留期规则。 |
 | `artifacts clean [--yes]` | 预览到期产物，加 `--yes` 执行清理。 |
 
-完整流程见[持久任务与验收](tasks.md)和[产物管理](artifacts.md)。
+从 v0.8.1 起，`task start`、`note`、`accept` 和 `finish` 支持 `--brief` 回执，`task status` 和 `resume` 支持 `--brief` 摘要。用 `task status <id> --brief` 只读查看，用 `task resume <id> --brief` 查看并选中任务。需要完整记录时使用 `task status <id> --json`。详见[精简输出](tasks.md#brief-output)、[交接示例](../guides/usage.md#保存任务与交接)和[产物管理](artifacts.md)。
 
 ### 宿主接入与发布审计
 
 | 命令 | 用途 |
 |---|---|
-| `roles` | 列出职责，指定 `--host` 和 `--role` 可预览受支持宿主的角色文件，加 `--yes` 写入。当前源码支持该命令，已发布的 v0.8.0 包尚未包含。 |
+| `roles` | 列出职责，指定 `--host` 和 `--role` 可预览受支持宿主的角色文件，加 `--yes` 写入。自 v0.8.1 起可用。 |
 | `hook` | 供宿主调用的事件接口，通过标准输入和输出交换 JSON，处理会话开始和结束时的验证提示。 |
 | `hooks clean [--yes]` | 预览到期的 Hook 会话快照，加 `--yes` 执行清理。 |
 | `export --destination <目录>` | 按公开路径策略导出文件到新建的本地目录，可用 `--manifest-out` 保存清单。 |

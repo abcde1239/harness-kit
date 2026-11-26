@@ -240,6 +240,70 @@ test('task CLI persists scope, notes and acceptance, resumes without execution a
   assert.ok(resumed.data.criteria.some(c=>c.status==='stale'));
 });
 
+test('brief task output keeps recovery and acceptance actionable without replaying history',()=>{
+  const root=fixture({'check.mjs':"import fs from 'node:fs'; fs.writeFileSync('.harness/ran.txt','yes');"});
+  assert.equal(run(root,'init','--private','--test','bun check.mjs','--yes','--skip-verify').code,0);
+  function brief(action,args=[],expected=0) {
+    const result=Bun.spawnSync([process.execPath,cli,'task',action,...args,'--root',root,'--brief'],{stdout:'pipe',stderr:'pipe',env:{...process.env,HARNESS_ACTIVE:''}});
+    assert.equal(result.exitCode,expected,Buffer.from(result.stderr).toString());
+    return Buffer.from(result.stdout).toString().trimEnd();
+  }
+  const start=brief('start',['fix','--title','Fix order lookup','--accept','Order lookup succeeds','--scope','check.mjs']);
+  assert.equal(start,'task start fix: in-progress');
+  const oldNote='Earlier findings: '+ 'Read the original API contract. '.repeat(40).trimEnd();
+  assert.equal(brief('note',['fix','--note',oldNote]),'task note fix: in-progress');
+  const latest='Interface is ready. '+ 'x'.repeat(779)+'🚀'+' Details at the end';
+  const next='Add the page and test lookup';
+  assert.equal(brief('note',['fix','--note',latest,'--next',next]),'task note fix: in-progress');
+  const evidence='Verified API contract against the fixture';
+  assert.equal(brief('accept',['fix','--criterion','c1','--evidence',evidence]),'task accept fix: in-progress c1=accepted');
+  assert.equal(run(root,'task','start','other','--accept','Other work').code,0);
+  const preview=brief('status',['fix']);
+  assert.equal(run(root,'task','status').data.task.id,'other');
+  for(const detail of ['Fix order lookup','check.mjs','missing','c1 [accepted] Order lookup succeeds','Interface is ready.','🚀…','task status fix --json'])assert.ok(preview.includes(detail),detail);
+  for(const detail of ['Earlier findings:',evidence,'Details at the end'])assert.equal(preview.includes(detail),false,detail);
+  assert.equal(preview.split(next).length,2);
+  const resume=brief('resume',['fix']);
+  assert.ok(resume.includes('c1 [accepted]'));
+  const full=run(root,'task','status').data;
+  assert.equal(full.task.id,'fix');
+  assert.deepEqual(full.task.notes.map(note=>note.text),[oldNote,latest]);
+  assert.equal(full.criteria[0].evidence,evidence);
+  write(root,'check.mjs','process.exit(0) // Changed since acceptance');
+  const blocked=brief('finish',['fix'],1);
+  assert.ok(blocked.includes('task finish fix: blocked'));
+  assert.ok(blocked.includes('c1 [stale] Order lookup succeeds'));
+  assert.ok(blocked.includes('任务验证：missing'));
+  assert.equal(fs.existsSync(path.join(root,'.harness/ran.txt')),false);
+});
+
+test('task handoff prints copyable context without selecting the source task or running verification',()=>{
+  const root=fixture({'check.mjs':"import fs from 'node:fs'; fs.writeFileSync('.harness/ran.txt','yes');"});
+  assert.equal(run(root,'init','--private','--test','bun check.mjs','--yes','--skip-verify').code,0);
+  assert.equal(run(root,'task','start','api','--title','Add API endpoint','--accept','API contract reviewed','--scope','check.mjs').code,0);
+  assert.equal(run(root,'task','note','api','--note','API implementation is ready','--next','Add endpoint tests').code,0);
+  assert.equal(run(root,'task','accept','api','--criterion','c1','--evidence','Reviewed the route contract').code,0);
+  assert.equal(run(root,'task','start','other','--accept','Other work').code,0);
+  const taskFile=path.join(root,'.harness/tasks/api.json');
+  const original=fs.readFileSync(taskFile,'utf8');
+  const result=run(root,'task','handoff','api');
+  assert.equal(result.code,0,JSON.stringify(result.data));
+  assert.equal(result.data.task.id,'api');
+  const prompt=result.data.handoff;
+  for(const detail of ['task resume api','Add API endpoint','check.mjs','missing','c1 [accepted]',
+    'Reviewed the route contract','API implementation is ready','Add endpoint tests'])assert.ok(prompt.includes(detail),detail);
+  const human=Bun.spawnSync([process.execPath,cli,'task','handoff','api','--root',root],{stdout:'pipe',stderr:'pipe',env:{...process.env,HARNESS_ACTIVE:''}});
+  assert.equal(human.exitCode,0,Buffer.from(human.stderr).toString());
+  assert.equal(Buffer.from(human.stdout).toString().trimEnd(),prompt);
+  assert.equal(run(root,'task','handoff').data.task.id,'other');
+  assert.equal(run(root,'task','handoff','unknown').code,2);
+  assert.equal(run(root,'task','handoff','api','--out','.harness/tasks/api.json').code,2);
+  write(root,'check.mjs','process.exit(0) // Changed since acceptance');
+  assert.ok(run(root,'task','handoff','api').data.handoff.includes('c1 [stale]'));
+  assert.equal(fs.readFileSync(taskFile,'utf8'),original);
+  assert.equal(fs.existsSync(path.join(root,'.harness/ran.txt')),false);
+});
+
 test('run work association validates IDs before execution and selected runner scope cannot finish a work task',()=>{
   const root=fixture({'check.mjs':"import fs from 'node:fs'; fs.writeFileSync('.harness/ran.txt','yes');"});
   assert.equal(run(root,'init','--private','--test','bun check.mjs','--yes').code,0);
@@ -259,7 +323,7 @@ test('task CLI rejects missing fields, unknown actions and mismatched options',(
   const root=fixture();
   for(const args of [
     ['start','x','--title','Missing acceptance'],['start','--title','No ID','--accept','Requirement'],
-    ['unknown'],['note','--title','Wrong field'],['note'],['accept','--criterion','c1'],['status','--scope','.'],
+    ['status','--brief'],['unknown'],['note','--title','Wrong field'],['note'],['accept','--criterion','c1'],['status','--scope','.'],
     ['start','x','--title','Duplicate','--title','Other','--accept','Requirement']
   ])assert.equal(run(root,'task',...args).code,2,JSON.stringify(args));
 });

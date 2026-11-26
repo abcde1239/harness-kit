@@ -14,7 +14,7 @@ export default defineConfig({
       {text: '开始使用', link: '/guides/installation'},
       {text: '工作流', link: '/guides/usage'},
       {text: '参考', link: '/reference/capabilities'},
-      {text: '版本', link: '/releases/v0.8.0'},
+      {text: '版本', link: '/releases/v0.8.1'},
       {text: 'GitHub', link: 'https://github.com/abcde1239/harness-kit'}
     ],
     sidebar: {
@@ -37,6 +37,7 @@ export default defineConfig({
           {text: '技术适配器', link: '/reference/adapters'},
           {text: '配置与调用', link: '/reference/configuration'},
           {text: '目标项目布局', link: '/reference/project-layout'},
+          {text: '环境与部署布局', link: '/reference/deployment-layout'},
           {text: '产物管理', link: '/reference/artifacts'}
         ]},
         {text: '协作与任务', items: [
@@ -50,6 +51,7 @@ export default defineConfig({
       ],
       '/releases/': [
         {text: '版本说明', items: [
+          {text: 'v0.8.1', link: '/releases/v0.8.1'},
           {text: 'v0.8.0', link: '/releases/v0.8.0'},
           {text: 'v0.7.0', link: '/releases/v0.7.0'},
           {text: 'v0.6.0', link: '/releases/v0.6.0'},

@@ -41,6 +41,30 @@ test('cleanup applies only to expired, completed and unreferenced managed runs',
   assert.equal(updateArtifactRun(root, kept.id, 'release').record.keep, false);
 });
 
+test('documentation protects expired runs until references are migrated', () => {
+  const root = fixture();
+  const maintained = finished(root, 'design-preview');
+  const generated = finished(root, 'generated-docs');
+  const document = 'apps/web/docs/design/proposal.md';
+  write(root, document, '[preview]: ../../../../' + maintained.path + '/report.txt#variant\n');
+  write(root, 'README.en.md', 'Temporary source: ' + maintained.path);
+  write(root, 'apps/web/docs/.vitepress/dist/index.html', '<a href="/' + generated.path + '/report.txt">Stale build</a>');
+  const workspaces = [{ id: 'web', root: 'apps/web' }];
+  const settings = config(root, { workspaces });
+  const results = lint(root, settings).findings.filter(item => item.ruleId === 'documents.artifactReferences');
+  assert.deepEqual(results.map(item => [item.path, item.severity]).sort(), [['README.en.md', 'warning'], [document, 'warning']]);
+  const cleanup = { apply: true, workspaces };
+  const first = cleanArtifactRuns(root, settings.artifacts, cleanup);
+  assert.deepEqual(first.items.map(item => [item.id, item.status]), [[maintained.id, 'referenced'], [generated.id, 'removed']]);
+  assert.match(first.items[0].reason, /Document reference: README.en.md/);
+  write(root, 'README.en.md', 'Design index relocated.');
+  write(root, 'artifacts/snapshots/design-v1/report.txt', 'evidence');
+  write(root, document, '[preview]: ../../../../artifacts/snapshots/design-v1/report.txt#variant\n');
+  assert.equal(lint(root, settings).findings.some(item => item.ruleId === 'documents.artifactReferences'), false);
+  assert.deepEqual(cleanArtifactRuns(root, settings.artifacts, cleanup).items.map(item => item.status), ['removed']);
+  assert.ok(fs.existsSync(path.join(root, 'artifacts/snapshots/design-v1/report.txt')));
+});
+
 test('cleanup protects indexed paths, Git metadata and links, including inside a parent checkout', () => {
   const parent = repo({ 'project/.gitignore': '/artifacts/\n' });
   const root = path.join(parent, 'project');

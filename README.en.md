@@ -1,6 +1,6 @@
 # Harness Kit
 
-[简体中文](README.md) · [Documentation (Chinese)](https://abcde1239.github.io/harness-kit/) · [Releases](https://github.com/abcde1239/harness-kit/releases)
+[简体中文](README.md) · [Documentation (Chinese)](https://abcde1239.github.io/harness-kit/) · [Releases](https://github.com/abcde1239/harness-kit/releases) · [v0.8.1 release notes](https://github.com/abcde1239/harness-kit/releases/tag/v0.8.1)
 
 Harness Kit connects coding agents to existing projects, runs the project's own tests and checks, and can save goals, progress, and acceptance records so a later session can pick up the work.
 
@@ -8,9 +8,9 @@ It can generate project instructions for Codex, Claude Code, Gemini CLI, Cursor,
 
 Requires **Node.js ≥ 22.12.0 or Bun ≥ 1.3.4**. Git features also require Git. Skills and plugins bundle the CLI. Running `bun setup` is unnecessary, and the terminal shortcut is optional.
 
-## Let your agent install a released version
+## Install with an agent
 
-Send this request to your agent. A repository link selects the latest stable release. Use a Release link to pin a version.
+Send the following request to the agent. A repository link selects the latest stable release. Use a Release link to pin a version.
 
 ```text
 Read https://github.com/abcde1239/harness-kit/blob/main/INSTALL.md.

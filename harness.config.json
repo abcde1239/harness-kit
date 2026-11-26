@@ -33,6 +33,20 @@
     "publicPatterns": ["README.md", "README.en.md", "INSTALL.md", "package.json", "bun.lock", "src/**", "bin/**", "scripts/**", "tests/**", "examples/**", "skills/harness-kit/**", ".github/workflows/**", ".gitignore", "harness.config.json"],
     "internalPatterns": ["AGENTS.md", "**/MEMORY.md", "**/memory/**", "**/memories/**", "**/decision/**", "docs/structure.md", "docs/agent_guide.md"]
   },
+  "files": {
+    "layout": [
+      {
+        "id": "maintained-scripts",
+        "match": ["scripts/**"],
+        "allow": [
+          "scripts/verify.mjs", "scripts/validate-skill.mjs",
+          "scripts/install.mjs", "scripts/install-plugin.mjs",
+          "scripts/package-skill.mjs", "scripts/package-distribution.mjs",
+          "scripts/build.mjs", "scripts/archive.mjs", "scripts/dsh-plugin.mjs"
+        ]
+      }
+    ]
+  },
   "tests": { "include": ["tests/**/*.test.mjs"], "exclude": ["artifacts/**"], "artifacts": ["artifacts", "coverage"], "requireConfiguredTask": true },
   "artifacts": { "retentionDays": 14 },
   "hooks": { "sessionRetentionDays": 30 },

@@ -16,7 +16,7 @@ The lead chooses roles from the user's goal, existing project, and actual worklo
 | README, user guides, first-user reading | [Documentation expert](roles/documentation.md) | Editor and integration lead |
 | Assess or improve Agent behavior, constraints, context, tools, evaluation | [Agent expert](roles/agent-expert.md) | Instruction/tool owner and integration lead |
 
-Read this page and the [collaboration conventions](collaboration.md), then only the selected role files. Do not load every profile or invent a context-manager, universal delegation API, or background Agent. Reusable instructions and delegation prompts are English. Preserve quoted user input and code; use the user's requested language for user-facing communication.
+Read only the selected role files. If the role is already selected, open its prompt directly. Use the [collaboration conventions](collaboration.md) for delegation, or apply the chosen role in the current session. Reusable instructions and delegation prompts are English. Preserve quoted user input and code; use the user's requested language for user-facing communication.
 
 ## Configure native roles
 
@@ -31,7 +31,9 @@ Use the host running the current conversation, or the host the user requests. Pa
 | `opencode` | `.opencode/agents/<name>.md` |
 | `dsh` | Load the Skill role prompt and pass it in the delegation task. Use the active preset and supply `name` when the tool supports it. |
 
-The generated files use the existing role prompts and the host's default model selection. If native registration is unavailable, use the same role as an assignment or apply the role in the main session. Native roles use short names such as `frontend`, `tester` (role ID `qa`), and `code-reviewer`. When the host supports separate instance names, use the role name or a task-specific name such as `checkout-frontend`. Keep the returned runtime ID when the host requires it for addressing. See [subagent naming](collaboration.md#name-each-subagent-by-its-responsibility).
+The generated files use the existing role prompts and the host's default model selection. Choose by execution host even when that host can run models from multiple providers. Keep model and permission settings in the relevant host or profile and avoid copying them into shared instructions. If native registration is unavailable, use the same role as an assignment or apply the role in the main session. Native roles use short names such as `frontend`, `tester` (role ID `qa`), and `code-reviewer`. When the host supports separate instance names, use the role name or a task-specific name such as `checkout-frontend`. Keep the returned runtime ID when the host requires it for addressing. See [subagent naming](collaboration.md#name-each-subagent-by-its-responsibility).
+
+The generated code reviewer limits tools to reading and search in Gemini CLI and Claude Code. Cursor receives a read-only role flag and OpenCode receives edit and shell restrictions. The Codex reviewer uses the role prompt with inherited session permissions. DSH uses the assigned role prompt and active preset. Verify native restrictions in the executing session when enforcement matters.
 
 ## Compose an assignment
 
@@ -53,13 +55,15 @@ Acceptance: <expected behavior, applicable commands, cwd, human inspection>.
 Stop conditions: <missing decisions, scope conflicts, unavailable dependencies, retry budget>.
 
 Deliver only the assigned outcome. Preserve the project's stack and conventions; do not replace frameworks, add dependencies, or expand requirements on your own.
-Request concrete boundary/interface changes from the integration lead rather than overwriting others' work.
+Treat paths outside your assigned write scope as read-only. With no assigned writes, inspect and report. Request changes to shared interfaces or files from the integration lead.
 Do not independently delegate, commit, deploy, publish, or declare the entire work task finished.
 Return assigned criteria, actual deliveries/files, interface changes, commands and results, uncovered behavior, and handoff information.
 Distinguish implemented, executed, passed, and unverified. Do not report assumptions as facts.
 ```
 
 When translating a requirement for a handoff, label the translation and keep exact terms that affect behavior. Check obligations, exceptions, quantities, and acceptance against the original. Resolve any meaning that would change the implementation with the source owner or the user. Keep interface names, paths, and required UI strings as specified.
+
+For independently started sessions on different hosts, assign the same work ID with separate write scopes, use separate checkouts when concurrent writes could collide, and review each diff before integration. Harness task scope records ownership. Enforce file access with the host execution environment when required.
 
 A PM proposal is not user approval; a QA report is not whole-task completion; a role name grants no tool permissions. The lead owns the active-task pointer, manual acceptance, and finish.
 

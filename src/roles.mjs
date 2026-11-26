@@ -34,13 +34,14 @@ export function readRolePrompts() {
 }
 
 function render(host, id, name, description, rolePrompt) {
-  const prompt = `${rolePrompt}\n\nUse the assignment's scope, write ownership, permitted checks and acceptance criteria. Ask the lead about material gaps or conflicts. Report actual evidence and uncovered behavior. Do not independently delegate, commit, deploy, publish, or declare the whole task finished.`;
+  const prompt = `${rolePrompt}\n\nUse the assignment's permitted inputs, writes, checks and acceptance criteria. Treat files outside assigned write paths as read-only. If no writes are assigned, review and report findings. Send changes outside your role or ownership back to the lead. Report actual evidence and uncovered behavior. Do not independently delegate, commit, deploy, publish, or declare the whole task finished.`;
   if (host === 'codex') {
     return `name = ${JSON.stringify(name)}\ndescription = ${JSON.stringify(description)}\ndeveloper_instructions = ${JSON.stringify(prompt)}\n`;
   }
   const settings = host === 'opencode' ? { description, mode: 'subagent' } : { name, description };
   if (id === 'code-reviewer') {
     if (host === 'claude') settings.tools = 'Read, Glob, Grep';
+    if (host === 'gemini') settings.tools = ['read_file', 'list_directory', 'glob', 'grep_search'];
     if (host === 'cursor') settings.readonly = true;
     if (host === 'opencode') settings.permissions = ['edit', 'shell'].map(action => ({ action, resource: '*', effect: 'deny' }));
   }

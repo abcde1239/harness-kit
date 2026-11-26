@@ -92,6 +92,28 @@ export function createTask(root, { id, title = id, criteria, scope = ['.'] } = {
 
 export function getTask(root, id) { return report(root, readTask(root, resolveId(root, id))); }
 
+export function getTaskHandoff(root, id) {
+  const result = getTask(root, id);
+  const { task, criteria, status, verification } = result;
+  const notes = task.notes.slice(-3);
+  const handoff = [
+    `Continue work on ${task.id} in ${path.basename(root)}.`,
+    `If the task record is available, use the Harness Kit CLI to run task resume ${task.id}.`,
+    'Check the current requirements, working tree and verification before taking the next step. Treat the saved context below as a record to verify.',
+    '',
+    `Task: ${task.title}`,
+    `Scope: ${task.scope.join(', ')}`,
+    `Task status: ${status}`,
+    `Linked verification: ${verification.status}`,
+    'Acceptance criteria:',
+    ...criteria.map(({ id, text, status, evidence }) =>
+      `- ${id} [${status}] ${text}${evidence ? `\n  Recorded evidence: ${evidence}` : ''}`),
+    ...(notes.length ? ['Recent notes:', ...notes.map(note => `- ${note.text}`)] : []),
+    `Saved next step: ${task.next || 'None recorded'}`,
+  ].join('\n');
+  return { ...result, handoff };
+}
+
 export function resumeTask(root, id) {
   return mutate(root, () => {
     const task = readTask(root, resolveId(root, id)), ctx = context(root);

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { atomicWrite, json, readJson, safePath, under } from './fs.mjs';
+import { atomicWrite, defaultIgnore, json, readJson, safePath, under, walk } from './fs.mjs';
 import { trackedPaths } from './git.mjs';
 
 export const RUNS = 'artifacts/runs';
@@ -10,6 +10,9 @@ const DAY = 86_400_000;
 const CATEGORIES = ['runs', 'releases', 'distribution', 'skill', 'snapshots', 'archive'];
 const LABEL = /^[a-z0-9][a-z0-9-]{0,47}$/;
 const RUN_ID = /^\d{8}-[a-z0-9][a-z0-9-]{0,47}-[0-9a-f]{8}$/;
+const RUN_REFERENCE = new RegExp('(?:^|[^a-z0-9_.-])artifacts/runs/(' + RUN_ID.source.slice(1, -1) + ')(?![a-z0-9_-])', 'gi');
+const DOCUMENT = /\.(?:mdx?|html?)$/i;
+const README = /^readme(?:[.-].+)?\.mdx?$/i;
 
 function stat(target) {
   return fs.lstatSync(target, { throwIfNoEntry: false });
@@ -108,6 +111,34 @@ function taskReferences(root) {
   });
 }
 
+// Match concrete paths conservatively, including reference-style links and code spans.
+export function artifactDocumentReferences(root, workspaces = []) {
+  const files = new Set();
+  for (const scope of new Set(['.', ...workspaces.map(workspace => workspace.root)])) {
+    const scopePath = safePath(root, scope);
+    const prefix = scope === '.' ? '' : scope + '/';
+    for (const entry of children(scopePath)) {
+      if (entry.isFile() && README.test(entry.name)) files.add(prefix + entry.name);
+    }
+    const docs = safePath(root, prefix + 'docs');
+    if (!stat(docs)?.isDirectory()) continue;
+    for (const entry of walk(docs, { ignore: [...defaultIgnore, '.vitepress'] })) {
+      if (entry.type === 'file' && DOCUMENT.test(entry.path)) files.add(prefix + 'docs/' + entry.path);
+    }
+  }
+  const references = new Map();
+  for (const file of files) {
+    const text = fs.readFileSync(safePath(root, file, { allowMissing: false }), 'utf8')
+      .replace(/\\|%5c|%2f/gi, '/');
+    for (const match of text.matchAll(RUN_REFERENCE)) {
+      const id = match[1].toLowerCase();
+      if (!references.has(id)) references.set(id, new Set());
+      references.get(id).add(file);
+    }
+  }
+  return references;
+}
+
 function classifyRun(root, entry, context) {
   const location = `${RUNS}/${entry.name}`;
   const item = { id: entry.name, path: location };
@@ -117,7 +148,9 @@ function classifyRun(root, entry, context) {
   try { record = readRun(root, entry.name); }
   catch { return { ...item, status: 'unmanaged', reason: 'Missing or invalid run record' }; }
   if (record.keep) return { ...item, status: 'kept' };
-  if (context.references.some(text => text.includes(entry.name))) return { ...item, status: 'referenced' };
+  if (context.references.some(text => text.includes(entry.name))) return { ...item, status: 'referenced', reason: 'Harness task reference' };
+  const documents = context.documentReferences.get(entry.name);
+  if (documents) return { ...item, status: 'referenced', reason: 'Document reference: ' + documents.values().next().value };
   if (!record.finishedAt) return { ...item, status: 'active' };
   try {
     const directory = safePath(root, location, { allowMissing: false });
@@ -129,14 +162,15 @@ function classifyRun(root, entry, context) {
   }
 }
 
-export function cleanArtifactRuns(root, { retentionDays }, { apply = false } = {}) {
+export function cleanArtifactRuns(root, { retentionDays }, { apply = false, workspaces = [] } = {}) {
   const cleanup = () => {
     const scope = safePath(root, RUNS);
     const entries = children(scope);
     const context = {
       cutoff: Date.now() - retentionDays * DAY,
       tracked: entries.length ? trackedPaths(root, RUNS) : [],
-      references: entries.length ? taskReferences(root) : []
+      references: entries.length ? taskReferences(root) : [],
+      documentReferences: entries.length ? artifactDocumentReferences(root, workspaces) : new Map()
     };
     const items = entries.map(entry => classifyRun(root, entry, context));
     if (apply) for (const [index, item] of items.entries()) {
