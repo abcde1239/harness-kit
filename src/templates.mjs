@@ -1,4 +1,11 @@
-export const managedPaths = ['harness.config.json','README.md','AGENTS.md','CLAUDE.md','GEMINI.md','.cursor/rules/harness-kit.mdc','.gitignore','docs/agent_guide.md','docs/structure.md'];
+export const sharedGuidePath = '.agent/guide.md';
+export const legacyGuidePath = 'docs/agent_guide.md';
+export const legacyGuidePointer = `# Project collaboration and verification
+
+The shared project guide is now at ../${sharedGuidePath}. Read that project file for collaboration and verification conventions.
+`;
+
+export const managedPaths = ['harness.config.json','README.md','AGENTS.md','CLAUDE.md','GEMINI.md','.cursor/rules/harness-kit.mdc','.gitignore',sharedGuidePath,legacyGuidePath,'docs/structure.md'];
 export const directories = ['docs/prd','docs/decision','docs/verification','docs/public/guides','docs/public/reference','docs/public/examples','scripts'];
 
 export const publicDocumentationRule = 'For public documentation, identify the intended reader. Cover supported product use, behavior, interfaces, and architecture relevant to that reader. Keep development history, internal decisions, work records, and repository-specific publication procedures internal. When both audiences need the same facts, write a standalone public explanation. Use descriptive headings and neutral prose with minimal personal pronouns. Before adding or editing a public page, identify its public path, reader, and applicable writing rules. Before finishing, reread the entire page and affected navigation as that reader. Verify changed claims, commands, and public links. For a public documentation audit, inventory and read every public page and report coverage and unresolved findings in internal records.';
@@ -20,7 +27,7 @@ export const structure = `# 文档目录与资料边界
 | docs/prd | 内部需求与验收标准 | 内部 |
 | docs/decision | 重要技术决策与取舍 | 内部 |
 | docs/verification | 验收方法、命令和测试链接 | 内部 |
-| docs/agent_guide.md | Agent 协作与验证规范 | 内部 |
+| .agent/guide.md | 各宿主共享的 Agent 协作与验证规范 | 内部 |
 | docs/structure.md | 本目录说明 | 内部 |
 | MEMORY.md、memory | 开发经验和过程记录 | 内部 |
 | .harness | 接入、任务、验证和发布审阅状态 | 内部 |
@@ -79,7 +86,8 @@ Thumbs.db
 /docs/prd/
 /docs/decision/
 /docs/verification/
-/docs/agent_guide.md
+/${sharedGuidePath}
+/${legacyGuidePath}
 /docs/structure.md
 MEMORY.md
 memory/

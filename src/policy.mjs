@@ -1,6 +1,7 @@
 import { matches, relativePath, under } from './fs.mjs';
+import { sharedGuidePath } from './templates.mjs';
 
-const protectedPatterns = ['.harness','.harness/**','artifacts/runs','artifacts/runs/**','**/.git/**','**/.git','**/MEMORY.md','**/memory/**','**/memories/**','**/decision/**','**/decisions/**'];
+const protectedPatterns = [sharedGuidePath,'.harness','.harness/**','artifacts/runs','artifacts/runs/**','**/.git/**','**/.git','**/MEMORY.md','**/memory/**','**/memories/**','**/decision/**','**/decisions/**'];
 export function classify(c, name) {
   name = relativePath(name);
   const internal = [], publicMatches = [];

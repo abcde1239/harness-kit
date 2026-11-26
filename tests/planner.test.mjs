@@ -20,11 +20,12 @@ test('gen-new guide and verify shell are preserved; conflicts are explicit',()=>
   const result=applyPlan(root,makePlan(root,answers));
   assert.ok(result.conflicts.includes('docs/agent_guide.md'));
   assert.equal(fs.readFileSync(path.join(root,'docs/agent_guide.md'),'utf8'),'custom guide');
+  assert.equal(fs.existsSync(path.join(root,'.agent/guide.md')),false);
   assert.equal(fs.readFileSync(path.join(root,'scripts/verify.sh'),'utf8'),'custom checks');
 });
 test('stale and modified plan are rejected before writes',()=>{
   const root=fixture(), plan=makePlan(root,answers);
-  write(root,'docs/agent_guide.md','user intervened');
+  write(root,'.agent/guide.md','user intervened');
   assert.throws(()=>applyPlan(root,plan),/Stale/);
   assert.equal(fs.existsSync(path.join(root,'harness.config.json')),false);
   const fresh=makePlan(root,answers); fresh.files[0].content='tampered';
@@ -38,16 +39,43 @@ test('unknown framework argv and layout can be explicitly declared',()=>{
 });
 test('changed managed guide is never overwritten on regeneration',()=>{
   const root=fixture(); applyPlan(root,makePlan(root,answers));
-  write(root,'docs/agent_guide.md','user modified');
+  write(root,'.agent/guide.md','user modified');
   const result=applyPlan(root,makePlan(root,answers));
   assert.equal(result.status,'conflicts');
-  assert.equal(fs.readFileSync(path.join(root,'docs/agent_guide.md'),'utf8'),'user modified');
+  assert.equal(fs.readFileSync(path.join(root,'.agent/guide.md'),'utf8'),'user modified');
 });
+test('upgrading a managed legacy guide preserves its old path as a pointer', () => {
+  const root = fixture();
+  applyPlan(root, makePlan(root, answers));
+  const legacy = 'docs/agent_guide.md';
+  const shared = '.agent/guide.md';
+  const statePath = '.harness/managed.json';
+  const state = JSON.parse(fs.readFileSync(path.join(root, statePath), 'utf8'));
+  fs.renameSync(path.join(root, shared), path.join(root, legacy));
+  state.files[legacy] = state.files[shared];
+  delete state.files[shared];
+  write(root, statePath, state);
+
+  const applied = applyPlan(root, makePlan(root, { ...answers, hosts: ['claude', 'gemini', 'cursor', 'opencode', 'dsh'] }));
+  assert.ok(applied.changed.includes(shared));
+  assert.ok(applied.changed.includes(legacy));
+  assert.match(fs.readFileSync(path.join(root, legacy), 'utf8'), /\.\.\/\.agent\/guide\.md/);
+  for (const entry of ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.cursor/rules/harness-kit.mdc']) {
+    assert.match(fs.readFileSync(path.join(root, entry), 'utf8'), /read \.agent\/guide\.md if present/);
+  }
+  const config = JSON.parse(fs.readFileSync(path.join(root, 'harness.config.json'), 'utf8'));
+  config.documents.internalRoots = [];
+  config.documents.internalPatterns = [];
+  config.documents.publicPatterns = ['**'];
+  assert.equal(classify(config, shared).audience, 'internal');
+  assert.deepEqual(applyPlan(root, makePlan(root, answers)).changed, []);
+});
+
 test('application failure restores written files and leaves user files intact',()=>{
   const root=fixture({'scripts':'a user file'}),plan=makePlan(root,answers);
   assert.throws(()=>applyPlan(root,plan));
   assert.equal(fs.existsSync(path.join(root,'harness.config.json')),false);
-  assert.equal(fs.existsSync(path.join(root,'docs/agent_guide.md')),false);
+  assert.equal(fs.existsSync(path.join(root,'.agent/guide.md')),false);
   assert.equal(fs.readFileSync(path.join(root,'scripts'),'utf8'),'a user file');
 });
 test('explicit unknown visibility is allowed for initialization but not publication',()=>{
@@ -66,7 +94,7 @@ test('default layout provides a public root introduction, categorized docs and a
   }
   const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   assert.equal(readme.trim(), '# 项目说明');
-  for (const file of ['AGENTS.md', 'docs/agent_guide.md']) {
+  for (const file of ['AGENTS.md', '.agent/guide.md']) {
     const instructions = fs.readFileSync(path.join(root, file), 'utf8');
     assert.match(instructions, /identify the intended reader/);
     assert.match(instructions, /minimal personal pronouns/);
@@ -90,7 +118,7 @@ test('generated gitignore ignores output and secrets while retaining private dev
     assert.ok(trackedCandidates.includes('.env.example'));
     assert.ok(!trackedCandidates.includes('artifacts/report.txt'));
     assert.ok(!trackedCandidates.includes('.env'));
-    for(const internal of ['docs/prd/feature.md','MEMORY.md','docs/structure.md','.harness/managed.json'])assert.equal(trackedCandidates.includes(internal),visibility==='private',internal);
+    for(const internal of ['.agent/guide.md','docs/prd/feature.md','MEMORY.md','docs/structure.md','.harness/managed.json'])assert.equal(trackedCandidates.includes(internal),visibility==='private',internal);
   }
 });
 

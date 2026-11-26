@@ -4,7 +4,7 @@ This document describes the target project, not Harness Kit's own source tree. O
 
 ## Managed files and state
 
-The CLI's plan/apply workflow manages `harness.config.json`, selected native host instruction files, `docs/agent_guide.md`, `docs/structure.md`, and `.gitignore`. It adds a public entry point when the root `README.md` is missing. Managed sections in existing host files preserve surrounding text and user edits. Existing project READMEs are preserved. Differences in existing gitignore or directory documentation produce conflict guidance. Default directories include `docs/prd`, `docs/decision`, `docs/verification`, `docs/public/guides`, `docs/public/reference`, `docs/public/examples`, and `scripts`. Empty directories are not automatically tracked by Git.
+The CLI's plan/apply workflow manages `harness.config.json`, selected native host instruction files, `.agent/guide.md`, `docs/structure.md`, and `.gitignore`. It adds a public entry point when the root `README.md` is missing. Managed sections in existing host files preserve surrounding text and user edits. Existing project READMEs are preserved. Differences in existing gitignore or directory documentation produce conflict guidance. Default directories include `docs/prd`, `docs/decision`, `docs/verification`, `docs/public/guides`, `docs/public/reference`, `docs/public/examples`, and `scripts`. Empty directories are not automatically tracked by Git.
 
 Use `--hosts` to select `codex`, `claude`, `gemini`, `cursor`, `opencode`, or `dsh`. DSH means DeepSeek Harness, also accepted as `deepseek-harness`. Codex, OpenCode, and DSH share `AGENTS.md`; Claude uses `CLAUDE.md`, Gemini uses `GEMINI.md`, and Cursor uses `.cursor/rules/harness-kit.mdc`. An explicit selection in a new project generates only those entries; the default is Codex. Previous selections accumulate, so choosing fewer hosts during later onboarding does not delete files. Selection is stored in onboarding state, without adding `hosts` to the config schema. DSH also reads `CLAUDE.md` and local overlays by default. It deduplicates same-group content only when identical after trimming; review differing existing content. See [configuration](configuration.md) for plugin and Skill discovery boundaries.
 
@@ -14,7 +14,13 @@ Apply maintains `.harness/managed.json`; the wizard saves `.harness/plan.json`. 
 
 Explicit `init --hooks` adds registrations for the supported hosts selected during onboarding. The [configuration reference](configuration.md#optional-local-hooks) covers host activation and local paths.
 
-Digests determine whether existing managed files can be updated safely; conflicts preserve the original files. Onboarding does not generate business source, tests, framework configuration, CI workflows, or `verify.sh`, and does not configure host models or permissions. Earlier gen-new `.agent/*`, guides, and `verify.sh` remain intact; their existence does not prove business tests pass. Static instruction files do not prove a live session has loaded them. Verify host-local and global rules separately.
+Digests determine whether existing managed files can be updated safely; conflicts preserve the original files. Onboarding does not generate business source, tests, framework configuration, CI workflows, or `verify.sh`, and does not configure host models or permissions. Existing user-owned `.agent/` files, guides, and `verify.sh` remain intact; their existence does not prove business tests pass. Static instruction files do not prove a live session has loaded them. Verify host-local and global rules separately.
+
+## Shared Agent guide
+
+The current source CLI creates `.agent/guide.md` for shared collaboration and verification guidance. Published v0.8.0 uses `docs/agent_guide.md`. Each selected host keeps its native instruction entry and reads the shared guide when the task needs more context. Host-specific role files and Hook registrations retain their native paths.
+
+When onboarding an existing project, the CLI can move an unchanged Harness-managed guide into `.agent/` and leave a short pointer at `docs/agent_guide.md`. A user-owned or edited legacy guide stays in place as the fallback. Review the onboarding plan before applying it. The shared guide is internal project material.
 
 ## What belongs in host instructions
 
@@ -64,8 +70,9 @@ project/
 |   |-- verification.json     Local validation evidence bound to current inputs
 |   |-- active-task.json      Optional active task pointer
 |   `-- tasks/                Recoverable goals, manual acceptance, notes, validation links
+|-- .agent/guide.md           Shared collaboration and verification guidance (internal)
 |-- docs/
-|   |-- agent_guide.md        Collaboration and validation conventions
+|   |-- agent_guide.md        Optional legacy entry or migration pointer
 |   |-- structure.md          Directory responsibilities and boundaries; internal
 |   |-- prd/                  Internal requirements; optional task tables
 |   |-- decision/             Internal significant decisions
@@ -80,7 +87,7 @@ project/
 `-- artifacts/, coverage/    Outputs according to actual framework configuration
 ```
 
-Default public paths are the root `README.md` and `docs/public`. Without existing governance configuration, newly generated generic host instructions may be included in proposed public rules. Existing host files and explicit `publicPatterns` are not broadened automatically; review before merging scope. Classify custom instructions containing internal material separately rather than allowing the whole file. Protected paths such as `MEMORY.md`, memory, and decision records can never be public. Default internal scope includes `docs/prd`, `docs/decision`, `docs/verification`, `docs/structure.md`, `docs/agent_guide.md`, and `.harness`. Add other process directories, task records, and Agent context to `internalRoots` or `internalPatterns`. Broad public rules do not replace classification.
+Default public paths are the root `README.md` and `docs/public`. Without existing governance configuration, newly generated generic host instructions may be included in proposed public rules. Existing host files and explicit `publicPatterns` are not broadened automatically; review before merging scope. Classify custom instructions containing internal material separately rather than allowing the whole file. Protected paths such as `MEMORY.md`, memory, and decision records can never be public. Default internal scope includes `docs/prd`, `docs/decision`, `docs/verification`, `docs/structure.md`, `docs/agent_guide.md`, `.agent/guide.md`, and `.harness`. Add other process directories, task records, and Agent context to `internalRoots` or `internalPatterns`. Broad public rules do not replace classification.
 
 ## Public documentation
 
@@ -123,6 +130,7 @@ When multiple stacks share a directory, recipes without path restrictions remain
 ```text
 repo/
 |-- harness.config.json       One root governance configuration listing workspaces
+|-- .agent/guide.md           Shared collaboration and verification guidance (internal)
 |-- docs/, .harness/          Shared document policy and plans
 |-- apps/web/                Frontend source, existing tests, framework configuration
 |-- services/api/            Backend module, package tests, testdata

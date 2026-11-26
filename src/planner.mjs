@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { inspect } from './discovery.mjs';
 import { CONFIG, validateConfig } from './config.mjs';
 import { atomicWrite, digest, fileHash, hash, json, readJson, safePath } from './fs.mjs';
-import { managedPaths, directories, readme, structure, guide, gitignore } from './templates.mjs';
+import { managedPaths, directories, readme, structure, guide, gitignore, sharedGuidePath, legacyGuidePath, legacyGuidePointer } from './templates.mjs';
 import { HOSTS, agentBlock, cursorFrontmatter, normalizeHosts, planAgentEntry, selectedHosts } from './host.mjs';
 import { ADAPTERS_FILE } from './adapters/recipes.mjs';
 
@@ -50,7 +50,16 @@ export function makePlan(root, answers = {}) {
     config.documents.publicPatterns = [...new Set([...config.documents.publicPatterns, ...entries.filter(f => f.action === 'create').map(f => f.path)])];
     config = validateConfig(config, root);
   }
-  const contents = { [CONFIG]: json(config), 'docs/agent_guide.md': guide, 'docs/structure.md': structure, '.gitignore': gitignore(config.repository.visibility) };
+  const contents = { [CONFIG]: json(config), 'docs/structure.md': structure, '.gitignore': gitignore(config.repository.visibility) };
+  const legacyGuideHash = fileHash(root, legacyGuidePath);
+  if (fileHash(root, sharedGuidePath) !== null || legacyGuideHash === null) {
+    contents[sharedGuidePath] = guide;
+  } else if (legacyGuideHash === previous.files?.[legacyGuidePath]) {
+    contents[sharedGuidePath] = guide;
+    contents[legacyGuidePath] = legacyGuidePointer;
+  } else {
+    contents[legacyGuidePath] = guide;
+  }
   // An existing project introduction is never replaced with a generic template.
   if (fileHash(root,'README.md') === null || previous.files?.['README.md']) contents['README.md'] = readme;
   const files = Object.entries(contents).map(([name, content]) => {

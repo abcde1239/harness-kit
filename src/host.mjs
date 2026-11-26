@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import {parse as parseYaml} from 'yaml';
 import { fileHash, hash, readJson, safePath } from './fs.mjs';
-import { publicDocumentationRule } from './templates.mjs';
+import { legacyGuidePath, publicDocumentationRule, sharedGuidePath } from './templates.mjs';
 
 export const AGENT_FILE = 'AGENTS.md';
 export const HOSTS = Object.freeze(Object.fromEntries([
@@ -34,7 +34,7 @@ export const AGENT_BLOCK_END = '<!-- harness-kit:end -->';
 export const agentInstructions = `${AGENT_BLOCK_START}
 ## Project development and verification
 
-- Use the project instructions already loaded by the host. Read additional instructions only when entering a new scope with undiscovered rules or when applicable instructions are missing from the current context. Avoid rereading files whose relevant contents are already available unless they changed. Consult docs/agent_guide.md or MEMORY.md only for missing, task-relevant context. Continue from public files when private material is absent.
+- Use the project instructions already loaded by the host. Read additional instructions only when entering a new scope with undiscovered rules or when applicable instructions are missing from the current context. Avoid rereading files whose relevant contents are already available unless they changed. For missing collaboration or verification context, read ${sharedGuidePath} if present, otherwise ${legacyGuidePath} if present. Consult MEMORY.md only for missing, task-relevant context. Continue from public files when private material is absent.
 - Keep this host entry concise. Put durable, actionable repository-wide agent rules here and narrower rules in the host's scoped instruction files. Record product requirements and feature acceptance criteria in project specs, architecture rationale in decision records, and task progress in task records. Point to relevant sources for on-demand reading without copying or automatically importing them. Add project-owned rules outside the Harness Kit markers.
 - If docs/decision/coding-style/RULES.md exists, apply adopted rules within this task's scope; candidate rules are references only. Personal preferences do not override current user requirements, applicable instructions or existing tool configuration. Explain material conflicts.
 - Use applicable installed Skills. If a task needs Harness Kit guidance that is missing from the current context, use the host's Skill mechanism to load it. Implement small changes directly; clarify scope and acceptance for complex work. Preserve frameworks and user edits.
