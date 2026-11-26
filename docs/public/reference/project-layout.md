@@ -82,6 +82,22 @@ project/
 
 Default public paths are the root `README.md` and `docs/public`. Without existing governance configuration, newly generated generic host instructions may be included in proposed public rules. Existing host files and explicit `publicPatterns` are not broadened automatically; review before merging scope. Classify custom instructions containing internal material separately rather than allowing the whole file. Protected paths such as `MEMORY.md`, memory, and decision records can never be public. Default internal scope includes `docs/prd`, `docs/decision`, `docs/verification`, `docs/structure.md`, `docs/agent_guide.md`, and `.harness`. Add other process directories, task records, and Agent context to `internalRoots` or `internalPatterns`. Broad public rules do not replace classification.
 
+## Public documentation
+
+| Content | Typical location |
+|---|---|
+| Entry points and navigation | `README.md`, `docs/public/index.md`, `docs/public/README.md` |
+| Installation and workflow instructions | `docs/public/guides/` |
+| Commands, configuration, and behavior | `docs/public/reference/` |
+| Worked examples | `docs/public/examples/` |
+| Changes and upgrade guidance for individual releases | `docs/public/releases/` |
+
+Keep product requirements, decisions, and verification records under the project's internal directories, such as `docs/prd/`, `docs/decision/`, and `docs/verification/`. Use the project's own directory conventions when they differ. With a compatible CLI, configure [document location rules](configuration.md#document-location-rules) to enforce those conventions. Public and internal path policies govern publication eligibility.
+
+When adding, editing, or moving a public page, review its intended audience, destination, and affected navigation. See the [documentation workflow](../guides/usage.md#维护公开文档) for location checks and Agent review.
+
+## Internal files and Git
+
 The supplied gitignore excludes dependencies, common root build directories, outputs, local env files while retaining `.env.example` and `.env.sample`, logs, OS temporary files, and local Harness answers and plans. Private repositories may commit internal documents and `managed.json`. Declaring a repository public additionally ignores default internal documents, memory/decision records, and all of `.harness`. Custom internal paths need corresponding ignore rules. Existing gitignore files are preserved, with differences merged by the Agent.
 
 Internal material may be tracked in private Git. In an already public repository, move it to a private companion repository or outside the checkout. For local-only storage, keep it untracked and inspect existing history. Directory names, gitignore, and passing ordinary lint cannot clean history.

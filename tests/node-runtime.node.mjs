@@ -43,6 +43,26 @@ test('source and all three portable formats run under Node without Bun on PATH',
  assert.equal(record.environment.node,process.versions.node);assert.equal(record.environment.bun,undefined);
 });
 
+test('bundled CLI checks public document placement in check and run', () => {
+ const root = project('public document layout');
+ init(entry, root);
+ const configPath = path.join(root, 'harness.config.json');
+ const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+ config.documents.layout = [{ id: 'public-pages', match: ['docs/public/**/*.md'], allow: ['docs/public/guides/**'] }];
+ fs.writeFileSync(configPath, JSON.stringify(config));
+ const publicRoot = path.join(root, 'docs/public');
+ const loose = path.join(publicRoot, 'setup.md');
+ fs.writeFileSync(loose, '# Setup');
+ const check = call(entry, root, ['check'], { expected: 1 });
+ assert.equal(check.findings.find(f => f.ruleId === 'documents.layout').path, 'docs/public/setup.md');
+ const run = call(entry, root, ['run'], { expected: 1 });
+ assert.deepEqual(run.governance.findings, check.findings);
+ assert.equal(run.verification.tasks[0].status, 'passed');
+ assert.equal(run.evidence.status, 'failed');
+ fs.renameSync(loose, path.join(publicRoot, 'guides/setup.md'));
+ assert.equal(call(entry, root, ['run']).evidence.status, 'passed');
+});
+
 test('Node verification, durable acceptance and source freshness retain their gates',()=>{
  const root=project('acceptance');init(entry,root);
  call(entry,root,['task','start','sum','--accept','Two plus three is five']);

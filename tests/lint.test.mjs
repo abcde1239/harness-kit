@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { fixture,config,write } from './helpers.mjs';
 import { lint,applyBaseline } from '../src/lint.mjs';
 import { finding } from '../src/report.mjs';
+import { classify } from '../src/policy.mjs';
 
 test('private memory is legal and missing tests stay explicit',()=>{
   const root=fixture({'MEMORY.md':'internal'}),r=lint(root,config(root));
@@ -80,4 +81,46 @@ test('document layout reports review design files and keeps maintained content a
   ]);
   assert.equal(lint(root, config(root, { ...options, rules: { 'documents.artifacts': 'warning' } })).exitCode, 0);
   assert.throws(() => config(root, { documents: { artifactAllowlist: ['docs/**'] } }), /Unsafe relative path/);
+});
+
+test('document placement applies overlapping public and workspace rules independently of publication policy', () => {
+  const root = fixture({
+    'README.md': '',
+    'docs/public/index.md': '',
+    'docs/public/guides/getting-started.md': '',
+    'docs/public/guides/ADR-002.md': '',
+    'docs/public/loose.mdx': '',
+    'docs/public/.vitepress/cache/generated.md': '',
+    'docs/public/public/logo.svg': '',
+    'docs/decision/ADR-001.md': '',
+    'packages/web/docs/public/reference/api.md': '',
+    'packages/web/docs/public/guide.md': '',
+  });
+  const options = {
+    documents: { layout: [
+      { id: 'public-pages', match: ['docs/public/**/*.md', 'docs/public/**/*.mdx'],
+        allow: ['docs/public/index.md', 'docs/public/guides/**'], exclude: ['docs/public/.vitepress/**'] },
+      { id: 'decision-records', match: ['docs/**/ADR-*.md'], allow: ['docs/decision/**'] },
+    ] },
+    workspaces: [{ id: 'web', root: 'packages/web', documents: {
+      layout: [{ id: 'web-pages', match: ['docs/public/**/*.md'], allow: ['docs/public/reference/**'] }],
+    } }],
+  };
+  const settings = config(root, options);
+  const findings = lint(root, settings).findings;
+  assert.deepEqual(findings.map(f => [f.path, f.workspace, f.detail.id]), [
+    ['docs/public/loose.mdx', 'root', 'public-pages'],
+    ['docs/public/guides/ADR-002.md', 'root', 'decision-records'],
+    ['packages/web/docs/public/guide.md', 'web', 'web-pages'],
+  ]);
+  assert.match(findings[0].message, /docs\/public\/guides/);
+  assert.equal(lint(root, config(root, { ...options, rules: { 'documents.layout': 'warning' } })).exitCode, 0);
+  assert.equal(lint(root, config(root, { ...options, rules: { 'documents.layout': 'off' } })).findings.length, 0);
+  assert.equal(classify(settings, 'docs/public/loose.mdx').audience, 'public');
+  assert.equal(classify(settings, 'docs/decision/ADR-001.md').audience, 'internal');
+
+  const rule = options.documents.layout[0];
+  assert.throws(() => config(root, { documents: { layout: [{ ...rule, allow: [] }] } }), /allow must contain/);
+  assert.throws(() => config(root, { documents: { layout: [{ ...rule, match: ['../docs/**'] }] } }), /Unsafe relative path/);
+  assert.throws(() => config(root, { documents: { layout: [rule, rule] } }), /Duplicate document layout rule/);
 });

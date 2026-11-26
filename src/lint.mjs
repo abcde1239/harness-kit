@@ -37,6 +37,29 @@ function checkDocumentArtifacts(files, config, add) {
   }
 }
 
+function checkDocumentLayout(files, config, add) {
+  const scopes = [
+    { id: 'root', root: '.', rules: config.documents.layout },
+    ...config.workspaces.map(workspace => ({
+      id: workspace.id, root: workspace.root, rules: workspace.documents?.layout,
+    })),
+  ];
+  for (const scope of scopes) {
+    for (const rule of scope.rules ?? []) {
+      for (const file of files) {
+        if (!under(file, scope.root)) continue;
+        const local = scope.root === '.' ? file : file.slice(scope.root.length + 1);
+        if (!rule.match.some(pattern => matches(local, pattern)) ||
+            rule.exclude?.some(pattern => matches(local, pattern)) ||
+            rule.allow.some(pattern => matches(local, pattern))) continue;
+        add('documents.layout', file,
+          `Document layout rule ${rule.id} expects: ${rule.allow.join(', ')}`,
+          scope.id, { id: rule.id, root: scope.root, allow: rule.allow });
+      }
+    }
+  }
+}
+
 export function applyBaseline(findings, baseline) {
   return findings.map(f => !f.protected && baseline.includes(f.fingerprint) ? { ...f, severity: 'warning', baseline: true } : f);
 }
@@ -49,6 +72,7 @@ export function lint(root, config, { useBaseline = true } = {}) {
   checkHarnessStorage(root, config, add);
   checkArtifactLayout(root, add);
   checkDocumentArtifacts(files, config, add);
+  if (config.rules['documents.layout'] !== 'off') checkDocumentLayout(files, config, add);
   try { taskOrder(config.tasks); } catch (error) { add('tasks.graph', 'harness.config.json', error.message, 'root', error.message); }
   const workspaceResults = [];
   for (const w of config.workspaces) {

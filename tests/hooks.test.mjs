@@ -45,7 +45,7 @@ test('generated runtime executes from a nested cwd and never runs tests inside a
   const root=project();await connectHooks(root);
   fs.mkdirSync(path.join(root,'nested'));
   const runtime=path.join(root,'.harness/hooks/runtime.mjs');
-  const call=event=>Bun.spawnSync([process.execPath,runtime,'hook','--root',root],{cwd:path.join(root,'nested'),stdin:Buffer.from(JSON.stringify(event)),stdout:'pipe',stderr:'pipe'});
+  const call=event=>Bun.spawnSync([process.execPath,runtime,'hook','--root',root],{cwd:path.join(root,'nested'),stdin:Buffer.from(JSON.stringify(event)),stdout:'pipe',stderr:'pipe',env:{...process.env,HARNESS_ACTIVE:''}});
   const started=call(input);assert.equal(started.exitCode,0,Buffer.from(started.stderr).toString());
   assert.ok(JSON.parse(Buffer.from(started.stdout).toString()).hookSpecificOutput);
   write(root,'check.mjs','await Bun.write("should-not-run.txt","side effect");');

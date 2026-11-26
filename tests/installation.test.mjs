@@ -51,7 +51,7 @@ test('packaged skill has no unfinished resources and bundled CLI validates missi
     assert.equal(validateSkill(destination).status,'passed');
   }
   for(const match of text.matchAll(/\]\((references\/[^)]+)\)/g))assert.ok(fs.existsSync(path.join(destination,match[1])));
-  const r=Bun.spawnSync([process.execPath,path.join(destination,'scripts/harness.mjs'),'setup','--yes','--json'],{cwd:fixture(),stdout:'pipe',stderr:'pipe'});
+  const r=Bun.spawnSync([process.execPath,path.join(destination,'scripts/harness.mjs'),'setup','--yes','--json'],{cwd:fixture(),stdout:'pipe',stderr:'pipe',env:{...process.env,HARNESS_ACTIVE:''}});
   assert.equal(r.exitCode,2);assert.ok(Buffer.from(r.stderr).toString().includes('未回答'));
 });
 

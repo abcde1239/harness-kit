@@ -61,7 +61,7 @@ test('invalid CLI options, missing config and unanswered apply fail distinctly',
 });
 test('CLI runs setup from target cwd without tool-root argument and defaults to nonblocking help without a TTY',()=>{
   const root=fixture({'answers.json':{visibility:'private',testCommands:{root:null}}});
-  const r=Bun.spawnSync([process.execPath,cli,'setup','--answers','answers.json','--yes','--json'],{cwd:root,stdout:'pipe',stderr:'pipe'});
+  const r=Bun.spawnSync([process.execPath,cli,'setup','--answers','answers.json','--yes','--json'],{cwd:root,stdout:'pipe',stderr:'pipe',env:{...process.env,HARNESS_ACTIVE:''}});
   assert.equal(r.exitCode,0,Buffer.from(r.stderr).toString());
   assert.equal(JSON.parse(Buffer.from(r.stdout).toString()).status,'applied');
   assert.equal(JSON.parse(fs.readFileSync(path.join(root,'.harness/plan.json'),'utf8')).version,1);

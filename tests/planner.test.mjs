@@ -64,7 +64,17 @@ test('default layout provides a public root introduction, categorized docs and a
     assert.ok(fs.statSync(path.join(root,'docs/public',name)).isDirectory());
     assert.equal(classify(c,`docs/public/${name}/page.md`).audience,'public');
   }
-  assert.ok(fs.existsSync(path.join(root,'README.md')));
+  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  assert.equal(readme.trim(), '# 项目说明');
+  for (const file of ['AGENTS.md', 'docs/agent_guide.md']) {
+    const instructions = fs.readFileSync(path.join(root, file), 'utf8');
+    assert.match(instructions, /identify the intended reader/);
+    assert.match(instructions, /minimal personal pronouns/);
+    assert.match(instructions, /supported product use, behavior, interfaces, and architecture/);
+    assert.match(instructions, /development history, internal decisions, work records, and repository-specific publication procedures internal/);
+    assert.match(instructions, /reread the entire page and affected navigation/);
+    assert.match(instructions, /inventory and read every public page/);
+  }
   assert.ok(fs.existsSync(path.join(root,'docs/structure.md')));
   assert.equal(fs.existsSync(path.join(root,'docs/public/README.md')),false);
 });

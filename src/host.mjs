@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import {parse as parseYaml} from 'yaml';
 import { fileHash, hash, readJson, safePath } from './fs.mjs';
+import { publicDocumentationRule } from './templates.mjs';
 
 export const AGENT_FILE = 'AGENTS.md';
 export const HOSTS = Object.freeze(Object.fromEntries([
@@ -43,6 +44,7 @@ export const agentInstructions = `${AGENT_BLOCK_START}
 - Delegate independent work only when authorized and real host tools are available. Give each subagent a name that identifies its responsibility, such as tester or checkout-frontend. Use the host’s name field when available; otherwise, include the label in the assignment. Provide goals, writable files, interface dependencies, applicable rules and verification commands. Assign one writer per shared file and independently check changes and evidence.
 - Reproduce failures and distinguish implementation, configuration and environment causes before retrying. Report changes, actual outcomes and remaining blockers; refresh relevant evidence after project inputs change.
 - Write maintained agent prompts and instructions in English. Use the requested language for each response or deliverable. Preserve source requirements, exact wording, code, and identifiers when carrying context forward. For observed agent behavior problems, assess context, tools, workflow, prompts and validation before adding a scoped rule.
+- ${publicDocumentationRule}
 - After coding or system design, consolidate reusable project memory and applicability. Keep development lessons, decisions and verification records internal. Check actual artifacts and provenance separately before publication.
 ${AGENT_BLOCK_END}`;
 

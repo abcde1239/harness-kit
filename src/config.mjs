@@ -11,10 +11,27 @@ const enumValue = (v, choices, label) => { if (!choices.includes(v)) throw new E
 const id = v => { if (typeof v !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/.test(v)) throw new Error(`Invalid id: ${v}`); };
 function array(v, label) { if (!Array.isArray(v)) throw new Error(`${label} must be an array`); }
 function paths(v, label, glob = false) { strings(v, label); for (let i=0;i<v.length;i++) v[i]=relativePath(v[i], { glob }); }
+function documentLayout(rules) {
+  array(rules, 'documents.layout');
+  const ids = new Set();
+  for (const rule of rules) {
+    keys(rule, ['id', 'match', 'allow', 'exclude'], 'document layout rule');
+    id(rule.id);
+    if (ids.has(rule.id)) throw new Error(`Duplicate document layout rule: ${rule.id}`);
+    ids.add(rule.id);
+    for (const key of ['match', 'allow']) {
+      const label = `documents.layout.${rule.id}.${key}`;
+      paths(rule[key], label, true);
+      if (!rule[key].length) throw new Error(`${label} must contain at least one path pattern`);
+    }
+    if (rule.exclude !== undefined) paths(rule.exclude, `documents.layout.${rule.id}.exclude`, true);
+  }
+}
 function documents(v) {
-  keys(v, ['defaultAudience','publicRoots','internalRoots','publicPatterns','internalPatterns','artifactAllowlist'], 'documents');
+  keys(v, ['defaultAudience','publicRoots','internalRoots','publicPatterns','internalPatterns','artifactAllowlist','layout'], 'documents');
   if (v.defaultAudience !== undefined && v.defaultAudience !== 'internal') throw new Error('documents.defaultAudience must be internal');
   for (const k of ['publicRoots','internalRoots','publicPatterns','internalPatterns','artifactAllowlist']) if (v[k] !== undefined) paths(v[k], `documents.${k}`, k.endsWith('Patterns'));
+  if (v.layout !== undefined) documentLayout(v.layout);
 }
 function tests(v) {
   keys(v, ['detect','include','exclude','artifacts','requireConfiguredTask'], 'tests');
@@ -84,7 +101,7 @@ export function validateConfig(value, root) {
     keys(p, ['id','manifest'], 'publicationTarget'); id(p.id); relativePath(p.manifest);
     if (targets.has(p.id)) throw new Error(`Duplicate target: ${p.id}`); targets.add(p.id);
   }
-  keys(c.rules, ['tests.layout','tests.configured','tests.artifacts','documents.links','documents.artifacts','tasks.graph','storage.state','artifacts.layout'], 'rules');
+  keys(c.rules, ['tests.layout','tests.configured','tests.artifacts','documents.links','documents.artifacts','documents.layout','tasks.graph','storage.state','artifacts.layout'], 'rules');
   for (const [k,v] of Object.entries(c.rules)) enumValue(v, ['error','warning','off'], k);
   strings(c.baseline, 'baseline');
   return c;

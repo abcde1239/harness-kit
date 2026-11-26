@@ -1,18 +1,14 @@
 export const managedPaths = ['harness.config.json','README.md','AGENTS.md','CLAUDE.md','GEMINI.md','.cursor/rules/harness-kit.mdc','.gitignore','docs/agent_guide.md','docs/structure.md'];
 export const directories = ['docs/prd','docs/decision','docs/verification','docs/public/guides','docs/public/reference','docs/public/examples','scripts'];
 
+export const publicDocumentationRule = 'For public documentation, identify the intended reader. Cover supported product use, behavior, interfaces, and architecture relevant to that reader. Keep development history, internal decisions, work records, and repository-specific publication procedures internal. When both audiences need the same facts, write a standalone public explanation. Use descriptive headings and neutral prose with minimal personal pronouns. Before adding or editing a public page, identify its public path, reader, and applicable writing rules. Before finishing, reread the entire page and affected navigation as that reader. Verify changed claims, commands, and public links. For a public documentation audit, inventory and read every public page and report coverage and unresolved findings in internal records.';
+
 export const readme = `# 项目说明
-
-本文是项目根目录的公开入口，用于介绍项目用途、安装、快速开始与验证命令。请按实际项目补充说明，内容应适合公开。
-
-详细公开文档按用途放在 docs/public/guides、docs/public/reference、docs/public/examples；有实际内容后再添加对应链接。
-
-接入诊断：harness doctor；约定检查：harness check；运行已配置验证：harness run。未配置测试不代表测试通过。
 `;
 
 export const structure = `# 文档目录与资料边界
 
-本文是内部协作说明，解释文档职责与放置方式。
+本文是内部协作说明，解释文档职责与放置方式。公开文档说明产品用途、使用方式、实际行为、接口和面向读者的原理与结构。需求、决策过程、实现进度、联调验收、发布操作和开发沟通保留在对应的内部资料。需要公开解释同一主题时，从已确认的产品事实独立编写。
 
 | 路径 | 用途 | 公开边界 |
 |---|---|---|
@@ -40,7 +36,7 @@ export const guide = `# Project collaboration and verification
 
 harness.config.json records project conventions. Native host entries are AGENTS.md for Codex/OpenCode/DeepSeek Harness, CLAUDE.md for Claude Code, GEMINI.md for Gemini CLI, and .cursor/rules/harness-kit.mdc for Cursor. Written configuration does not prove the current host loaded it; confirm in a new session. Read relevant requirements and decisions before editing. See docs/structure.md for document responsibilities.
 
-- The root README.md is public by default; detailed public documentation belongs in docs/public/guides, reference and examples.
+- The root README.md is public by default; detailed public documentation belongs in docs/public/guides, reference and examples. ${publicDocumentationRule}
 - Keep native host entries concise and scoped to durable agent rules. Put project-owned rules outside the Harness Kit markers.
 - Keep feature requirements and acceptance criteria in the existing specs (docs/prd by default), significant decisions in docs/decision, and repeatable verification methods in docs/verification. Use existing task records or Harness work tasks for progress and handoffs. Refer to those sources on demand.
 - Memory, decisions and development records may be committed to private Git; keep them internal by default.

@@ -25,6 +25,7 @@ Write maintained agent instructions, role prompts, and prompt templates in Engli
 | Develop, repair, or review | [Development and recovery](references/development.md) |
 | Resume work or record acceptance | [Persistent tasks](references/tasks.md) |
 | Delegate to specialists | [Collaboration](references/collaboration.md) and [roles](references/roles.md). Use the active host and its authorized delegation tools. Otherwise cover the roles serially. |
+| Write or review public documentation | [Public writing rules](references/public-documentation.md). Explain supported product use, behavior, and relevant architecture. Review every added or edited public page and affected navigation before finishing. For a public documentation audit, inventory and read the entire public scope. |
 | Assess an agent behavior | [Agent expert](references/roles/agent-expert.md) |
 | Derive style and architecture rules | [Coding style](references/coding-style.md) |
 | Configure another technology stack | [Adapters](references/adapters.md) |

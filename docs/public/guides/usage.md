@@ -29,7 +29,21 @@ harness init --private --test "bun test ./tests" --yes
 | `harness check` | 只读检查项目约定 |
 | `harness doctor` | 只读诊断配置、环境和验证记录 |
 
-改动有关源码或配置后，用 `harness run` 刷新验证记录。`run --task <验证任务 ID>` 仅验证所选任务及其依赖。要确认宿主实际加载了 Skill 或项目指令，请在新会话中检查。命令参数见 `harness help --all`。
+改动有关源码或配置后，用 `harness run` 刷新验证记录。`run --task <验证任务 ID>` 仅验证所选任务及其依赖。要确认宿主实际加载了 Skill 或项目指令，请在新会话中检查。命令用途见 [CLI 命令速查](../reference/cli-and-skill.md#command-reference)。运行 `harness help --all` 可查看所用版本的参数。
+
+## 维护公开文档
+
+文档位置检查可通过当前源码运行。已发布的 v0.8.0 不支持 `documents.layout`。从源码使用时，按本页开头的方式调用 `bin/harness.mjs`。
+
+1. 新增、编辑或移动页面前，确认读者和用途，按[目标项目布局](../reference/project-layout.md#public-documentation)选择位置，并查看项目已有的文档规则。
+2. 首次设置时，在 `harness.config.json` 中按目录和文件类型配置[位置规则](../reference/configuration.md#document-location-rules)。后续新增符合规则的页面时，沿用现有配置。以配置参考中的示例为例，`docs/public/setup.md` 会触发 `documents.layout`。报告会列出该文件、`public-pages` 规则和允许的位置。将安装说明移到 `docs/public/guides/setup.md`，更新引用和导航，再运行 `harness check`。`harness run` 也会检查位置，并执行配置的项目任务。
+3. 让 Agent 从目标读者的角度通读改动页面及受影响的导航，核对阅读顺序、前提、命令、链接和适用版本。CLI 的位置检查只匹配路径。需要全量审读时，让 Agent 先枚举所有维护中的公开页面，覆盖未列入导航的页面和公开 README 等入口。
+
+将下面的审读请求交给已加载 Harness Kit Skill 的 Agent。
+
+```text
+请审读所有维护中的公开文档，覆盖导航之外的页面和仓库公开入口。检查读者能否按文档完成操作，并核对前提、命令、链接及适用版本。按文件报告问题、建议修正和未覆盖范围。
+```
 
 ## 保存任务与交接
 
@@ -38,4 +52,4 @@ harness init --private --test "bun test ./tests" --yes
 - 分配前端、后端、测试或审查等职责时，查阅[角色](../reference/roles.md)和[协作流程](../reference/collaboration.md)。
 - 生成截图、日志、报告或评审稿前，先用 `harness artifacts create` 分配任务目录。目录约定和到期清理见[产物管理](../reference/artifacts.md)及[项目布局](../reference/project-layout.md)。
 - 需要会话开始提醒或结束前的验证检查时，查阅[可选会话 Hook](../reference/configuration.md#optional-local-hooks)。
-- 从已有项目归纳编码与架构约定时，使用[编码习惯提炼](coding-style.md)。公开导出与历史审计步骤见[发布边界](../reference/publication-boundary.md#导出与审计)。
+- 从已有项目归纳编码与架构约定时，使用[编码习惯提炼](coding-style.md)。公开导出与历史审计步骤见[公开导出与审计](../reference/publication-boundary.md#导出与审计)。
